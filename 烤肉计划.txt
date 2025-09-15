@@ -1,0 +1,37 @@
+吸血鬼と同棲⁉
+https://www.youtube.com/watch?v=8JYAMS0Dar0&t=1s
+
+紅い月の下で逢いましょう　～レミリアとよふかし～
+https://www.youtube.com/playlist?list=PLFU-QWGTBq-4SsfGQuJBNzmvZtTzN3FoJ
+
+東方永夢桜
+https://www.youtube.com/playlist?list=PLmc6eO_qCE4nYR7tYmTsppAF1CTxhcrTP
+
+拾われた執事の俺が主のレミリアと付き合うことに！？
+https://youtube.com/playlist?list=PLuabzLomQRYVdcxxhc8Y47EAzF790gZOz&si=jCApWj1cv2Ihfwxw
+
+---
+
+自殺未遂したらレミリアと付き合うことに？！
+https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT&si=5RNTZWuao9UJS3p2
+
+いじめられてる男の子を助ける天使の妹
+https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh&si=yrWxkutK0fpWnuCk
+
+ヴォルガが幻想入り
+https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V&si=bo7-mw9Nzuw-Fhiz
+
+『好き』という気持ちが行き着く場所
+https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8&si=OOT7VVQqAnADEC6S
+
+
+
+
+
+翻译成中文，内容里出现的人名优先匹配《东方project》中的人物，保留原文中的「」，不需要替换为双引号，输出格式按srt来，每个字幕内容都写在一行里，用代码块输出给我
+
+ --video_path D:/东方project/油库里茶番剧/被捡回来的管家我竟要和主人蕾米莉亚交往了/9/生肉.mp4 --lang japan --subtitle_position center --output D:/东方project/油库里茶番剧/被捡回来的管家我竟要和主人蕾米莉亚交往了/9/原文.srt --time_start 0:00 --conf_threshold 75 --sim_threshold 80 --max_merge_gap 0.1 --ssim_threshold 92 --ocr_image_max_width 1280 --frames_to_skip 1 --min_subtitle_duration 0.2 --use_gpu true --use_fullframe false --use_dual_zone false --use_angle_cls false --post_processing true --use_server_model true --crop_x 1 --crop_y 680 --crop_width 1912 --crop_height 393
+
+C:\Users\ZHANGBaoHang\AppData\Local\Programs\Python\Python312\python.exe "D:\东方project\service\subtitle_extraction.py" --video_path D:/东方project/projects/被捡回来的管家我竟要和主人蕾米莉亚交往了/1/生肉copy.mp4 --lang japan --subtitle_position center --output D:/东方project/projects/被捡回来的管家我竟要和主人蕾米莉亚交往了/1/原文copy.srt --time_start 0:00 --conf_threshold 75 --sim_threshold 80 --max_merge_gap 0.1 --ssim_threshold 92 --ocr_image_max_width 1280 --frames_to_skip 1 --min_subtitle_duration 0.2 --use_gpu true --use_fullframe false --use_dual_zone false --use_angle_cls false --post_processing true --use_server_model true --crop_x 1 --crop_y 680 --crop_width 1912 --crop_height 393
+
+"C:\Users\ZHANGBaoHang\Desktop\CODE\VideOCR\CLI\PaddleOCR-GPU-v1.3.2-CUDA-12.9\paddleocr.exe" ocr --input C:\Users\ZHANGB~1\AppData\Local\Temp\videocr_temp_klnhbm28 --device gpu --use_textline_orientation false --use_doc_orientation_classify False --use_doc_unwarping False --lang japan --text_detection_model_dir D:\东方project\service\PaddleOCR.PP-OCRv5.support.files\det\PP-OCRv5_server_det --text_detection_model_name PP-OCRv5_server_det --text_recognition_model_dir D:\东方project\service\PaddleOCR.PP-OCRv5.support.files\rec\PP-OCRv5_server_rec --text_recognition_model_name PP-OCRv5_server_rec
