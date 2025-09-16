@@ -1,2 +1,4 @@
 *.mp4
 *.jpg
+*.part
+__pycache__
