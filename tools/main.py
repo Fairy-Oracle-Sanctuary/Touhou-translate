@@ -12,7 +12,7 @@ def get_project_paths(directory: str) -> list:
     project_paths = []
     for item in os.listdir(directory):
         full_path = os.path.join(directory, item)
-        if os.path.isdir(full_path) and not full_path.endswith(".git") and not full_path.endswith("tools"):
+        if os.path.isdir(full_path) and not full_path.endswith(".git") and not full_path.endswith("tools") and not full_path.endswith("CLI") :
             project_paths.append(full_path)
     return project_paths
 
