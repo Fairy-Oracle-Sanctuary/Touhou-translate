@@ -2,3 +2,4 @@
 *.jpg
 *.part
 __pycache__
+CLI/
