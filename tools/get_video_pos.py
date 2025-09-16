@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import os
-import argparse
 
 class VideoCoordinateTool:
     def __init__(self, video_path):

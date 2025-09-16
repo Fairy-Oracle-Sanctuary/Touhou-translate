@@ -1,3 +1,5 @@
+#pip install yt_dlp requests opencv-python numpy
+
 import os
 
 from tool import *
