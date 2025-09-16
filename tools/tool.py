@@ -151,6 +151,7 @@ def file_copy():
         for d in os.listdir(current_dir)
         if os.path.isdir(os.path.join(current_dir, d))
         and not d.startswith(".")
+        and not d.endswith("tools")
         and d != os.path.basename(__file__)
     ]
 
