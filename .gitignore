@@ -3,3 +3,4 @@
 *.part
 __pycache__
 CLI/
+.__jianying_export_temp_folder__
