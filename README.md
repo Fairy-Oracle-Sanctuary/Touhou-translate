@@ -8,7 +8,7 @@
 
 | 序号 | 日文原标题 | 中文译名 | 原作者/Link | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | 吸血鬼と同棲⁉ | 《和吸血鬼同居了⁉》 | [YouTube链接](https://www.youtube.com/watch?v=8JYAMS0Dar0&t=1s) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6267690) |
+| 1 | 吸血鬼と同棲⁉ | 《和吸血鬼同居》 | [YouTube链接](https://www.youtube.com/watch?v=8JYAMS0Dar0&t=1s) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6267690) |
 | 2 | 紅い月の下で逢いましょう ～レミリアとよふかし～ | 《红月夜的契约————与蕾米莉亚的彻夜醉迷》 | [YouTube播放列表](https://www.youtube.com/playlist?list=PLFU-QWGTBq-4SsfGQuJBNzmvZtTzN3FoJ) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6324095) |
 | 3 | 東方永夢桜 | 《东方永梦樱》 | [YouTube播放列表](https://www.youtube.com/playlist?list=PLmc6eO_qCE4nYR7tYmTsppAF1CTxhcrTP) | `已完成` / `未上传` |
 | 4 | 自殺未遂したらレミリアと付き合うことに？！ | 《自杀未遂后竟然和蕾米莉亚开始交往了》 | [YouTube播放列表](https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT) | `待开始` |
