@@ -10,7 +10,7 @@ This project plans to translate and repost the following works:
 
 | No. | Original Japanese Title | Chinese Translated Title | Original Author/Link | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | 吸血鬼と同棲⁉ | 《和吸血鬼同居了⁉》 | [YouTube Link](https://youtube.com/playlist?list=PL4PMLGSCaH8AF_vC-FcV9DTDU5XPCatxG&si=GWl5UiVDuTpyRH8R) | [BiliBili Link](https://space.bilibili.com/499929312/lists/6267690) |
+| 1 | 吸血鬼と同棲⁉ | 《和吸血鬼同居⁉》 | [YouTube Link](https://youtube.com/playlist?list=PL4PMLGSCaH8AF_vC-FcV9DTDU5XPCatxG&si=GWl5UiVDuTpyRH8R) | [BiliBili Link](https://space.bilibili.com/499929312/lists/6267690) |
 | 2 | 紅い月の下で逢いましょう ～レミリアとよふかし～ | 《红月夜的契约————与蕾米莉亚的彻夜醉迷》 | [YouTube Link](https://www.youtube.com/playlist?list=PLFU-QWGTBq-4SsfGQuJBNzmvZtTzN3FoJ) | [BiliBili Link](https://space.bilibili.com/499929312/lists/6324095) |
 | 3 | 東方永夢桜 | 《东方永梦樱》 | [YouTube Link](https://www.youtube.com/playlist?list=PLmc6eO_qCE4nYR7tYmTsppAF1CTxhcrTP) | `Completed` / `Not Uploaded` |
 | 4 | 自殺未遂したらレミリアと付き合うことに？！ | 《自杀未遂后竟然和蕾米莉亚开始交往了》 | [YouTube Link](https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT) | `Pending` |
