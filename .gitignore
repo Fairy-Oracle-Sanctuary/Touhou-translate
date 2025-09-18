@@ -1,5 +1,7 @@
 *.mp4
 *.jpg
 *.part
+*.aac
 __pycache__
 CLI/
+.__jianying_export_temp_folder__
