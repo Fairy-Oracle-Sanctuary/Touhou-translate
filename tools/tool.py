@@ -212,7 +212,7 @@ def file_copy():
     print("\n所有操作已完成!")
 
 
-def rename_media_files():
+def rename_files():
     """
     重命名工程文件夹中子文件夹内的媒体文件：
     1. 让用户选择一个工程文件夹
@@ -272,6 +272,7 @@ def rename_media_files():
         # 筛选jpg和mp4文件
         jpg_files = [f for f in files if f.lower().endswith(".jpg")]
         mp4_files = [f for f in files if f.lower().endswith(".mp4")]
+        srt_files = [f for f in files if f.lower().endswith("copy.txt")]
 
         # 检查文件数量是否符合要求
         if len(jpg_files) != 1 or len(mp4_files) != 1:
@@ -289,11 +290,15 @@ def rename_media_files():
             mp4_old = os.path.join(subfolder_path, mp4_files[0])
             mp4_new = os.path.join(subfolder_path, "生肉.mp4")
 
+            srt_old = os.path.join(subfolder_path, srt_files[0])
+            srt_new = os.path.join(subfolder_path, "译文.srt")
+
             os.rename(jpg_old, jpg_new)
             os.rename(mp4_old, mp4_new)
+            os.rename(srt_old, srt_new)
 
             print(
-                f"已处理子文件夹 '{subfolder}': {jpg_files[0]} -> 封面.jpg, {mp4_files[0]} -> 生肉.mp4"
+                f"已处理子文件夹 '{subfolder}': {jpg_files[0]} -> 封面.jpg, {mp4_files[0]} -> 生肉.mp4, {srt_files[0]} -> 译文.srt"
             )
             processed += 1
         except Exception as e:
@@ -476,26 +481,26 @@ def fix_video_list():
 
         print("下载完成")
         
-# if __name__ == "__main__":
-#     while True:
-#         print(
-#             "0.退出程序\n1.项目初始化\n2.硬字幕文件复制\n3.重命名文件\n4.根据播放列表一键初始化项目\n5.视频字幕区域框选"
-#         )
+if __name__ == "__main__":
+    while True:
+        print(
+            "0.退出程序\n1.项目初始化\n2.硬字幕文件复制\n3.重命名文件\n4.根据播放列表一键初始化项目\n5.视频字幕区域框选"
+        )
 
-#         func = int(input("请选择功能："))
+        func = int(input("请选择功能："))
 
-#         if func == 0:
-#             break
-#         elif func == 1:
-#             create_project()
-#         elif func == 2:
-#             file_copy()
-#         elif func == 3:
-#             rename_media_files()
-#         elif func == 4:
-#             get_video_list(input("请输入视频列表网址："))
-#         elif func == 5:
-#             tool = VideoCoordinateTool(input("请输入视频路径："))
-#             tool.run()
+        if func == 0:
+            break
+        elif func == 1:
+            create_project()
+        elif func == 2:
+            file_copy()
+        elif func == 3:
+            rename_files()
+        elif func == 4:
+            get_video_list(input("请输入视频列表网址："))
+        elif func == 5:
+            tool = VideoCoordinateTool(input("请输入视频路径："))
+            tool.run()
 
 # # "D:\东方project\油库里茶番剧\被捡回来的管家我竟要和主人蕾米莉亚交往了\8\生肉.mp4"
