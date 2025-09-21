@@ -1,13 +1,10 @@
 import os
-from PySide6.QtWidgets import QGridLayout
+from PySide6.QtWidgets import QGridLayout, QWidget
 
-from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar
+from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
 
 class AddProject(MessageBoxBase):
-    """
-    添加新项目
-    """
-
+    """添加新项目"""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setup_ui()
@@ -83,8 +80,3 @@ class AddProject(MessageBoxBase):
             )
             return
         super().accept()
-
-def showMessage(window):
-    w = AddProject(window)
-    if w.exec():
-        print(w.urlLineEdit.text())
