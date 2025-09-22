@@ -80,3 +80,33 @@ class AddProject(MessageBoxBase):
             )
             return
         super().accept()
+
+class EditEpisodeTitle(MessageBoxBase):
+    """ Custom message box """
+
+    def __init__(self, title, text, parent=None):
+        super().__init__(parent)
+        self.titleLabel = SubtitleLabel(title)
+        self.LineEdit = LineEdit()
+
+        self.LineEdit.setPlaceholderText(text)
+        self.LineEdit.setClearButtonEnabled(True)
+
+        # 将组件添加到布局中
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addWidget(self.LineEdit)
+
+        # 设置对话框的最小宽度
+        self.widget.setMinimumWidth(350)
+
+    def accept(self):
+        errors = self.LineEdit.text().strip()
+        if not errors:
+            InfoBar.error(
+            title="输入错误",
+            content="请输入内容",
+            parent=self,
+            duration=2000
+            )
+            return
+        super().accept()
