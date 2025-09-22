@@ -102,7 +102,8 @@ class Project():
                 f.write(f'{i}\n')
             f.write('\n')
             for i in range(1, subfolder_count + 1):
-                f.write(f'{i}\nhttps://www.youtube.com/watch?v=\n\n\n---')
+                f.write(f'{i}\nhttps://www.youtube.com/watch?v=\n\n')
+            f.write('\n---')
         print("已创建文件: 标题.txt")
 
         # 创建标识文件
