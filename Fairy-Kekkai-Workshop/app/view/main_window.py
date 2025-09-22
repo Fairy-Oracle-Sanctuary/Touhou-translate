@@ -64,7 +64,7 @@ class MainWindow(MSFluentWindow):
         self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 
     def initWindow(self):
-        self.resize(900, 700)
+        self.resize(1000, 700)
         self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
         self.setWindowTitle('Fairy-Kekkai-Workshop')
 
