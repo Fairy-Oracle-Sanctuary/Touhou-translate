@@ -11,24 +11,41 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QFont
-from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLayout, QStackedWidget
 
 import os
 
 from ..service.project import Project
 from .dialog import AddProject
+from .project_detail_interface import ProjectDetailInterface
 
 class ProjectInterface(ScrollArea):
     projectDeleted = Signal(str)    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
+        self.project = Project()
+
         self.projectsLayout = QVBoxLayout(self.view)
+        
+        # 创建堆叠窗口，用于切换项目列表和项目详情
+        self.stackedWidget = QStackedWidget(self.view)
+        
+        # 项目列表页面
+        self.projectListPage = QWidget()
+        self.projectListLayout = QVBoxLayout(self.projectListPage)
+        
+        # 项目详情页面
+        self.projectDetailInterface = ProjectDetailInterface(self.project)
+        self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
+        
+        # 初始化页面
+        self.stackedWidget.addWidget(self.projectListPage)
+        self.stackedWidget.addWidget(self.projectDetailInterface)
         
         # 创建顶部按钮卡片
         self.topButtonCard = TopButtonCard()
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
-        # self.topButtonCard.newFromPlaylistButton.clicked.connect(self.addProjectFromPlaylist)
         self.topButtonCard.refreshButton.clicked.connect(self.refreshProjectList)
         
         # 项目卡片容器
@@ -38,18 +55,19 @@ class ProjectInterface(ScrollArea):
         self.cardsLayout.setContentsMargins(0, 0, 0, 0)
         self.cardsLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
+        # 设置项目列表页面布局
+        self.projectListLayout.addWidget(self.topButtonCard)
+        self.projectListLayout.addWidget(self.cardsContainer)
+        self.projectListLayout.setSpacing(10)
+        self.projectListLayout.setContentsMargins(10, 10, 10, 10)
+        
         # 设置主布局
-        self.projectsLayout.addWidget(self.topButtonCard)
-        self.projectsLayout.addWidget(self.cardsContainer)
-        self.projectsLayout.setSpacing(5)
-        self.projectsLayout.setContentsMargins(10, 10, 10, 10)
+        self.projectsLayout.addWidget(self.stackedWidget)
         
         # 初始化项目卡片
-        self.project = Project()
         self.refreshProjectList()
         
         self._initWidget()
-
         self.projectDeleted.connect(self.deleteProject)
 
     def _initWidget(self):
@@ -118,7 +136,17 @@ class ProjectInterface(ScrollArea):
     def addProjectCard(self, icon, title, content, id, path):
         """添加项目卡片到布局"""
         project_card = ProjectCard(icon, title, content, id, path, self.view)
+        project_card.openProjectSignal.connect(self.openProjectDetail)  # 连接信号
         self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
+
+    def openProjectDetail(self, project_ifm):
+        """打开项目详情页面"""
+        # 加载项目详情
+        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1], self.project)
+        
+        # 切换到项目详情页面
+        self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
+    
 
     def deleteProject(self, project_path):
         isSuccess = self.project.delete_project(project_path)
@@ -138,6 +166,10 @@ class ProjectInterface(ScrollArea):
                 duration=3000,
             )
         self.refreshProjectList()
+
+    def showProjectList(self):
+        """显示项目列表页面"""
+        self.stackedWidget.setCurrentWidget(self.projectListPage)
 
 class TopButtonCard(CardWidget):
     def __init__(self, parent=None):
@@ -168,6 +200,9 @@ class TopButtonCard(CardWidget):
 
 
 class ProjectCard(CardWidget):
+    # 打开项目信号
+    openProjectSignal = Signal(list)
+    
     def __init__(self, icon, title, content, id, path, window, parent=None):
         super().__init__(parent)
         self.main_window = window
@@ -184,6 +219,7 @@ class ProjectCard(CardWidget):
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
 
+        self.openButton.clicked.connect(self.openProject)
         self.moreButton.clicked.connect(self.showFlyout)
 
         self.setFixedHeight(73)
@@ -207,7 +243,11 @@ class ProjectCard(CardWidget):
         self.hBoxLayout.addWidget(self.moreButton, 0, Qt.AlignRight)
 
         self.moreButton.setFixedSize(32, 32)
-    
+
+    def openProject(self):
+        """打开项目"""
+        self.openProjectSignal.emit([self.path, self.card_id])
+
     def showFlyout(self):
         flyout_view = CustomFlyoutView(self.path, self.main_window)
         flyout_view.deleteRequested.connect(self.handleDeleteRequest)
