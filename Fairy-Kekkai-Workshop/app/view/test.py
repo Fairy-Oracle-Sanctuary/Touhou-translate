@@ -2,7 +2,7 @@
 from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, 
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
                         InfoBar, TitleLabel, SubtitleLabel, ListWidget)
-from PySide6.QtCore import Qt, Signal, QUrl
+from PySide6.QtCore import Qt, Signal, QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout
 import os
@@ -24,7 +24,7 @@ class ProjectDetailInterface(ScrollArea):
         self.path = ''
         self.project = project
         self.card_id = -1
-        # print(self.project.project_subtitle[0])
+        self.current_project_path = None  # 添加当前项目路径存储
 
         self._initWidget()
     
@@ -37,10 +37,12 @@ class ProjectDetailInterface(ScrollArea):
     
     def loadProject(self, project_path, id, project):
         """加载项目详情"""
+        # 存储当前项目路径
+        self.current_project_path = project_path
+        
         # 同步参数
         self.card_id = id
         self.project = project
-        # print(self.card_id)
 
         # 清空当前布局
         for i in reversed(range(self.vBoxLayout.count())): 
@@ -53,8 +55,8 @@ class ProjectDetailInterface(ScrollArea):
         backButton.clicked.connect(self.backToProjectListSignal.emit)
         
         # 创建项目标题
-        projectTitle = TitleLabel(os.path.basename(project_path), self.view)
-                
+        projectTitle = TitleLabel(os.path.basename(project_path), self.view)        
+
         # 创建文件列表容器
         fileListContainer = QWidget(self.view)
         fileListLayout = QVBoxLayout(fileListContainer)
@@ -105,7 +107,7 @@ class ProjectDetailInterface(ScrollArea):
                 fileListWidget.addItem(item)
             
             # 连接文件列表的点击事件
-            fileListWidget.itemClicked.connect(lambda item: self.handleFileItemClick(item, project_path))
+            fileListWidget.itemClicked.connect(self.handleFileItemClick)
             
             fileListLayout.addWidget(fileListWidget)
         
@@ -114,7 +116,7 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(fileListContainer)
     
-    def handleFileItemClick(self, item, project_path):
+    def handleFileItemClick(self, item):
         """处理文件项点击事件"""
         file_path = item.data(Qt.UserRole)
         
@@ -132,7 +134,7 @@ class ProjectDetailInterface(ScrollArea):
                     self.fallbackOpenFile(file_path)
         else:
             # 如果文件不存在，提供上传选项
-            self.uploadMissingFile(file_path, project_path)
+            self.uploadMissingFile(file_path)
 
     def openTextFile(self, file_path):
         """使用文本编辑器打开文件"""
@@ -154,8 +156,26 @@ class ProjectDetailInterface(ScrollArea):
                 parent=self,
                 duration=3000
             )
+    
+    def fallbackOpenFile(self, file_path):
+        """备用的文件打开方式"""
+        try:
+            if platform.system() == "Windows":
+                os.startfile(file_path)
+            elif platform.system() == "Darwin":
+                subprocess.call(('open', file_path))
+            else:
+                subprocess.call(('xdg-open', file_path))
+        except Exception as e:
+            # 如果所有方法都失败，显示错误信息
+            InfoBar.error(
+                title="错误",
+                content=f"无法打开文件: {str(e)}",
+                parent=self,
+                duration=3000
+            )
 
-    def uploadMissingFile(self, file_path, project_path):
+    def uploadMissingFile(self, file_path):
         """上传缺失的文件"""
         # 获取文件目录和文件名
         file_dir = os.path.dirname(file_path)
@@ -176,8 +196,8 @@ class ProjectDetailInterface(ScrollArea):
                     # 复制文件到目标位置
                     shutil.copy2(source_path, destination_path)
                     
-                    # 刷新项目详情页面
-                    self.loadProject(project_path, self.card_id, self.project)
+                    # 使用定时器延迟刷新界面，避免直接调用导致的崩溃
+                    QTimer.singleShot(100, self.delayedRefreshProject)
                     
                     InfoBar.success(
                         title="成功",
@@ -193,12 +213,20 @@ class ProjectDetailInterface(ScrollArea):
                         duration=3000
                     )
     
-    def uploadFile(self, project_path):
+    def delayedRefreshProject(self):
+        """延迟刷新项目详情页面"""
+        if self.current_project_path:
+            self.loadProject(self.current_project_path, self.card_id, self.project)
+    
+    def uploadFile(self):
         """上传文件到项目"""
+        if not self.current_project_path:
+            return
+            
         # 打开文件选择对话框
         file_dialog = QFileDialog(self)
         file_dialog.setFileMode(QFileDialog.ExistingFile)
-        file_dialog.setNameFilter("视频文件 (*.mp4);;字幕文件 (*.srt);;所有文件 (*)")
+        file_dialog.setNameFilter("视频文件 (*.mp4);;字幕文件 (*.srt);;图片文件 (*.jpg *.png);;所有文件 (*)")
         
         if file_dialog.exec():
             selected_files = file_dialog.selectedFiles()
@@ -212,8 +240,8 @@ class ProjectDetailInterface(ScrollArea):
                 
                 # 获取所有子文件夹
                 subfolders = []
-                for item in os.listdir(project_path):
-                    item_path = os.path.join(project_path, item)
+                for item in os.listdir(self.current_project_path):
+                    item_path = os.path.join(self.current_project_path, item)
                     if os.path.isdir(item_path) and item.isdigit():
                         subfolders.append((int(item), item_path))
                 
@@ -224,14 +252,14 @@ class ProjectDetailInterface(ScrollArea):
                 for folder_num, folder_path in subfolders:
                     action = Action(f"第 {folder_num} 集")
                     action.triggered.connect(
-                        lambda checked, path=folder_path: self.copyFileToFolder(source_path, path, file_name, project_path)
+                        lambda checked, path=folder_path, fname=file_name: self.copyFileToFolder(source_path, path, fname)
                     )
                     menu.addAction(action)
                 
                 # 显示菜单
                 menu.exec(menu.getPopupPos(self.mapToGlobal(self.rect().center())), aniType=MenuAnimationType.DROP_DOWN)
     
-    def copyFileToFolder(self, source_path, folder_path, file_name, project_path):
+    def copyFileToFolder(self, source_path, folder_path, file_name):
         """复制文件到指定文件夹"""
         destination_path = os.path.join(folder_path, file_name)
         
@@ -239,8 +267,8 @@ class ProjectDetailInterface(ScrollArea):
             # 复制文件到目标位置
             shutil.copy2(source_path, destination_path)
             
-            # 刷新项目详情页面
-            self.loadProject(project_path, self.card_id, self.project)
+            # 使用定时器延迟刷新界面，避免直接调用导致的崩溃
+            QTimer.singleShot(100, self.delayedRefreshProject)
             
             InfoBar.success(
                 title="成功",

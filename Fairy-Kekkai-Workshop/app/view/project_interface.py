@@ -46,7 +46,7 @@ class ProjectInterface(ScrollArea):
         # 创建顶部按钮卡片
         self.topButtonCard = TopButtonCard()
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
-        self.topButtonCard.refreshButton.clicked.connect(self.refreshProjectList)
+        self.topButtonCard.refreshButton.clicked.connect(lambda: self.refreshProjectList(isMessage=True))
         
         # 项目卡片容器
         self.cardsContainer = QWidget()
@@ -65,7 +65,7 @@ class ProjectInterface(ScrollArea):
         self.projectsLayout.addWidget(self.stackedWidget)
         
         # 初始化项目卡片
-        self.refreshProjectList()
+        self.refreshProjectList(isMessage=False)
         
         self._initWidget()
         self.projectDeleted.connect(self.deleteProject)
@@ -98,7 +98,7 @@ class ProjectInterface(ScrollArea):
             )
         else:
             pass
-        self.refreshProjectList()
+        self.refreshProjectList(isMessage=False)
         
     
     def addProjectFromPlaylist(self):
@@ -106,7 +106,7 @@ class ProjectInterface(ScrollArea):
         # 发出信号，通知主窗口切换到播放列表界面
         self.switchToPlaylistInterface.emit()
     
-    def refreshProjectList(self):
+    def refreshProjectList(self, isMessage):
         """刷新项目列表"""
         # 清空当前所有卡片
         for i in reversed(range(self.cardsLayout.count())): 
@@ -126,12 +126,13 @@ class ProjectInterface(ScrollArea):
                 self.project.project_path[card_id],
             )
             card_id += 1
-        InfoBar.success(
-        title="成功",
-        content="已刷新项目列表",
-        parent=self,
-        duration=3000,
-        )
+        if isMessage:
+            InfoBar.success(
+            title="成功",
+            content="已刷新项目列表",
+            parent=self,
+            duration=1000,
+            )
 
     def addProjectCard(self, icon, title, content, id, path):
         """添加项目卡片到布局"""
@@ -142,11 +143,17 @@ class ProjectInterface(ScrollArea):
     def openProjectDetail(self, project_ifm):
         """打开项目详情页面"""
         # 加载项目详情
-        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1], self.project)
+        self.projectDetailInterface.loadProject(self.view, project_ifm[0], project_ifm[1], self.project)
         
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
     
+        InfoBar.success(
+            title="打开成功",
+            content=f"已打开项目 {project_ifm[0]}",
+            parent=self.view,
+            duration=2000
+        )
 
     def deleteProject(self, project_path):
         isSuccess = self.project.delete_project(project_path)
@@ -165,7 +172,7 @@ class ProjectInterface(ScrollArea):
                 parent=self,
                 duration=3000,
             )
-        self.refreshProjectList()
+        self.refreshProjectList(isMessage=False)
 
     def showProjectList(self):
         """显示项目列表页面"""
@@ -311,8 +318,8 @@ class CustomFlyoutView(FlyoutViewBase):
         if self.flyout:
             self.flyout.hide()  # 先关闭Flyout
             
-        title = "你确定要删除这个项目吗?"
-        content = "注意这个操作是不可逆的"
+        title = "确认删除"
+        content = "确定要删除项目吗？此操作不可撤销。"
         dialog = MessageBox(title, content, self.mainwindow)
         if dialog.exec():
             self.deleteRequested.emit(self.path)

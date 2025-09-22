@@ -86,8 +86,12 @@ class Project():
 
         # 创建空的标题文件
         title_file = os.path.join(project_name, "标题.txt")
-        with open(title_file, "w", encoding="utf-8"):
-            pass  # 创建空文件
+        with open(title_file, "w", encoding="utf-8") as f:
+            for i in range(1, subfolder_count + 1):
+                f.write(f'{i}\n')
+            f.write('\n')
+            for i in range(1, subfolder_count + 1):
+                f.write(f'{i}\nhttps://www.youtube.com/watch?v=\n\n')
         print("已创建文件: 标题.txt")
 
         # 创建标识文件
