@@ -6,6 +6,7 @@ class Project():
         self.project_path = self.get_project_paths('.')
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
+        self.project_subtitle = self.get_project_subtitles()
         # print(self.project_title)
 
     def get_project_paths(self, directory):
@@ -32,18 +33,14 @@ class Project():
         return project_paths
     
     def get_project_names(self):
-        '''
-        获取工程名
-        '''
+        '''获取工程名'''
         project_names = []
         for name in self.project_path:
             project_names.append(name.split('\\')[-1])
         return project_names
     
     def get_project_titles(self):
-        '''
-        获取原标题
-        '''
+        '''获取原标题'''
         project_titles = []
         for project in self.project_path:
             for dir in os.listdir(project):
@@ -51,6 +48,31 @@ class Project():
                     project_titles.append(dir.split('.')[0])
         return project_titles
     
+    def get_project_subtitles(self):
+        '''获取每集的标题'''
+        project_subtitles = []
+        for path in self.project_path:
+            with open(path + "/标题.txt", "r", encoding="utf-8") as f:
+                is_subtitle = False
+                subtitles = []
+                subtitle_num = 0
+
+                content = f.readlines()
+                for n, line in enumerate(content):
+                    if line == '\n' and not is_subtitle:
+                        subtitle_num = n
+                        is_subtitle = True
+                    elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
+                        subtitles.append(content[n-2].replace('\n', ''))
+                        # print(subtitle_num)
+                        subtitle_num -= 1
+                    elif line == '\n' and is_subtitle and subtitle_num <= 0:
+                        break
+
+                project_subtitles.append(subtitles)
+
+        return project_subtitles
+
     def creat_files(self, project_name, subfolder_count, label):
         """创建工程文件夹"""
         os.makedirs(project_name)
@@ -89,3 +111,13 @@ class Project():
         except Exception:
             return False
         
+if __name__ == "__main__":
+    proj = Project()
+    # print(proj.project_path)
+    # print(proj.project_name)
+    # print(proj.project_title)
+    print(proj.project_subtitle[0])
+    print(len(proj.project_subtitle[0]))
+    print(proj.project_subtitle[2])
+    print(len(proj.project_subtitle[2]))
+    
