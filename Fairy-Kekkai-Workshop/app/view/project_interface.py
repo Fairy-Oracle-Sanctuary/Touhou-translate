@@ -11,7 +11,7 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QFont
-from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLayout, QStackedWidget
+from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLayout, QStackedWidget, QApplication
 
 import os
 
@@ -72,7 +72,7 @@ class ProjectInterface(ScrollArea):
 
     def _initWidget(self):
         self.setWidget(self.view)
-        self.setAcceptDrops(True)
+        # self.setAcceptDrops(True)
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
@@ -320,7 +320,15 @@ class CustomFlyoutView(FlyoutViewBase):
             
         title = "确认删除"
         content = "确定要删除项目吗？此操作不可撤销。"
-        dialog = MessageBox(title, content, self.mainwindow)
+        
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+        
+        dialog = MessageBox(title, content, main_window if main_window else self.mainwindow)
         if dialog.exec():
             self.deleteRequested.emit(self.path)
         else:

@@ -5,11 +5,13 @@ from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, Capti
                         FlowLayout, MessageBox)
 from PySide6.QtCore import Qt, Signal, QUrl, QTimer
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame, QApplication
 import os
 import shutil
 import subprocess
 import platform
+
+from .dialog import EditEpisodeTitle
 
 class FileItemWidget(QFrame):
     """自定义文件项widget"""
@@ -311,6 +313,7 @@ class ProjectDetailInterface(ScrollArea):
         
         # 创建项目标题
         projectTitle = TitleLabel(os.path.basename(project_path), self.view)        
+        projectTitle.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         # 创建文件列表容器
         fileListContainer = QWidget(self.view)
@@ -328,9 +331,31 @@ class ProjectDetailInterface(ScrollArea):
         
         # 为每个子文件夹创建文件列表
         for folder_num, folder_path in subfolders:
-            # 创建文件夹标题
-            folderLabel = StrongBodyLabel(f"第 {folder_num} 集 - {self.project.project_subtitle[self.card_id][folder_num-1]}", fileListContainer)
-            fileListLayout.addWidget(folderLabel)
+            # 创建文件夹标题容器（水平布局，包含标题和编辑按钮）
+            folderTitleWidget = QWidget(fileListContainer)
+            folderTitleLayout = QHBoxLayout(folderTitleWidget)
+            folderTitleLayout.setContentsMargins(0, 0, 0, 0)
+            
+            # 文件夹标题
+            folderLabel = StrongBodyLabel(f"第 {folder_num} 集 - {self.project.project_subtitle[self.card_id][folder_num-1]}", folderTitleWidget)
+            folderLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            
+            # 编辑标题按钮
+            editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
+            editTitleButton.setToolTip("编辑本集标题")
+            editTitleButton.clicked.connect(lambda checked, fn=folder_num: self.editEpisodeTitle(fn))
+
+            # 打开链接标签
+            openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
+            openurlButton.setToolTip("打开本集链接")
+            openurlButton.clicked.connect(lambda checked, url=self.project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
+            
+            folderTitleLayout.addWidget(folderLabel)
+            folderTitleLayout.addStretch()
+            folderTitleLayout.addWidget(editTitleButton)
+            folderTitleLayout.addWidget(openurlButton)
+            
+            fileListLayout.addWidget(folderTitleWidget)
             
             # 创建自定义文件列表widget
             fileListWidget = FileListWidget(self.main_window, fileListContainer)
@@ -374,6 +399,29 @@ class ProjectDetailInterface(ScrollArea):
         """延迟刷新项目详情页面"""
         if self.current_project_path:
             self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+    
+    def editEpisodeTitle(self, folder_num):
+        """编辑指定集的标题"""
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+
+        dialog = EditEpisodeTitle(title=f"编辑第 {folder_num} 集的标题: ", text=f"{self.project.project_subtitle[self.card_id][folder_num-1]}", parent= main_window if main_window else self.window())
+        if dialog.exec():
+            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit.text().strip())
+            InfoBar.success(
+                title="成功",
+                content=f"编辑第 {folder_num} 集标题成功",
+                parent=self,
+                duration=2000
+            )
+            self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+        else:
+            pass
+        
         
     def copyFileToFolder(self, source_path, folder_path, file_name):
         """复制文件到指定文件夹"""
@@ -399,3 +447,6 @@ class ProjectDetailInterface(ScrollArea):
                 parent=self,
                 duration=3000
             )
+    
+    def openUrl(self, url):
+        QDesktopServices.openUrl(QUrl(url))
