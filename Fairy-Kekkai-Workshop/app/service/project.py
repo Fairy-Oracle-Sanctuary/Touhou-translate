@@ -16,7 +16,7 @@ class Project():
         获取projects文件夹下所有子文件夹的完整路径，排除特定文件夹
         '''
         project_paths = []
-        ban_names = [".git", "tools", "Fairy-Kekkai-Workshop"]  # 要排除的文件夹名称
+        ban_names = [".git", "tools", "Fairy-Kekkai-Workshop", "_internal"]  # 要排除的文件夹名称
         
         # 确保目录路径是绝对路径
         directory = os.path.abspath(directory)
@@ -56,31 +56,34 @@ class Project():
         self.project_subtitle_isTranslated = []
 
         for path in self.project_path:
-            with open(path + "/标题.txt", "r", encoding="utf-8") as f:
-                is_subtitle = False
-                subtitles = []
-                video_urls = []
-                subtitle_num = 0
+            try:
+                with open(path + "/标题.txt", "r", encoding="utf-8") as f:
+                    is_subtitle = False
+                    subtitles = []
+                    video_urls = []
+                    subtitle_num = 0
 
-                content = f.readlines()
-                for n, line in enumerate(content):
-                    if line == '\n' and not is_subtitle:
-                        subtitle_num = n
-                        if content[n+3] != '\n':
-                            self.project_subtitle_isTranslated.append(True)
-                        else:
-                            self.project_subtitle_isTranslated.append(False)
-                        is_subtitle = True
-                    elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
-                        video_urls.append(content[n-1].replace('\n', ''))
-                        subtitles.append(content[n-2].replace('\n', ''))
-                        # print(subtitle_num)
-                        subtitle_num -= 1
-                    elif line == '\n' and is_subtitle and subtitle_num <= 0:
-                        break
-                
-                self.project_video_url.append(video_urls)
-                project_subtitles.append(subtitles)
+                    content = f.readlines()
+                    for n, line in enumerate(content):
+                        if line == '\n' and not is_subtitle:
+                            subtitle_num = n
+                            if content[n+3] != '\n':
+                                self.project_subtitle_isTranslated.append(True)
+                            else:
+                                self.project_subtitle_isTranslated.append(False)
+                            is_subtitle = True
+                        elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
+                            video_urls.append(content[n-1].replace('\n', ''))
+                            subtitles.append(content[n-2].replace('\n', ''))
+                            # print(subtitle_num)
+                            subtitle_num -= 1
+                        elif line == '\n' and is_subtitle and subtitle_num <= 0:
+                            break
+                    
+                    self.project_video_url.append(video_urls)
+                    project_subtitles.append(subtitles)
+            except Exception:
+                return []
         
         return project_subtitles
 
