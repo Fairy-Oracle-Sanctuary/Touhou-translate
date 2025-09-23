@@ -3,15 +3,47 @@ from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, Capti
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
                         InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton,
                         FlowLayout, MessageBox)
-from PySide6.QtCore import Qt, Signal, QUrl, QTimer
+from PySide6.QtCore import Qt, Signal, QUrl, QTimer, QThread
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame, QApplication
 import os
 import shutil
 import subprocess
 import platform
+import requests
 
 from .dialog import CustomMessageBox, CustomDoubleMessageBox
+
+
+class ImageDownloadThread(QThread):
+    """图片下载线程"""
+    
+    # 定义信号
+    downloadFinished = Signal(bool, str, str)  # 成功/失败, 消息, 保存路径
+    
+    def __init__(self, image_url, save_path, parent=None):
+        super().__init__(parent)
+        self.image_url = image_url
+        self.save_path = save_path
+    
+    def run(self):
+        """执行下载任务"""
+        try:
+            # 发送GET请求
+            response = requests.get(self.image_url)
+            response.raise_for_status()  # 如果请求失败会抛出异常
+            
+            # 以二进制写入模式打开文件
+            with open(self.save_path, "wb") as f:
+                # 将响应的二进制内容写入文件
+                f.write(response.content)
+            
+            self.downloadFinished.emit(True, f"图片成功下载并保存到: {self.save_path}", self.save_path)
+            
+        except requests.exceptions.RequestException as e:
+            self.downloadFinished.emit(False, f"下载图片时出错: {e}", self.save_path)
+        except Exception as e:
+            self.downloadFinished.emit(False, f"发生未知错误: {e}", self.save_path)
 
 class FileItemWidget(QFrame):
     """自定义文件项widget"""
@@ -125,13 +157,16 @@ class FileItemWidget(QFrame):
             return
             
         # 确认对话框
-        box = MessageBox(
+        dialog = MessageBox(
             "确认删除",
             f"确定要删除文件 '{self.file_name}' 吗？此操作不可撤销。",
             self.window()
         )
+
+        dialog.yesButton.setText("确定")
+        dialog.cancelButton.setText("取消")
         
-        if box.exec():
+        if dialog.exec():
             try:
                 os.remove(self.file_path)
                 # 发送信号通知文件已删除
@@ -158,17 +193,38 @@ class FileItemWidget(QFrame):
         file_ext = os.path.splitext(self.file_name)[1].lower()
         
         if file_ext in ['.jpg', '.jpeg', '.png']:
-            # 下载封面 - 这里需要从视频URL获取封面
-            # 由于yt-dlp主要下载视频，封面下载需要特殊处理
-            # 暂时提示用户手动处理或使用其他方式
-            InfoBar.warning(
-                title="功能开发中",
-                content="封面下载功能正在开发中，请暂时手动处理",
-                parent=self.window(),
-                duration=3000
-            )
-            return
+            # 下载封面 这个函数就不归进donwload_interface.py里了
+            self.donwloadPic()
+        else:
+            # 下载视频
+            self.downloadVideo()
+    
+    def donwloadPic(self):
+        download_path = os.path.dirname(self.file_path)
+
+        dialog = CustomMessageBox(
+            title=f"下载第 {self.folder_num} 集封面",
+            text="请输入视频URL:",
+            parent=self.window()
+        )
+        dialog.LineEdit.setText(self.project.project_video_url[self.card_id][self.folder_num-1])
         
+        if dialog.exec():
+            video_url = dialog.LineEdit.text().strip().split("=")[-1]
+            if video_url:
+                # 通过信号发送下载请求
+                download_path = self.file_path
+                # 找到父级ProjectDetailInterface并发射信号
+                parent = self.parent()
+                while parent:
+                    if isinstance(parent, ProjectDetailInterface):
+                        parent.downloadPic.emit(
+                            video_url, download_path
+                        )
+                        break
+                    parent = parent.parent()
+
+    def downloadVideo(self):
         download_path = os.path.dirname(self.file_path)
 
         dialog = CustomMessageBox(
@@ -322,6 +378,8 @@ class ProjectDetailInterface(ScrollArea):
     backToProjectListSignal = Signal()
     # 添加下载请求信号
     downloadRequested = Signal(str, str, str)  # url, download_path, project_name, episode_num
+    # 图片下载信号
+    downloadPic = Signal(str, str)  
     def __init__(self, project, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
@@ -340,7 +398,48 @@ class ProjectDetailInterface(ScrollArea):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.view.setObjectName('projectDetailView')
         self.setStyleSheet("#projectDetailView {background-color: transparent;}")
+
+        #连接信号
+        self.downloadPic.connect(lambda pic_url, save_path: self.downloadPicture(pic_url, save_path))
     
+    def downloadPicture(self, pic_url, save_path):
+        # https://i.ytimg.com/vi/4r2guMZPVJw/maxresdefault.jpg
+        self.download_image(f"https://i.ytimg.com/vi/{pic_url}/maxresdefault.jpg", save_path)
+
+    def download_image(self, image_url, save_path):
+        """使用多线程下载图片"""
+        # 创建并启动下载线程
+        self.download_thread = ImageDownloadThread(image_url, save_path)
+        self.download_thread.downloadFinished.connect(self.on_image_download_finished)
+        self.download_thread.start()
+        
+        # 显示下载中的提示
+        InfoBar.info(
+            title="开始下载",
+            content=f"正在下载图片...",
+            parent=self,
+            duration=2000
+        )
+
+    def on_image_download_finished(self, success, message, save_path):
+        """图片下载完成回调"""
+        if success:
+            InfoBar.success(
+                title="成功",
+                content=f"图片已下载到: {save_path}",
+                parent=self,
+                duration=2000
+            )
+            # 刷新项目详情页面
+            self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+        else:
+            InfoBar.error(
+                title="失败",
+                content=message,
+                parent=self,
+                duration=3000
+            )
+            
     def loadProject(self, window, project_path, id, project, isMessage=False):
         """加载项目详情"""
         #同步主窗口

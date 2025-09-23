@@ -33,12 +33,12 @@ class MainWindow(MSFluentWindow):
         self.initWindow()
 
         # 创建页面
-        self.homeInterface = HomeInterface(self)
+        # self.homeInterface = HomeInterface(self)
         self.projectInterface = ProjectInterface(self)
         self.downloadInterface = DownloadInterface(self)  
 
         # 连接信号
-        self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
+        # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
         # 连接下载请求信号
         self.projectInterface.downloadRequested.connect(
@@ -50,7 +50,7 @@ class MainWindow(MSFluentWindow):
         self.splashScreen.finish()
 
     def initNavigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, '主页', FIF.HOME_FILL)
+        # self.addSubInterface(self.homeInterface, FIF.HOME, '主页', FIF.HOME_FILL)
         self.addSubInterface(self.projectInterface, FIF.FOLDER, '项目')
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, '下载')
 
@@ -64,7 +64,7 @@ class MainWindow(MSFluentWindow):
             position=NavigationItemPosition.BOTTOM,
         )
 
-        self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
+        # self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 
     def initWindow(self):
         self.resize(1000, 700)

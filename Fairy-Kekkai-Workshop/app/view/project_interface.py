@@ -204,12 +204,12 @@ class TopButtonCard(CardWidget):
         super().__init__(parent)
         # 创建三个按钮
         self.newProjectButton = PushButton('新建项目', self)
-        self.newFromPlaylistButton = PushButton('根据播放列表新建项目', self)
+        # self.newFromPlaylistButton = PushButton('根据播放列表新建项目', self)
         self.refreshButton = PrimaryPushButton('刷新项目列表', self)
         
         # 设置按钮样式
         self.newProjectButton.setFixedWidth(120)
-        self.newFromPlaylistButton.setFixedWidth(180)
+        # self.newFromPlaylistButton.setFixedWidth(180)
         self.refreshButton.setFixedWidth(120)
         
         # 创建水平布局
@@ -219,7 +219,7 @@ class TopButtonCard(CardWidget):
         
         # 添加按钮到布局
         self.hBoxLayout.addWidget(self.newProjectButton)
-        self.hBoxLayout.addWidget(self.newFromPlaylistButton)
+        # self.hBoxLayout.addWidget(self.newFromPlaylistButton)
         self.hBoxLayout.addStretch(1)  # 添加弹性空间
         self.hBoxLayout.addWidget(self.refreshButton)
         

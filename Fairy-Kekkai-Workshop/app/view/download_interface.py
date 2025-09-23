@@ -64,27 +64,10 @@ class DownloadThread(QThread):
                 'format': 'bv[ext=mp4]+ba[ext=m4a]',
                 'embedmetadata': True,
                 'merge_output_format': 'mp4',
-                'outtmpl': f'{self.task.download_path}',
+                'outtmpl': f'{self.task.download_path if self.task.file_name else self.task.download_path+"/%(title)s.%(ext)s"}',
                 'progress_hooks': [self.progress_hook],
             }
-            
-            # 根据质量设置选择不同的格式
-            # if self.task.quality == 'best':
-            #     ydl_opts['format'] = 'best'
-            # elif self.task.quality == '1080p':
-            #     ydl_opts['format'] = 'best[height<=1080]'
-            # elif self.task.quality == '720p':
-            #     ydl_opts['format'] = 'best[height<=720]'
-            # elif self.task.quality == '480p':
-            #     ydl_opts['format'] = 'best[height<=480]'
-            # elif self.task.quality == 'audio':
-            #     ydl_opts['format'] = 'bestaudio'
-            #     ydl_opts['postprocessors'] = [{
-            #         'key': 'FFmpegExtractAudio',
-            #         'preferredcodec': 'mp3',
-            #         'preferredquality': '192',
-            #     }]
-            
+
             # 开始下载
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 # 获取视频信息
@@ -105,12 +88,19 @@ class DownloadThread(QThread):
                 self.task.error_message = str(e)
                 self.task.end_time = datetime.now()
                 self.finished_signal.emit(False, f"下载失败: {str(e)}")
+                
     
     def progress_hook(self, d):
         """进度回调函数"""
         if self.is_cancelled:
             raise Exception("下载已取消")
-            
+        
+        # 获取视频名称
+        video_name = d.get('filename', d.get('info_dict', {}).get('title', '未知视频'))
+        if video_name and not self.task.filename:
+            self.task.filename = video_name
+            print(video_name)
+
         if d['status'] == 'downloading':
             # 计算下载进度
             if 'total_bytes' in d and d['total_bytes']:
@@ -165,12 +155,11 @@ class DownloadItemWidget(SimpleCardWidget):
         
         # 标题和项目信息
         titleInfoLayout = QVBoxLayout()
-        titleLabel = BodyLabel(self.task.filename or "获取信息中...", self)
-        titleLabel.setStyleSheet("font-weight: bold;")
+        self.titleLabel = StrongBodyLabel("视频下载", self)
         
-        projectInfo = CaptionLabel(f"项目: {self.task.project_name} - 第 {self.task.episode_num} 集", self)
+        projectInfo = StrongBodyLabel(f"{self.task.download_path}", self)
         
-        titleInfoLayout.addWidget(titleLabel)
+        titleInfoLayout.addWidget(self.titleLabel)
         titleInfoLayout.addWidget(projectInfo)
         
         # 状态标签
@@ -190,8 +179,8 @@ class DownloadItemWidget(SimpleCardWidget):
         self.progressBar = ProgressBar(self)
         self.progressBar.setValue(self.task.progress)
         
-        speedLabel = CaptionLabel(self.task.speed or "等待开始", self)
-        
+        speedLabel = CaptionLabel(self.task.speed or "初始化中", self)
+
         progressLayout.addWidget(self.progressBar, 4)
         progressLayout.addWidget(speedLabel, 1)
         
@@ -256,6 +245,7 @@ class DownloadItemWidget(SimpleCardWidget):
         self.task.speed = speed
         if filename and not self.task.filename:
             self.task.filename = filename
+            self.titleLabel.setText(self.task.filename)
             
         self.progressBar.setValue(progress)
         
@@ -436,10 +426,9 @@ class DownloadInterface(ScrollArea):
             url = dialog.LineEdit.text().strip()
             task = DownloadTask(
                 url=url,
-                download_path=os.path.expanduser("~/Downloads"),
+                download_path=os.path.expanduser(r"~\Downloads"),
                 quality="best",
-                project_name="示例项目",
-                episode_num=1
+                file_name="",
             )
             self.addDownloadTask(task)
         else:

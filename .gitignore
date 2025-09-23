@@ -3,5 +3,6 @@
 *.part
 *.aac
 __pycache__
-CLI/
+build/
+dist/
 .__jianying_export_temp_folder__
