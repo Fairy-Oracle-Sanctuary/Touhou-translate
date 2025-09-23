@@ -1,5 +1,6 @@
 import os
 from PySide6.QtWidgets import QGridLayout, QWidget
+from PySide6.QtCore import Qt
 
 from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
 
@@ -33,6 +34,7 @@ class AddProject(MessageBoxBase):
             grid_layout.addWidget(label, row, 0)
             grid_layout.addWidget(widget, row, 1)
 
+        #按钮文本设置
         self.yesButton.setText("确定")
         self.cancelButton.setText("取消")
 
@@ -81,7 +83,7 @@ class AddProject(MessageBoxBase):
             return
         super().accept()
 
-class EditEpisodeTitle(MessageBoxBase):
+class CustomMessageBox(MessageBoxBase):
     """ Custom message box """
 
     def __init__(self, title, text, parent=None):
@@ -99,6 +101,10 @@ class EditEpisodeTitle(MessageBoxBase):
         # 设置对话框的最小宽度
         self.widget.setMinimumWidth(350)
 
+        # 按钮文本设置
+        self.yesButton.setText("确定")
+        self.cancelButton.setText("取消")
+
     def accept(self):
         errors = self.LineEdit.text().strip()
         if not errors:
@@ -110,3 +116,76 @@ class EditEpisodeTitle(MessageBoxBase):
             )
             return
         super().accept()
+
+class CustomDoubleMessageBox(MessageBoxBase):
+    """ Custom message box """
+
+    def __init__(self, title, input1, input2, text1, text2, error1, error2, parent=None):
+        super().__init__(parent)
+        self.error1 = error1
+        self.error2 = error2
+
+        grid_layout = QGridLayout()
+        
+        self.titleLabel = SubtitleLabel(title)
+
+        self.input_label_1 = StrongBodyLabel(input1, self)
+        self.input_label_2 = StrongBodyLabel(input2, self)
+
+        self.LineEdit_1 = LineEdit()
+        self.LineEdit_2 = LineEdit()
+
+        self.LineEdit_1.setPlaceholderText(text1)
+        self.LineEdit_1.setClearButtonEnabled(True)
+
+        self.LineEdit_2.setPlaceholderText(text2)
+        self.LineEdit_2.setClearButtonEnabled(True)
+
+        # 调整组件添加顺序：先添加标题，再添加网格布局
+        self.viewLayout.addWidget(self.titleLabel)
+        self.viewLayout.addLayout(grid_layout)
+
+        # 将输入框组件添加到网格布局中
+        grid_layout.addWidget(self.input_label_1, 0, 0, 1, 1)
+        grid_layout.addWidget(self.LineEdit_1, 0, 1, 1, 1)
+        grid_layout.addWidget(self.input_label_2, 1, 0, 1, 1)
+        grid_layout.addWidget(self.LineEdit_2, 1, 1, 1, 1)
+
+        # 按钮文本设置
+        self.yesButton.setText("确定")
+        self.cancelButton.setText("取消")
+
+        # 设置最小宽度
+        self.widget.setMinimumWidth(400)
+
+        # 设置列拉伸，使输入框能够扩展
+        grid_layout.setColumnStretch(1, 1)
+
+        # 左对齐
+        grid_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+    def validateInput(self):
+        errors = []
+        text1 = self.LineEdit_1.text().strip()
+        text2 = self.LineEdit_2.text().strip()
+
+        if not text1:
+            errors.append(self.error1)
+        if not text2:
+            errors.append(self.error2)
+
+        return errors
+
+    def accept(self):
+        errors = self.validateInput()
+        if errors:
+            error_message = "\n".join(errors)
+            InfoBar.error(
+            title="输入错误",
+            content=error_message,
+            parent=self,
+            duration=3000
+            )
+            return
+        super().accept()
+

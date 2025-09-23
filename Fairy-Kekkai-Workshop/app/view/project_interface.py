@@ -20,7 +20,8 @@ from .dialog import AddProject
 from .project_detail_interface import ProjectDetailInterface
 
 class ProjectInterface(ScrollArea):
-    projectDeleted = Signal(str)    
+    projectDeleted = Signal(str) 
+    downloadRequested = Signal(str, str, str)  
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
@@ -144,7 +145,11 @@ class ProjectInterface(ScrollArea):
         """打开项目详情页面"""
         # 加载项目详情
         self.projectDetailInterface.loadProject(self.view, project_ifm[0], project_ifm[1], self.project)
-        
+
+        # 连接下载请求信号
+        self.projectDetailInterface.downloadRequested.connect(
+            lambda url, path, name: self.handleDownloadRequest(url, path, name)
+        )
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
     
@@ -154,6 +159,22 @@ class ProjectInterface(ScrollArea):
             parent=self.view,
             duration=2000
         )
+
+    def handleDownloadRequest(self, url, download_path, file_name):
+        """处理下载请求"""
+        # 获取主窗口
+        # if hasattr(main_window, 'download_interface'):
+        #     print("c")
+        self.downloadRequested.emit(
+            url, download_path, file_name
+        )
+        # main_window.downloadInterface.addDownloadFromProject(
+        #     url=url,
+        #     download_path=download_path,
+        #     quality='best',
+        #     project_name=project_name,
+        #     episode_num=episode_num
+        # )
 
     def deleteProject(self, project_path):
         isSuccess = self.project.delete_project(project_path)
@@ -329,6 +350,8 @@ class CustomFlyoutView(FlyoutViewBase):
                 break
         
         dialog = MessageBox(title, content, main_window if main_window else self.mainwindow)
+        dialog.yesButton.setText("确定")
+        dialog.cancelButton.setText("取消")
         if dialog.exec():
             self.deleteRequested.emit(self.path)
         else:
