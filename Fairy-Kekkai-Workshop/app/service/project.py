@@ -127,7 +127,7 @@ class Project():
         except Exception:
             return False
     
-    def change_subtitle(self, id, num, text):
+    def change_subtitle(self, id, num, text, offset=0):
         file_path = self.project_path[id] + '/标题.txt'
         if self.project_subtitle_isTranslated[id]:
             line_number = 4*num + len(self.project_subtitle[id]) - 1
@@ -137,7 +137,7 @@ class Project():
         new_content = text
         # print(file_path)
 
-        self.replace_line_in_file(file_path, line_number, new_content)
+        self.replace_line_in_file(file_path, line_number + offset, new_content)
         self.__init__()
     
     def replace_line_in_file(self, file_path, line_number, new_content):

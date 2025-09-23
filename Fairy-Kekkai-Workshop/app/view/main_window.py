@@ -1,7 +1,7 @@
 # coding: utf-8
 import sys
 
-from PySide6.QtCore import QUrl, QSize, Qt, QLocale
+from PySide6.QtCore import QUrl, QSize, Qt, QLocale, Signal
 from PySide6.QtGui import QIcon, QColor, QGuiApplication, QDesktopServices
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout
 from PySide6.QtSql import QSqlDatabase
@@ -27,20 +27,23 @@ class Widget(QFrame):
 
 
 class MainWindow(MSFluentWindow):
-
     def __init__(self):
         super().__init__()
 
         self.initWindow()
 
-        # create sub interface
+        # 创建页面
         self.homeInterface = HomeInterface(self)
         self.projectInterface = ProjectInterface(self)
-        self.downloadInterface = DownloadInterface(self)  # 创建播放列表界面
+        self.downloadInterface = DownloadInterface(self)  
 
         # 连接信号
         self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
+        # 连接下载请求信号
+        self.projectInterface.downloadRequested.connect(
+            lambda url, path, name: self.handleDownloadRequest(url, path, name)
+        )
         self.initNavigation()
 
         # 初始化完毕 取消启动界面
@@ -84,6 +87,13 @@ class MainWindow(MSFluentWindow):
         # self.navigationInterface.setCurrentItem(self.playlistInterface.objectName())
         # 切换到播放列表界面
         self.stackedWidget.setCurrentWidget(self.downloadInterface)
+
+    def handleDownloadRequest(self, url, download_path, file_name):
+        self.downloadInterface.addDownloadFromProject(
+            url=url,
+            download_path=download_path,
+            file_name=file_name,
+        )
 
     def showMessageBox(self):
         w = MessageBox(

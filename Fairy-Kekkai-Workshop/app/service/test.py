@@ -1,21 +1,11 @@
-with open(r"D:\东方project\projects\吸血鬼同居\标题.txt", "r", encoding="utf-8") as f:
-    is_subtitle = False
-    subtitles = []
-    subtitle_num = 0
+import yt_dlp
 
-    content = f.readlines()
-    for n, line in enumerate(content):
-        if line == '\n' and not is_subtitle:
-            subtitle_num = n
-            subtitles.append(subtitle_num)
-            is_subtitle = True
-        elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
-            subtitles.append(content[n-2].replace('\n', ''))
-            # print(subtitle_num)
-            subtitle_num -= 1
-        elif line == '\n' and is_subtitle and subtitle_num < 0:
-            print(n)
-            break
+ydl_opts = {
+    'format': 'bv[ext=mp4]+ba[ext=m4a]',
+    'embedmetadata': True,
+    'merge_output_format': 'mp4',
+    'outtmpl': r'D:\东方project\projects\test\1\生肉.%(ext)s',
+}
 
-print(subtitles)
-print(len(subtitles))
+with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    ydl.download(['https://www.youtube.com/watch?v=8JYAMS0Dar0&t=1s'])

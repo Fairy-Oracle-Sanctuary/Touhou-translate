@@ -11,17 +11,21 @@ import shutil
 import subprocess
 import platform
 
-from .dialog import EditEpisodeTitle
+from .dialog import CustomMessageBox, CustomDoubleMessageBox
 
 class FileItemWidget(QFrame):
     """自定义文件项widget"""
     
-    def __init__(self, window, file_name, file_path, icon, file_exists, parent=None):
+    def __init__(self, window, project, card_id, folder_num, file_name, file_path, icon, file_exists, donwload_need, parent=None):
         super().__init__(parent)
         self.main_window = window
+        self.project = project
+        self.card_id = card_id
+        self.folder_num = folder_num
         self.file_name = file_name
         self.file_path = file_path
         self.file_exists = file_exists
+        self.download_need = donwload_need
         
         self.setFixedHeight(60)
         self.setFrameShape(QFrame.Box)
@@ -53,6 +57,7 @@ class FileItemWidget(QFrame):
             color: black;  /* 确保文件名是黑色 */
         """)
         
+
         # 状态指示器
         statusLabel = QLabel("✓" if self.file_exists else "✗", self)
         statusLabel.setStyleSheet("""
@@ -80,6 +85,13 @@ class FileItemWidget(QFrame):
         # 只有文件存在时才启用删除按钮
         self.deleteBtn.setEnabled(self.file_exists)
         
+        # 下载快捷键 只在封面和mp4文件缺失时并需要下载才启用
+        if self.download_need and not self.file_exists:
+            self.downloadBtn = TransparentToolButton(FluentIcon.DOWNLOAD, self)
+            self.downloadBtn.setToolTip("下载缺失的文件")
+            self.downloadBtn.clicked.connect(self.donwloadFile)
+            buttonLayout.addWidget(self.downloadBtn)
+
         buttonLayout.addWidget(self.openPathBtn)
         buttonLayout.addWidget(self.deleteBtn)
         
@@ -140,20 +152,64 @@ class FileItemWidget(QFrame):
                     duration=3000
                 )
 
+    def donwloadFile(self):
+        """下载缺失的文件"""
+
+        file_ext = os.path.splitext(self.file_name)[1].lower()
+        
+        if file_ext in ['.jpg', '.jpeg', '.png']:
+            # 下载封面 - 这里需要从视频URL获取封面
+            # 由于yt-dlp主要下载视频，封面下载需要特殊处理
+            # 暂时提示用户手动处理或使用其他方式
+            InfoBar.warning(
+                title="功能开发中",
+                content="封面下载功能正在开发中，请暂时手动处理",
+                parent=self.window(),
+                duration=3000
+            )
+            return
+        
+        download_path = os.path.dirname(self.file_path)
+
+        dialog = CustomMessageBox(
+            title=f"下载第 {self.folder_num} 集生肉视频",
+            text="请输入视频URL:",
+            parent=self.window()
+        )
+        dialog.LineEdit.setText(self.project.project_video_url[self.card_id][self.folder_num-1])
+        
+        if dialog.exec():
+            video_url = dialog.LineEdit.text().strip()
+            if video_url:
+                # 通过信号发送下载请求
+                download_path = self.file_path
+                # 找到父级ProjectDetailInterface并发射信号
+                parent = self.parent()
+                while parent:
+                    if isinstance(parent, ProjectDetailInterface):
+                        parent.downloadRequested.emit(
+                            video_url, download_path, "生肉"
+                        )
+                        break
+                    parent = parent.parent()
+
 class FileListWidget(QWidget):
     """自定义文件列表widget"""
     
     fileDeletedSignal = Signal()
     
-    def __init__(self, window, parent=None):
+    def __init__(self, window, project, card_id, folder_num, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.main_window = window
+        self.project = project
+        self.card_id = card_id
+        self.folder_num = folder_num
         self.fileWidgets = []
     
-    def addFileItem(self, file_name, file_path, icon, file_exists):
+    def addFileItem(self, file_name, file_path, icon, file_exists, download_need):
         """添加文件项"""
-        fileWidget = FileItemWidget(self.main_window, file_name, file_path, icon, file_exists, self)
+        fileWidget = FileItemWidget(self.main_window, self.project, self.card_id, self.folder_num, file_name, file_path, icon, file_exists, download_need, self)
         fileWidget.setCursor(Qt.PointingHandCursor)
         
         # 连接点击事件（整个widget的点击）
@@ -264,7 +320,8 @@ class ProjectDetailInterface(ScrollArea):
     
     # 定义返回信号
     backToProjectListSignal = Signal()
-    
+    # 添加下载请求信号
+    downloadRequested = Signal(str, str, str)  # url, download_path, project_name, episode_num
     def __init__(self, project, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
@@ -342,12 +399,12 @@ class ProjectDetailInterface(ScrollArea):
             
             # 编辑标题按钮
             editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
-            editTitleButton.setToolTip("编辑本集标题")
+            editTitleButton.setToolTip("编辑本集标题和视频url")
             editTitleButton.clicked.connect(lambda checked, fn=folder_num: self.editEpisodeTitle(fn))
 
             # 打开链接标签
             openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
-            openurlButton.setToolTip("打开本集链接")
+            openurlButton.setToolTip(f"打开本集链接: {self.project.project_video_url[self.card_id][folder_num-1]}")
             openurlButton.clicked.connect(lambda checked, url=self.project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
             
             folderTitleLayout.addWidget(folderLabel)
@@ -358,7 +415,7 @@ class ProjectDetailInterface(ScrollArea):
             fileListLayout.addWidget(folderTitleWidget)
             
             # 创建自定义文件列表widget
-            fileListWidget = FileListWidget(self.main_window, fileListContainer)
+            fileListWidget = FileListWidget(self.main_window, self.project, self.card_id, folder_num, fileListContainer)
             fileListWidget.setMinimumHeight(300)
             
             # 连接文件删除信号到刷新函数
@@ -366,18 +423,18 @@ class ProjectDetailInterface(ScrollArea):
 
             # 定义期望的文件
             expected_files = [
-                ("封面.jpg", FluentIcon.PHOTO),
-                ("生肉.mp4", FluentIcon.VIDEO),
-                ("熟肉.mp4", FluentIcon.VIDEO),
-                ("原文.srt", FluentIcon.DOCUMENT),
-                ("译文.srt", FluentIcon.DOCUMENT),
+                ("封面.jpg", FluentIcon.PHOTO, True),
+                ("生肉.mp4", FluentIcon.VIDEO, True),
+                ("熟肉.mp4", FluentIcon.VIDEO, False),
+                ("原文.srt", FluentIcon.DOCUMENT, False),
+                ("译文.srt", FluentIcon.DOCUMENT, False),
             ]
             
             # 检查文件是否存在并添加到列表
-            for file_name, icon in expected_files:
+            for file_name, icon, donwload_need in expected_files:
                 file_path = os.path.join(folder_path, file_name)
                 file_exists = os.path.exists(file_path)
-                fileListWidget.addFileItem(file_name, file_path, icon, file_exists)
+                fileListWidget.addFileItem(file_name, file_path, icon, file_exists, donwload_need)
             
             fileListLayout.addWidget(fileListWidget)
         
@@ -386,6 +443,7 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addWidget(refreshButton)
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(fileListContainer)
+        self.vBoxLayout.addStretch(1)
 
         if isMessage:
             InfoBar.success(
@@ -409,14 +467,25 @@ class ProjectDetailInterface(ScrollArea):
                 main_window = widget
                 break
 
-        dialog = EditEpisodeTitle(title=f"编辑第 {folder_num} 集的标题: ", text=f"{self.project.project_subtitle[self.card_id][folder_num-1]}", parent= main_window if main_window else self.window())
+        dialog = CustomDoubleMessageBox(
+            title=f"编辑第 {folder_num} 集的标题和视频URL", 
+            input1="标题:",
+            input2="URL:",
+            text1=f"{self.project.project_subtitle[self.card_id][folder_num-1]}", 
+            text2=f"{self.project.project_video_url[self.card_id][folder_num-1]}", 
+            parent= main_window if main_window else self.window(),
+            error1="请输入标题",
+            error2="请输入视频url",
+            )
+        dialog.LineEdit_2.setText(f"{self.project.project_video_url[self.card_id][folder_num-1]}")
         if dialog.exec():
-            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit.text().strip())
+            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
+            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_2.text().strip(), offset=1)
             InfoBar.success(
                 title="成功",
-                content=f"编辑第 {folder_num} 集标题成功",
+                content=f"编辑第 {folder_num} 集标题和视频url成功",
                 parent=self,
-                duration=2000
+                duration=2500,
             )
             self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
         else:
