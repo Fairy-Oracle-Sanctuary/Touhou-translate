@@ -97,12 +97,12 @@ class MainWindow(MSFluentWindow):
 
     def showMessageBox(self):
         w = MessageBox(
-            '支持作者🥰',
-            '个人开发不易，如果这个项目帮助到了您，可以考虑请作者喝一瓶快乐水🥤。您的支持就是作者开发和维护项目的动力🚀',
+            '支持项目',
+            '现在团队人手紧缺，如果感兴趣的话请加入我们',
             self
         )
-        w.yesButton.setText('来啦老弟')
+        w.yesButton.setText('访问仓库')
         w.cancelButton.setText('下次一定')
 
         if w.exec():
-            QDesktopServices.openUrl(QUrl("https://qfluentwidgets.com/zh/price/"))
+            QDesktopServices.openUrl(QUrl("https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"))
