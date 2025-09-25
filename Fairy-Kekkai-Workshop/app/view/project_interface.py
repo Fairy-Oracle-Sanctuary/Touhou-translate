@@ -75,7 +75,7 @@ class ProjectInterface(ScrollArea):
 
     def _initWidget(self):
         self.setWidget(self.view)
-        # self.setAcceptDrops(True)
+        event_bus.project_interface = self.view
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
@@ -96,7 +96,7 @@ class ProjectInterface(ScrollArea):
             InfoBar.success(
             title="成功",
             content=f"已创建新项目: {dialog.nameInput.text().strip()}",
-            parent=self,
+            parent=event_bus.project_interface,
             duration=3000,
             )
         else:
@@ -133,20 +133,20 @@ class ProjectInterface(ScrollArea):
             InfoBar.success(
             title="成功",
             content="已刷新项目列表",
-            parent=self,
+            parent=event_bus.project_interface,
             duration=1000,
             )
 
     def addProjectCard(self, icon, title, content, id, path):
         """添加项目卡片到布局"""
-        project_card = ProjectCard(icon, title, content, id, path, self.view)
+        project_card = ProjectCard(icon, title, content, id, path)
         project_card.openProjectSignal.connect(self.openProjectDetail)  # 连接信号
         self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
 
     def openProjectDetail(self, project_ifm):
         """打开项目详情页面"""
         # 加载项目详情
-        self.projectDetailInterface.loadProject(self.view, project_ifm[0], project_ifm[1], self.project)
+        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1], self.project)
 
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
@@ -154,7 +154,7 @@ class ProjectInterface(ScrollArea):
         InfoBar.success(
             title="打开成功",
             content=f"已打开项目 {project_ifm[0]}",
-            parent=self.view,
+            parent=event_bus.project_interface,
             duration=2000
         )
 
@@ -181,14 +181,14 @@ class ProjectInterface(ScrollArea):
             InfoBar.success(
                 title="成功",
                 content=f"项目-{name}-已删除",
-                parent=self,
+                parent=event_bus.project_interface,
                 duration=3000,
             )
         else:
             InfoBar.error(
                 title="错误",
                 content=f"删除项目失败",
-                parent=self,
+                parent=event_bus.project_interface,
                 duration=3000,
             )
         self.refreshProjectList(isMessage=False)
@@ -229,9 +229,9 @@ class ProjectCard(CardWidget):
     # 打开项目信号
     openProjectSignal = Signal(list)
     
-    def __init__(self, icon, title, content, id, path, window, parent=None):
+    def __init__(self, icon, title, content, id, path, parent=None):
         super().__init__(parent)
-        self.main_window = window
+        self.main_window = event_bus.project_interface
         #同步卡片id和路径
         self.card_id = id
         self.path = path
@@ -275,30 +275,23 @@ class ProjectCard(CardWidget):
         self.openProjectSignal.emit([self.path, self.card_id])
 
     def showFlyout(self):
-        flyout_view = CustomFlyoutView(self.path, self.main_window)
+        flyout_view = CustomFlyoutView(self.path)
         flyout_view.deleteRequested.connect(self.handleDeleteRequest)
         flyout = Flyout.make(flyout_view, self.moreButton, self, aniType=FlyoutAnimationType.PULL_UP)
         flyout_view.setFlyout(flyout)  # 设置Flyout引用
 
     def handleDeleteRequest(self, project_path):
         """处理删除请求,转发到ProjectInterface"""
-        event_bus.projectDeleted.emit(
-            EventBuilder.deleted_project(
-                project_path=project_path,
-            )
-        )
-        # 获取ProjectInterface实例
         project_interface = self.main_window.parent().parent()
-        if hasattr(project_interface, 'projectDeleted'):
-            project_interface.projectDeleted.emit(project_path)
+        project_interface.projectDeleted.emit(project_path)
 
 
 class CustomFlyoutView(FlyoutViewBase):
     deleteRequested = Signal(str)
-    def __init__(self, path, window, parent=None):
+    def __init__(self, path, parent=None):
         super().__init__(parent)
         self.path = path
-        self.mainwindow = window
+        self.mainwindow = event_bus.project_interface
         self.flyout = None  # 用于存储Flyout引用
 
         self.vBoxLayout = QVBoxLayout(self)
@@ -352,7 +345,7 @@ class CustomFlyoutView(FlyoutViewBase):
                 main_window = widget
                 break
         
-        dialog = MessageBox(title, content, main_window if main_window else self.mainwindow)
+        dialog = MessageBox(title, content, main_window)
         dialog.yesButton.setText("确定")
         dialog.cancelButton.setText("取消")
         if dialog.exec():

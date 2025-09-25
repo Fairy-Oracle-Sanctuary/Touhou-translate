@@ -220,7 +220,7 @@ class FileItemWidget(QFrame):
             if video_url:
                 # 通过信号发送下载请求
                 download_path = self.file_path
-                
+
                 # 找到父级ProjectDetailInterface并发射信号
                 parent = self.parent()
                 while parent:
@@ -245,7 +245,8 @@ class FileItemWidget(QFrame):
             video_url = dialog.LineEdit.text().strip()
             if video_url:
                 # 通过信号发送下载请求
-                download_path = self.file_path
+                download_path = os.path.dirname(self.file_path) + '\生肉.mp4'
+                print(download_path)
                 # 发射信号
                 event_bus.download_requested.emit(
                     EventBuilder.download_video(
@@ -351,7 +352,16 @@ class FileListWidget(QWidget):
                 
                 try:
                     shutil.copy2(source_path, destination_path)
-                    
+
+                    # 上传成功后刷新页面
+                    parent = self.parent()
+                    while parent:
+                        if isinstance(parent, ProjectDetailInterface):
+                            # 调用ProjectDetailInterface的刷新方法
+                            parent.delayedRefreshProject()
+                            break
+                        parent = parent.parent()
+                                    
                     InfoBar.success(
                         title="成功",
                         content=f"已上传文件: {file_name}",
@@ -383,6 +393,7 @@ class ProjectDetailInterface(ScrollArea):
     def __init__(self, project, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
+
         self.vBoxLayout = QVBoxLayout(self.view)
 
         self.path = ''
@@ -431,7 +442,7 @@ class ProjectDetailInterface(ScrollArea):
                 duration=2000
             )
             # 刷新项目详情页面
-            self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id, self.project)
         else:
             InfoBar.error(
                 title="失败",
@@ -440,12 +451,8 @@ class ProjectDetailInterface(ScrollArea):
                 duration=3000
             )
             
-    def loadProject(self, window, project_path, id, project, isMessage=False):
+    def loadProject(self, project_path, id, project, isMessage=False):
         """加载项目详情"""
-        #同步主窗口
-        if window:
-            self.main_window = window
-
         # 存储当前项目路径
         self.current_project_path = project_path
         
@@ -465,7 +472,7 @@ class ProjectDetailInterface(ScrollArea):
 
         # 创建刷新按钮
         refreshButton = PushButton("刷新项目列表", self.view)
-        refreshButton.clicked.connect(lambda: self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project, isMessage=True))
+        refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, self.project, isMessage=True))
         
         # 创建项目标题
         projectTitle = TitleLabel(os.path.basename(project_path), self.view)        
@@ -514,7 +521,7 @@ class ProjectDetailInterface(ScrollArea):
             fileListLayout.addWidget(folderTitleWidget)
             
             # 创建自定义文件列表widget
-            fileListWidget = FileListWidget(self.main_window, self.project, self.card_id, folder_num, fileListContainer)
+            fileListWidget = FileListWidget(self.view, self.project, self.card_id, folder_num, fileListContainer)
             fileListWidget.setMinimumHeight(300)
             
             # 连接文件删除信号到刷新函数
@@ -543,6 +550,7 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(fileListContainer)
         self.vBoxLayout.addStretch(1)
+        event_bus.project_detail_interface = self.vBoxLayout
 
         if isMessage:
             InfoBar.success(
@@ -555,7 +563,7 @@ class ProjectDetailInterface(ScrollArea):
     def delayedRefreshProject(self):
         """延迟刷新项目详情页面"""
         if self.current_project_path:
-            self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id, self.project)
     
     def editEpisodeTitle(self, folder_num):
         """编辑指定集的标题"""

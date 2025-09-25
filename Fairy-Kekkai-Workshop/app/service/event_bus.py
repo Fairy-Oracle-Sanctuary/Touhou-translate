@@ -4,7 +4,10 @@ from typing import Any, Dict, Optional
 
 class GlobalEventBus(QObject):
     """全局事件总线，负责组件间通信"""
-    
+    # 窗口
+    project_interface = None
+    project_detail_interface = None
+
     # 下载相关事件
     download_requested = Signal(dict)  # {"type": "video", "url": "...", "path": "...", "quality": "..."}
     download_progress = Signal(dict)   # {"task_id": 1, "progress": 50, "status": "downloading"}
