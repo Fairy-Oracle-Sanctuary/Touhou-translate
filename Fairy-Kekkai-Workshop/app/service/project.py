@@ -29,8 +29,8 @@ class Project():
                 # 获取目录的基本名称（最后一部分）
                 dir_name = os.path.basename(full_path)
                 
-                # 检查目录是否在排除列表中
-                if dir_name not in ban_names:
+                # 检查目录是否在排除列表中 并且目录中是否有核心文件
+                if dir_name not in ban_names and os.path.exists(full_path+'\\标题.txt'):
                     project_paths.append(full_path)
         return project_paths
     
@@ -182,11 +182,11 @@ class Project():
 
 if __name__ == "__main__":
     proj = Project()
-    # print(proj.project_path)
+    print(proj.project_path)
     # print(proj.project_name)
     # print(proj.project_title)
     # print(proj.project_subtitle_isTranslated)
-    print(proj.project_video_url)
+    # print(proj.project_video_url)
     # proj.change_subtitle(5, 7, "雪中萌发的春天1")
 
 

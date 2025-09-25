@@ -14,6 +14,8 @@ import requests
 
 from .dialog import CustomMessageBox, CustomDoubleMessageBox
 
+from ..service.event_bus import event_bus
+from ..service.events import EventBuilder
 
 class ImageDownloadThread(QThread):
     """图片下载线程"""
@@ -47,7 +49,7 @@ class ImageDownloadThread(QThread):
 
 class FileItemWidget(QFrame):
     """自定义文件项widget"""
-    
+    # fileDeleted = Signal()
     def __init__(self, window, project, card_id, folder_num, file_name, file_path, icon, file_exists, donwload_need, parent=None):
         super().__init__(parent)
         self.main_window = window
@@ -132,7 +134,7 @@ class FileItemWidget(QFrame):
         layout.addStretch()
         layout.addWidget(statusLabel)
         layout.addLayout(buttonLayout)
-    
+
     def openFileLocation(self):
         """打开文件所在路径"""
         if os.path.exists(self.file_path):
@@ -169,10 +171,14 @@ class FileItemWidget(QFrame):
         if dialog.exec():
             try:
                 os.remove(self.file_path)
-                # 发送信号通知文件已删除
-                if hasattr(self.parent(), 'fileDeletedSignal'):
-                    self.parent().fileDeletedSignal.emit()
-                
+                # 发射文件删除信号
+                parent = self.parent()
+                while parent:
+                    if isinstance(parent, ProjectDetailInterface):
+                        parent.delayedRefreshProject()
+                        break
+                    parent = parent.parent()
+
                 InfoBar.success(
                     title="删除成功",
                     content=f"已删除文件: {self.file_name}",
@@ -214,6 +220,7 @@ class FileItemWidget(QFrame):
             if video_url:
                 # 通过信号发送下载请求
                 download_path = self.file_path
+                
                 # 找到父级ProjectDetailInterface并发射信号
                 parent = self.parent()
                 while parent:
@@ -239,21 +246,16 @@ class FileItemWidget(QFrame):
             if video_url:
                 # 通过信号发送下载请求
                 download_path = self.file_path
-                # 找到父级ProjectDetailInterface并发射信号
-                parent = self.parent()
-                while parent:
-                    if isinstance(parent, ProjectDetailInterface):
-                        parent.downloadRequested.emit(
-                            video_url, download_path, "生肉"
-                        )
-                        break
-                    parent = parent.parent()
+                # 发射信号
+                event_bus.download_requested.emit(
+                    EventBuilder.download_video(
+                        video_url,
+                        download_path,
+                    )
+                )
 
 class FileListWidget(QWidget):
     """自定义文件列表widget"""
-    
-    fileDeletedSignal = Signal()
-    
     def __init__(self, window, project, card_id, folder_num, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
@@ -275,8 +277,9 @@ class FileListWidget(QWidget):
         self.fileWidgets.append(fileWidget)
         
         # 连接删除信号
-        fileWidget.deleteBtn.clicked.connect(self.fileDeletedSignal.emit)
+        # fileWidget.deleteBtn.clicked.connect(event_bus.fileDeletedSignal.emit)
     
+
     def handleFileItemClick(self, fileWidget):
         """处理文件项点击事件"""
         file_path = fileWidget.file_path
@@ -348,7 +351,6 @@ class FileListWidget(QWidget):
                 
                 try:
                     shutil.copy2(source_path, destination_path)
-                    self.fileDeletedSignal.emit()  # 使用相同的信号来刷新
                     
                     InfoBar.success(
                         title="成功",
@@ -376,8 +378,6 @@ class ProjectDetailInterface(ScrollArea):
     
     # 定义返回信号
     backToProjectListSignal = Signal()
-    # 添加下载请求信号
-    downloadRequested = Signal(str, str, str)  # url, download_path, project_name, episode_num
     # 图片下载信号
     downloadPic = Signal(str, str)  
     def __init__(self, project, parent=None):
@@ -518,7 +518,7 @@ class ProjectDetailInterface(ScrollArea):
             fileListWidget.setMinimumHeight(300)
             
             # 连接文件删除信号到刷新函数
-            fileListWidget.fileDeletedSignal.connect(lambda: self.delayedRefreshProject())
+            # fileListWidget.fileDeleted.connect(self.delayedRefreshProject)
 
             # 定义期望的文件
             expected_files = [

@@ -20,6 +20,9 @@ import re
 
 from .dialog import CustomMessageBox
 
+from ..service.event_bus import event_bus
+from ..service.events import EventBuilder
+
 class DownloadTask:
     """下载任务类"""
     _id_counter = 0
@@ -363,7 +366,9 @@ class DownloadInterface(ScrollArea):
         self.max_concurrent_downloads = 2  # 最大同时下载数
         
         self._initWidget()
-    
+
+        event_bus.download_requested.connect(self.addDownloadFromProject)
+
     def _initWidget(self):
         self.setWidget(self.view)
         self.setWidgetResizable(True)
@@ -643,11 +648,11 @@ class DownloadInterface(ScrollArea):
         # 开始下一个下载
         self.startNextDownload()
     
-    def addDownloadFromProject(self, url, download_path, file_name):
+    def addDownloadFromProject(self, request_data):
         """从项目界面添加下载任务"""
         task = DownloadTask(
-            url=url,
-            download_path=download_path,
-            file_name = file_name
+            url=request_data['url'],
+            download_path=request_data['save_path'],
+            file_name = ''
         )
         self.addDownloadTask(task)

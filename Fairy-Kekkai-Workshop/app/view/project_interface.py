@@ -16,12 +16,14 @@ from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLa
 import os
 
 from ..service.project import Project
+from ..service.event_bus import event_bus
+from ..service.events import EventBuilder
+
 from .dialog import AddProject
 from .project_detail_interface import ProjectDetailInterface
 
 class ProjectInterface(ScrollArea):
     projectDeleted = Signal(str) 
-    downloadRequested = Signal(str, str, str)  
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
@@ -146,10 +148,6 @@ class ProjectInterface(ScrollArea):
         # 加载项目详情
         self.projectDetailInterface.loadProject(self.view, project_ifm[0], project_ifm[1], self.project)
 
-        # 连接下载请求信号
-        self.projectDetailInterface.downloadRequested.connect(
-            lambda url, path, name: self.handleDownloadRequest(url, path, name)
-        )
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
     
@@ -284,6 +282,11 @@ class ProjectCard(CardWidget):
 
     def handleDeleteRequest(self, project_path):
         """处理删除请求,转发到ProjectInterface"""
+        event_bus.projectDeleted.emit(
+            EventBuilder.deleted_project(
+                project_path=project_path,
+            )
+        )
         # 获取ProjectInterface实例
         project_interface = self.main_window.parent().parent()
         if hasattr(project_interface, 'projectDeleted'):

@@ -16,3 +16,4 @@ if __name__ == '__main__':
 
 
 # Fairy-Kekkai-Workshop
+# pip install --upgrade yt-dlp
