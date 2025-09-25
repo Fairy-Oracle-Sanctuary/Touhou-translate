@@ -40,10 +40,6 @@ class MainWindow(MSFluentWindow):
         # 连接信号
         # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
-        # 连接下载请求信号
-        self.projectInterface.downloadRequested.connect(
-            lambda url, path, name: self.handleDownloadRequest(url, path, name)
-        )
         self.initNavigation()
 
         # 初始化完毕 取消启动界面
@@ -87,13 +83,6 @@ class MainWindow(MSFluentWindow):
         # self.navigationInterface.setCurrentItem(self.playlistInterface.objectName())
         # 切换到播放列表界面
         self.stackedWidget.setCurrentWidget(self.downloadInterface)
-
-    def handleDownloadRequest(self, url, download_path, file_name):
-        self.downloadInterface.addDownloadFromProject(
-            url=url,
-            download_path=download_path,
-            file_name=file_name,
-        )
 
     def showMessageBox(self):
         w = MessageBox(
