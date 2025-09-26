@@ -1,9 +1,9 @@
 # coding: utf-8
 import sys
 
-from PySide6.QtCore import QUrl, QSize, Qt, QLocale, Signal
+from PySide6.QtCore import QUrl, QSize, Qt, QLocale, Signal, QSettings
 from PySide6.QtGui import QIcon, QColor, QGuiApplication, QDesktopServices
-from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout
+from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QSystemTrayIcon
 from PySide6.QtSql import QSqlDatabase
 
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont, InfoBarPosition
@@ -11,6 +11,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..service.event_bus import event_bus
 from ..service.infobar import NotificationService
+from ..components.system_tray import SystemTray
 
 from .home_interface import HomeInterface
 from .project_interface import ProjectInterface
@@ -43,6 +44,9 @@ class MainWindow(MSFluentWindow):
         self.notification_service.set_position(InfoBarPosition.BOTTOM_RIGHT)
         event_bus.notification_service = self.notification_service
 
+        # 读取设置
+        self.settings = QSettings("Fairy-Kekkai-Workshop", "Settings")
+
         self.initWindow()
 
         # 创建页面
@@ -55,9 +59,20 @@ class MainWindow(MSFluentWindow):
 
         self.initNavigation()
 
+        # 初始化系统托盘
+        self.system_tray = SystemTray(self)
+        
+        # 设置应用程序不在最后一个窗口关闭时退出
+        QApplication.setQuitOnLastWindowClosed(False)
+        
+        # 连接托盘信号
+        self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
+
+        # 恢复窗口状态
+        self.restore_window_state()
 
     def initNavigation(self):
         # self.addSubInterface(self.homeInterface, FIF.HOME, '主页', FIF.HOME_FILL)
@@ -109,3 +124,66 @@ class MainWindow(MSFluentWindow):
 
         if w.exec():
             QDesktopServices.openUrl(QUrl("https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"))
+
+    def restore_window_state(self):
+        """恢复窗口状态"""
+        # 恢复窗口大小和位置
+        size = self.settings.value("window/size", self.size())
+        position = self.settings.value("window/position", self.pos())
+        
+        self.resize(size)
+        self.move(position)
+        
+        # 恢复窗口最大化状态
+        if self.settings.value("window/maximized", False, type=bool):
+            self.showMaximized()
+    
+    def save_window_state(self):
+        """保存窗口状态"""
+        # 如果窗口是最大化的，保存正常状态的大小
+        if self.isMaximized():
+            self.settings.setValue("window/maximized", True)
+            self.showNormal()  # 临时恢复正常状态以获取大小
+            self.settings.setValue("window/size", self.size())
+            self.showMaximized()  # 恢复最大化
+        else:
+            self.settings.setValue("window/maximized", False)
+            self.settings.setValue("window/size", self.size())
+            self.settings.setValue("window/position", self.pos())
+    
+    def closeEvent(self, event):
+        """重写关闭事件"""
+        # 检查是否真的需要退出（例如通过托盘菜单的退出选项）
+        if hasattr(self, '_really_quit') and self._really_quit:
+            # 保存窗口状态
+            self.save_window_state()
+            # 执行真正的退出
+            super().closeEvent(event)
+        else:
+            # 最小化到托盘
+            event.ignore()
+            self.hide()
+            
+            # 显示通知
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                "程序已最小化到系统托盘\n右键点击托盘图标可显示菜单",
+                QSystemTrayIcon.Information,
+                3000
+            )
+    
+    def on_tray_message_clicked(self):
+        """托盘消息被点击时的处理"""
+        self.show_main_window_from_tray()
+    
+    def show_main_window_from_tray(self):
+        """从托盘显示主窗口"""
+        self.show()
+        self.activateWindow()
+        self.raise_()
+    
+    def really_quit(self):
+        """真正退出应用程序"""
+        self._really_quit = True
+        self.system_tray.hide()
+        # self.close()
