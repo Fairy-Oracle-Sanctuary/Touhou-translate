@@ -6,7 +6,7 @@ from PySide6.QtGui import QIcon, QColor, QGuiApplication, QDesktopServices
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QSystemTrayIcon
 from PySide6.QtSql import QSqlDatabase
 
-from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont, InfoBarPosition
+from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont, InfoBarPosition, setTheme, Theme
 from qfluentwidgets import FluentIcon as FIF
 
 from ..service.event_bus import event_bus
@@ -36,6 +36,7 @@ class Widget(QFrame):
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        setTheme(Theme.LIGHT)
         # 初始化通知服务
         self.notification_service = NotificationService(self)
         
@@ -168,7 +169,7 @@ class MainWindow(MSFluentWindow):
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
                 "程序已最小化到系统托盘\n右键点击托盘图标可显示菜单",
-                QSystemTrayIcon.Information,
+                QIcon(':/app/images/logo.png'),
                 3000
             )
     

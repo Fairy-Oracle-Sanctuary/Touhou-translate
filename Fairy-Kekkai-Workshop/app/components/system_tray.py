@@ -32,23 +32,11 @@ class SystemTray(QSystemTrayIcon):
         ])
         self.setContextMenu(self.menu)
         
-        # 连接信号
-        # self.activated.connect(self.on_tray_activated)
-        
         # 显示托盘图标
         self.show()
-        
-        # 显示提示消息
-        # self.showMessage(
-        #     "Fairy-Kekkai-Workshop",
-        #     "应用程序已启动，点击托盘图标可显示菜单",
-        #     QSystemTrayIcon.Information,
-        #     2000
-        # )
-    
+            
     def on_tray_activated(self):
         """托盘图标被激活时的处理"""
-        print("a")
         # 显示/隐藏主窗口
         if self.main_window.isVisible():
             self.hide_main_window()
@@ -67,7 +55,7 @@ class SystemTray(QSystemTrayIcon):
         self.showMessage(
             "Fairy-Kekkai-Workshop",
             "程序已最小化到系统托盘",
-            QSystemTrayIcon.Information,
+            QIcon(':/app/images/logo.png'),
             1500
         )
     
@@ -77,5 +65,4 @@ class SystemTray(QSystemTrayIcon):
         self.main_window._really_quit = True
         # 退出应用程序
         QApplication.instance().exit
-        # self.main_window.really_quit()
 

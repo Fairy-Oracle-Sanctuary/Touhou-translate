@@ -28,9 +28,11 @@ class ProjectInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
-        # self.notification_service = notification_service
         self.project = Project()
 
+        self._initWidgets()
+
+    def _initWidgets(self):
         self.projectsLayout = QVBoxLayout(self.view)
         
         # 创建堆叠窗口，用于切换项目列表和项目详情
@@ -42,7 +44,6 @@ class ProjectInterface(ScrollArea):
         
         # 项目详情页面
         self.projectDetailInterface = ProjectDetailInterface(self.project)
-        self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
         
         # 初始化页面
         self.stackedWidget.addWidget(self.projectListPage)
@@ -50,8 +51,6 @@ class ProjectInterface(ScrollArea):
         
         # 创建顶部按钮卡片
         self.topButtonCard = TopButtonCard()
-        self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
-        self.topButtonCard.refreshButton.clicked.connect(lambda: self.refreshProjectList(isMessage=True))
         
         # 项目卡片容器
         self.cardsContainer = QWidget()
@@ -60,6 +59,10 @@ class ProjectInterface(ScrollArea):
         self.cardsLayout.setContentsMargins(0, 0, 0, 0)
         self.cardsLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
         
+        self._initLayout()
+        self._connectSignalToSlot()
+
+    def _initLayout(self):
         # 设置项目列表页面布局
         self.projectListLayout.addWidget(self.topButtonCard)
         self.projectListLayout.addWidget(self.cardsContainer)
@@ -71,11 +74,7 @@ class ProjectInterface(ScrollArea):
         
         # 初始化项目卡片
         self.refreshProjectList(isMessage=False)
-        
-        self._initWidget()
-        self.projectDeleted.connect(self.deleteProject)
 
-    def _initWidget(self):
         self.setWidget(self.view)
         event_bus.project_interface = self.view
         self.setWidgetResizable(True)
@@ -84,7 +83,13 @@ class ProjectInterface(ScrollArea):
         self.resize(780, 800)
         self.setObjectName("projectInterface")
         self.enableTransparentBackground()
-    
+
+    def _connectSignalToSlot(self):
+        self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
+        self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
+        self.topButtonCard.refreshButton.clicked.connect(lambda: self.refreshProjectList(isMessage=True))
+        self.projectDeleted.connect(self.deleteProject)
+
     def addNewProjectCard(self):
         """添加新的项目卡片"""
         dialog = AddProject(self)
@@ -215,8 +220,10 @@ class ProjectCard(CardWidget):
 
         self.iconWidget = IconWidget(icon)
         self.titleLabel = BodyLabel(title, self)
+        self.titleLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.contentLabel = CaptionLabel(content, self)
-        self.openButton = PrimaryPushButton('Open', self)
+        self.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.openButton = PrimaryPushButton('打开项目', self)
         self.moreButton = TransparentToolButton(FluentIcon.MORE, self)
 
         self.hBoxLayout = QHBoxLayout(self)

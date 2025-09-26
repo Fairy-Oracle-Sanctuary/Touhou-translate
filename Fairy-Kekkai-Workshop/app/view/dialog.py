@@ -83,7 +83,7 @@ class AddProject(MessageBoxBase):
 class CustomMessageBox(MessageBoxBase):
     """ Custom message box """
 
-    def __init__(self, title, text, parent=None):
+    def __init__(self, title, text, minwidth=350, parent=None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(title)
         self.LineEdit = LineEdit()
@@ -96,7 +96,7 @@ class CustomMessageBox(MessageBoxBase):
         self.viewLayout.addWidget(self.LineEdit)
 
         # 设置对话框的最小宽度
-        self.widget.setMinimumWidth(350)
+        self.widget.setMinimumWidth(minwidth)
 
         # 按钮文本设置
         self.yesButton.setText("确定")
