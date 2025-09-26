@@ -4,6 +4,9 @@ from typing import Any, Dict, Optional
 
 class GlobalEventBus(QObject):
     """全局事件总线，负责组件间通信"""
+    # 通知服务
+    notification_service = None
+    
     # 窗口
     project_interface = None
     project_detail_interface = None

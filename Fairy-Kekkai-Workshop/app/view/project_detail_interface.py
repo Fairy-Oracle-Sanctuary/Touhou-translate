@@ -178,20 +178,9 @@ class FileItemWidget(QFrame):
                         parent.delayedRefreshProject()
                         break
                     parent = parent.parent()
-
-                InfoBar.success(
-                    title="删除成功",
-                    content=f"已删除文件: {self.file_name}",
-                    parent=self.main_window,
-                    duration=3000
-                )
+                event_bus.notification_service.show_success("成功", f"已删除文件: {self.file_name}")
             except Exception as e:
-                InfoBar.error(
-                    title="删除失败",
-                    content=f"删除文件时出错: {str(e)}",
-                    parent=self.main_window,
-                    duration=3000
-                )
+                event_bus.notification_service.show_error("错误", f"删除文件时出错: {str(e)}")
 
     def donwloadFile(self):
         """下载缺失的文件"""
@@ -311,12 +300,7 @@ class FileListWidget(QWidget):
             else:
                 subprocess.call(('xdg-open', file_path))
         except Exception as e:
-            InfoBar.error(
-                title="错误",
-                content=f"打开文件失败: {str(e)}",
-                parent=self.main_window,
-                duration=3000
-            )
+            event_bus.notification_service.show_error("错误", f"打开文件失败: {str(e)}")
     
     def fallbackOpenFile(self, file_path):
         """备用的文件打开方式"""
@@ -328,12 +312,7 @@ class FileListWidget(QWidget):
             else:
                 subprocess.call(('xdg-open', file_path))
         except Exception as e:
-            InfoBar.error(
-                title="错误",
-                content=f"无法打开文件: {str(e)}",
-                parent=self.main_window,
-                duration=3000
-            )
+            event_bus.notification_service.show_error("错误", f"无法打开文件: {str(e)}")
     
     def uploadMissingFile(self, file_path):
         """上传缺失的文件"""
@@ -361,20 +340,10 @@ class FileListWidget(QWidget):
                             parent.delayedRefreshProject()
                             break
                         parent = parent.parent()
-                                    
-                    InfoBar.success(
-                        title="成功",
-                        content=f"已上传文件: {file_name}",
-                        parent=self.main_window,
-                        duration=3000
-                    )
+                    
+                    event_bus.notification_service.show_success("成功", f"已上传文件: {file_name}")
                 except Exception as e:
-                    InfoBar.error(
-                        title="错误",
-                        content=f"上传文件失败: {str(e)}",
-                        parent=self.main_window,
-                        duration=3000
-                    )
+                    event_bus.notification_service.show_success("错误", f"上传文件失败: {str(e)}")
     
     def clearFiles(self):
         """清空所有文件项"""
@@ -425,31 +394,16 @@ class ProjectDetailInterface(ScrollArea):
         self.download_thread.start()
         
         # 显示下载中的提示
-        InfoBar.info(
-            title="开始下载",
-            content=f"正在下载图片...",
-            parent=self,
-            duration=2000
-        )
+        event_bus.notification_service.show_info("开始下载", f"正在下载图片...")
 
     def on_image_download_finished(self, success, message, save_path):
         """图片下载完成回调"""
         if success:
-            InfoBar.success(
-                title="成功",
-                content=f"图片已下载到: {save_path}",
-                parent=self,
-                duration=2000
-            )
+            event_bus.notification_service.show_success("成功", f"图片已下载到: {save_path}")
             # 刷新项目详情页面
             self.loadProject(self.current_project_path, self.card_id, self.project)
         else:
-            InfoBar.error(
-                title="失败",
-                content=message,
-                parent=self,
-                duration=3000
-            )
+            event_bus.notification_service.show_error("错误", message)
             
     def loadProject(self, project_path, id, project, isMessage=False):
         """加载项目详情"""
@@ -550,15 +504,10 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(fileListContainer)
         self.vBoxLayout.addStretch(1)
-        event_bus.project_detail_interface = self.vBoxLayout
+        event_bus.project_detail_interface = self.view
 
         if isMessage:
-            InfoBar.success(
-            title="成功",
-            content=f"已刷新文件列表",
-            parent=self,
-            duration=1000
-        )
+            event_bus.notification_service.show_success("成功", f"已刷新文件列表")
             
     def delayedRefreshProject(self):
         """延迟刷新项目详情页面"""
@@ -588,12 +537,7 @@ class ProjectDetailInterface(ScrollArea):
         if dialog.exec():
             self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
             self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_2.text().strip(), offset=1)
-            InfoBar.success(
-                title="成功",
-                content=f"编辑第 {folder_num} 集标题和视频url成功",
-                parent=self,
-                duration=2500,
-            )
+            event_bus.notification_service.show_success("成功", f"编辑第 {folder_num} 集标题和视频url成功")
             self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
         else:
             pass
@@ -610,19 +554,9 @@ class ProjectDetailInterface(ScrollArea):
             # 使用定时器延迟刷新界面
             QTimer.singleShot(100, self.delayedRefreshProject)
             
-            InfoBar.success(
-                title="成功",
-                content=f"已上传文件到: {os.path.basename(folder_path)}/{file_name}",
-                parent=self,
-                duration=3000
-            )
+            event_bus.notification_service.show_success("成功", f"已上传文件到: {os.path.basename(folder_path)}/{file_name}")
         except Exception as e:
-            InfoBar.error(
-                title="错误",
-                content=f"上传文件失败: {str(e)}",
-                parent=self,
-                duration=3000
-            )
+            event_bus.notification_service.show_error("错误", f"上传文件失败: {str(e)}")
     
     def openUrl(self, url):
         QDesktopServices.openUrl(QUrl(url))

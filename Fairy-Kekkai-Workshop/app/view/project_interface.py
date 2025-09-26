@@ -18,6 +18,7 @@ import os
 from ..service.project import Project
 from ..service.event_bus import event_bus
 from ..service.events import EventBuilder
+from ..service.infobar import NotificationService
 
 from .dialog import AddProject
 from .project_detail_interface import ProjectDetailInterface
@@ -27,6 +28,7 @@ class ProjectInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
+        # self.notification_service = notification_service
         self.project = Project()
 
         self.projectsLayout = QVBoxLayout(self.view)
@@ -93,12 +95,7 @@ class ProjectInterface(ScrollArea):
                 int(dialog.numInput.text().strip()),
                 dialog.titleInput.text().strip(),                
             )
-            InfoBar.success(
-            title="成功",
-            content=f"已创建新项目: {dialog.nameInput.text().strip()}",
-            parent=event_bus.project_interface,
-            duration=3000,
-            )
+            event_bus.notification_service.show_success("成功", f"已创建新项目: {dialog.nameInput.text().strip()}")
         else:
             pass
         self.refreshProjectList(isMessage=False)
@@ -122,7 +119,7 @@ class ProjectInterface(ScrollArea):
         self.project = Project()
         for project_num in range(len(self.project.project_title)):
             self.addProjectCard(
-                ":/qfluentwidgets/images/logo.png", 
+                ":/app/images/logo.png", 
                 self.project.project_name[project_num], 
                 self.project.project_title[project_num],
                 card_id,
@@ -130,12 +127,7 @@ class ProjectInterface(ScrollArea):
             )
             card_id += 1
         if isMessage:
-            InfoBar.success(
-            title="成功",
-            content="已刷新项目列表",
-            parent=event_bus.project_interface,
-            duration=1000,
-            )
+            event_bus.notification_service.show_success("成功", "已刷新项目列表")
 
     def addProjectCard(self, icon, title, content, id, path):
         """添加项目卡片到布局"""
@@ -150,13 +142,8 @@ class ProjectInterface(ScrollArea):
 
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
-    
-        InfoBar.success(
-            title="打开成功",
-            content=f"已打开项目 {project_ifm[0]}",
-            parent=event_bus.project_interface,
-            duration=2000
-        )
+
+        event_bus.notification_service.show_success("打开成功", f"已打开项目 {project_ifm[0]}")
 
     def handleDownloadRequest(self, url, download_path, file_name):
         """处理下载请求"""
@@ -178,19 +165,9 @@ class ProjectInterface(ScrollArea):
         isSuccess = self.project.delete_project(project_path)
         name = project_path.split('\\')[-1]
         if isSuccess:
-            InfoBar.success(
-                title="成功",
-                content=f"项目-{name}-已删除",
-                parent=event_bus.project_interface,
-                duration=3000,
-            )
+            event_bus.notification_service.show_success("成功", f"项目-{name}-已删除")
         else:
-            InfoBar.error(
-                title="错误",
-                content=f"删除项目失败",
-                parent=event_bus.project_interface,
-                duration=3000,
-            )
+            event_bus.notification_service.show_error("错误", f"删除项目失败")
         self.refreshProjectList(isMessage=False)
 
     def showProjectList(self):
@@ -281,10 +258,13 @@ class ProjectCard(CardWidget):
         flyout_view.setFlyout(flyout)  # 设置Flyout引用
 
     def handleDeleteRequest(self, project_path):
-        """处理删除请求,转发到ProjectInterface"""
-        project_interface = self.main_window.parent().parent()
-        project_interface.projectDeleted.emit(project_path)
-
+        """处理删除请求"""
+        parent = self.parent()
+        while parent:
+            if isinstance(parent, ProjectInterface):
+                parent.deleteProject(project_path)
+                break
+            parent = parent.parent()
 
 class CustomFlyoutView(FlyoutViewBase):
     deleteRequested = Signal(str)
@@ -323,12 +303,7 @@ class CustomFlyoutView(FlyoutViewBase):
             QDesktopServices.openUrl(QUrl.fromLocalFile(self.path))
         else:
             # 如果路径不存在，显示错误信息
-            InfoBar.error(
-                title="错误",
-                content=f"路径不存在: {self.path}",
-                parent=self.mainwindow,  # 使用主窗口作为父窗口
-                duration=3000
-            )
+            event_bus.notification_service.show_success("错误", f"路径不存在: {self.path}")
     
     def delateProjectConfirm(self):
         '''永久删除项目'''

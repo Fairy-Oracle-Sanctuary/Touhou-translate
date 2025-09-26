@@ -6,17 +6,23 @@ from PySide6.QtGui import QIcon, QColor, QGuiApplication, QDesktopServices
 from PySide6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout
 from PySide6.QtSql import QSqlDatabase
 
-from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont
+from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont, InfoBarPosition
 from qfluentwidgets import FluentIcon as FIF
+
+from ..service.event_bus import event_bus
+from ..service.infobar import NotificationService
 
 from .home_interface import HomeInterface
 from .project_interface import ProjectInterface
 from .download_interface import DownloadInterface  # 假设你有一个播放列表界面
 
+from ..resource import resource_rc
+
 class Widget(QFrame):
 
     def __init__(self, text: str, parent=None):
         super().__init__(parent=parent)
+
         self.label = SubtitleLabel(text, self)
         self.hBoxLayout = QHBoxLayout(self)
 
@@ -29,11 +35,18 @@ class Widget(QFrame):
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        # 初始化通知服务
+        self.notification_service = NotificationService(self)
+        
+        # 可以自定义配置（可选）
+        self.notification_service.set_default_duration(3000)
+        self.notification_service.set_position(InfoBarPosition.BOTTOM_RIGHT)
+        event_bus.notification_service = self.notification_service
 
         self.initWindow()
 
         # 创建页面
-        # self.homeInterface = HomeInterface(self)
+        # self.homeInterface = HomeInterface(self.notification_service, self)
         self.projectInterface = ProjectInterface(self)
         self.downloadInterface = DownloadInterface(self)  
 
@@ -41,6 +54,7 @@ class MainWindow(MSFluentWindow):
         # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
         self.initNavigation()
+
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -64,7 +78,7 @@ class MainWindow(MSFluentWindow):
 
     def initWindow(self):
         self.resize(1000, 700)
-        self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
+        self.setWindowIcon(QIcon(':/app/images/logo.png'))
         self.setWindowTitle('Fairy-Kekkai-Workshop')
 
         #创建启动页面
