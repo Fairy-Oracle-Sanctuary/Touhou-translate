@@ -4,6 +4,9 @@
 *.aac
 *.spec
 __pycache__
+Fairy-Kekkai-Workshop/
 build/
-dist/
+CLI/
+_internal/
 .__jianying_export_temp_folder__
+Fairy-Kekkai-Workshop.exe
