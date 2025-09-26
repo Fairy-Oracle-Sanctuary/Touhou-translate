@@ -20,7 +20,7 @@ from ..service.event_bus import event_bus
 from ..service.events import EventBuilder
 from ..service.infobar import NotificationService
 
-from .dialog import AddProject
+from ..components.dialog import AddProject
 from .project_detail_interface import ProjectDetailInterface
 
 class ProjectInterface(ScrollArea):
