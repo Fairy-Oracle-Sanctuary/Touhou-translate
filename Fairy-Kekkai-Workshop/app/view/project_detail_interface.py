@@ -12,7 +12,7 @@ import subprocess
 import platform
 import requests
 
-from .dialog import CustomMessageBox, CustomDoubleMessageBox
+from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox
 
 from ..service.event_bus import event_bus
 from ..service.events import EventBuilder
@@ -459,6 +459,8 @@ class FileItemWidget(QFrame):
                         download_path,
                     )
                 )
+                # 显示下载中的提示
+                event_bus.notification_service.show_info("开始下载", f"正在下载视频: {video_url}")
 
 class FileListWidget(QWidget):
     """自定义文件列表widget"""

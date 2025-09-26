@@ -18,7 +18,7 @@ from datetime import datetime
 import time
 import re
 
-from .dialog import CustomMessageBox
+from ..components.dialog import CustomMessageBox
 
 from ..service.event_bus import event_bus
 from ..service.events import EventBuilder
@@ -135,12 +135,12 @@ class DownloadInterface(ScrollArea):
         self.download_tasks.append(task)
         
         # 创建任务项
-        task_item = DownloadItemWidget(task, self.taskListContainer)
-        self.taskListLayout.insertWidget(0, task_item)
+        self.task_item = DownloadItemWidget(task, self.taskListContainer)
+        self.taskListLayout.insertWidget(0, self.task_item)
 
         # 连接信号 - 添加这四行代码
-        task_item.removeTaskSignal.connect(self.removeTask)
-        task_item.retryDownloadSignal.connect(self.retryDownload)
+        self.task_item.removeTaskSignal.connect(self.removeTask)
+        self.task_item.retryDownloadSignal.connect(self.retryDownload)
 
         # 隐藏空状态提示
         self.emptyStateLabel.setVisible(False)
@@ -190,11 +190,12 @@ class DownloadInterface(ScrollArea):
         # 更新任务状态
         task.status = "下载中"
         
+        # 更新UI
+        self.updateTaskUI(task.id)
+
         # 开始下载
         download_thread.start()
         
-        # 更新UI
-        self.updateTaskUI(task.id)
     
     def onDownloadProgress(self, task_id, progress, speed, filename):
         """下载进度更新"""
@@ -286,34 +287,38 @@ class DownloadInterface(ScrollArea):
 
     def removeTask(self, task_id):
         """移除任务"""
-        for task in self.download_tasks[:]:
-            if task.id == task_id:
-                # 如果任务正在下载，先取消
-                for thread in self.active_downloads[:]:
-                    if thread.task.id == task_id:
-                        thread.cancel()
-                        thread.wait()
-                        self.active_downloads.remove(thread)
-                        break
-                
-                self.download_tasks.remove(task)
-                break
-        
-        # 从UI中移除
-        for i in range(self.taskListLayout.count()):
-            widget = self.taskListLayout.itemAt(i).widget()
-            if isinstance(widget, DownloadItemWidget) and widget.task.id == task_id:
-                self.taskListLayout.removeWidget(widget)
-                widget.deleteLater()
-                break
-        
-        # 检查是否还有任务
-        if not self.download_tasks:
-            self.emptyStateLabel.setVisible(True)
-            self.emptyStateLabel.setText("暂无下载任务")
-        
-        # 开始下一个下载
-        self.startNextDownload()
+        try:
+            for task in self.download_tasks[:]:
+                if task.id == task_id:
+                    # 如果任务正在下载，先取消
+                    for thread in self.active_downloads[:]:
+                        if thread.task.id == task_id:
+                            thread.cancel()
+                            thread.wait()
+                            self.active_downloads.remove(thread)
+                            break
+                    
+                    self.download_tasks.remove(task)
+                    break
+            
+            # 从UI中移除
+            for i in range(self.taskListLayout.count()):
+                widget = self.taskListLayout.itemAt(i).widget()
+                if isinstance(widget, DownloadItemWidget) and widget.task.id == task_id:
+                    self.taskListLayout.removeWidget(widget)
+                    widget.deleteLater()
+                    break
+            
+            # 检查是否还有任务
+            if not self.download_tasks:
+                self.emptyStateLabel.setVisible(True)
+                self.emptyStateLabel.setText("暂无下载任务")
+
+            # 开始下一个下载
+            self.startNextDownload()
+        except Exception as e:
+            event_bus.notification_service.show_error("错误", f"任务移除失败: {e}")
+            
     
     def addDownloadFromProject(self, request_data):
         """从项目界面添加下载任务"""
@@ -392,7 +397,6 @@ class DownloadThread(QThread):
                 self.task.error_message = str(e)
                 self.task.end_time = datetime.now()
                 self.finished_signal.emit(False, f"下载失败: {str(e)}")
-                
     
     def progress_hook(self, d):
         """进度回调函数"""
@@ -599,6 +603,8 @@ class DownloadItemWidget(SimpleCardWidget):
         self.retryBtn.setVisible(status == "失败")
 
         if status == "已完成":
+            self.removeBtn.setDisabled(False)
+        if status == "失败":
             self.removeBtn.setDisabled(False)
     
     def openFolder(self):
