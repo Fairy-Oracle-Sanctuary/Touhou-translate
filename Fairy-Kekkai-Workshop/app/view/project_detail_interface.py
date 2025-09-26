@@ -538,7 +538,7 @@ class ProjectDetailInterface(ScrollArea):
             self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
             self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_2.text().strip(), offset=1)
             event_bus.notification_service.show_success("成功", f"编辑第 {folder_num} 集标题和视频url成功")
-            self.loadProject(self.main_window, self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id, self.project)
         else:
             pass
         
