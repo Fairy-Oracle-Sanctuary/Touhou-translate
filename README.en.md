@@ -42,7 +42,7 @@ We welcome any form of help and contribution!
 *   **Timing:** Creating subtitle files (ASS/SRT, etc.) or encoding videos with subtitles.
 *   **Checking:** Watching the finished product to check for translation errors, subtitle sync issues, etc.
 
-If you are interested in participating, please contact us through the following methods (e.g., Discord, QQ group, email, etc.):
+If you are interested in participating, please contact us through the following methods (QQ group):
 
 *   **QQ Group:** [`1015718753`]
 
