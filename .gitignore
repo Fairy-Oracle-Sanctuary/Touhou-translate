@@ -3,6 +3,8 @@
 *.part
 *.aac
 __pycache__
+Fairy-Kekkai-Workshop/
+build/
 CLI/
 _internal/
 .__jianying_export_temp_folder__
