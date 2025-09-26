@@ -334,12 +334,7 @@ class DownloadItemWidget(SimpleCardWidget):
             self.retryBtn.setVisible(True)
 
             # 显示取消提示
-            InfoBar.info(
-                title="下载已取消",
-                content=f"任务 '{self.task.filename}' 已被取消",
-                parent=self.window(),
-                duration=3000
-            )
+            event_bus.notification_service.show_info("下载已取消", f"任务 '{self.task.filename}' 已被取消")
 
     def retryDownload(self):
         """重新下载"""
@@ -536,20 +531,10 @@ class DownloadInterface(ScrollArea):
             if task.id == task_id:
                 if success:
                     task.status = "已完成"
-                    InfoBar.success(
-                        title="下载完成",
-                        content=f"'{task.filename}' 下载完成",
-                        parent=self,
-                        duration=3000
-                    )
+                    event_bus.notification_service.show_success("下载完成", f"-{task.filename}- 下载完成")
                 else:
                     task.status = "失败"
-                    InfoBar.error(
-                        title="下载失败",
-                        content=message,
-                        parent=self,
-                        duration=5000
-                    )
+                    event_bus.notification_service.show_error("下载失败", message.strip())
                 
                 # 移除活跃下载
                 for thread in self.active_downloads[:]:

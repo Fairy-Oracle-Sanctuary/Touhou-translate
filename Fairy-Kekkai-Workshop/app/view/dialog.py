@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt
 
 from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
 
+from ..service.event_bus import event_bus
+
 class AddProject(MessageBoxBase):
     """添加新项目"""
     def __init__(self, parent=None):
@@ -74,12 +76,7 @@ class AddProject(MessageBoxBase):
         errors = self.validateInput()
         if errors:
             error_message = "\n".join(errors)
-            InfoBar.error(
-            title="输入错误",
-            content=error_message,
-            parent=self,
-            duration=3000
-            )
+            event_bus.notification_service.show_error("输入错误", error_message)
             return
         super().accept()
 
@@ -108,12 +105,7 @@ class CustomMessageBox(MessageBoxBase):
     def accept(self):
         errors = self.LineEdit.text().strip()
         if not errors:
-            InfoBar.error(
-            title="输入错误",
-            content="请输入内容",
-            parent=self,
-            duration=2000
-            )
+            event_bus.notification_service.show_error("输入错误", "请输入内容")
             return
         super().accept()
 
@@ -180,12 +172,7 @@ class CustomDoubleMessageBox(MessageBoxBase):
         errors = self.validateInput()
         if errors:
             error_message = "\n".join(errors)
-            InfoBar.error(
-            title="输入错误",
-            content=error_message,
-            parent=self,
-            duration=3000
-            )
+            event_bus.notification_service.show_error("输入错误", error_message)
             return
         super().accept()
 
