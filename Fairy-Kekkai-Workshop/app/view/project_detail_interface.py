@@ -408,7 +408,7 @@ class FileItemWidget(QFrame):
 
         dialog = CustomMessageBox(
             title=f"下载第 {self.folder_num} 集封面",
-            text="请补全视频URL: https://www.youtube.com/watch?v=",
+            text="请输入视频id: https://www.youtube.com/watch?v=",
             parent=self.window(),
             minwidth=450,
         )
@@ -438,9 +438,9 @@ class FileItemWidget(QFrame):
 
         dialog = CustomMessageBox(
             title=f"下载第 {self.folder_num} 集生肉视频",
-            text="请补全视频URL: https://www.youtube.com/watch?v=",
+            text="请输入视频id: https://www.youtube.com/watch?v=",
             parent=self.window(),
-            minwidth=400,
+            minwidth=450,
         )
         v = self.project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
         if v and "youtube" not in v:
@@ -472,7 +472,7 @@ class FileListWidget(QWidget):
         self.card_id = card_id
         self.folder_num = folder_num
         self.fileWidgets = []
-    
+
     def addFileItem(self, file_name, file_path, icon, file_exists, download_need):
         """添加文件项"""
         fileWidget = FileItemWidget(self.main_window, self.project, self.card_id, self.folder_num, file_name, file_path, icon, file_exists, download_need, self)
@@ -570,3 +570,56 @@ class FileListWidget(QWidget):
             widget.deleteLater()
         self.fileWidgets.clear()
 
+class FileOpenThread(QThread):
+    """打开文件的线程"""
+    
+    # 定义信号，用于在主线程中执行GUI操作
+    openFileRequested = Signal(str)  # 文件路径
+    uploadFileRequested = Signal(str)  # 文件路径
+    
+    def __init__(self, file_path, parent=None):
+        super().__init__(parent)
+        self.file_path = file_path
+    
+    def run(self):
+        """线程执行函数"""
+        # 检查文件是否存在
+        if os.path.exists(self.file_path):
+            # 文件存在，尝试打开
+            file_ext = os.path.splitext(self.file_path)[1].lower()
+            
+            if file_ext == '.srt':
+                # 对于字幕文件，使用文本编辑器打开
+                self.openTextFile(self.file_path)
+            else:
+                # 对于其他文件，使用系统默认程序打开
+                success = QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
+                if not success:
+                    self.fallbackOpenFile(self.file_path)
+        else:
+            # 文件不存在，发射信号请求上传
+            self.uploadFileRequested.emit(self.file_path)
+    
+    def openTextFile(self, file_path):
+        """使用文本编辑器打开文件"""
+        try:
+            if platform.system() == "Windows":
+                os.system(f'notepad "{file_path}"')
+            elif platform.system() == "Darwin":
+                subprocess.call(('open', '-a', 'TextEdit', file_path))
+            else:
+                subprocess.call(('xdg-open', file_path))
+        except Exception as e:
+            print(f"打开文件失败: {str(e)}")
+    
+    def fallbackOpenFile(self, file_path):
+        """备用的文件打开方式"""
+        try:
+            if platform.system() == "Windows":
+                os.startfile(file_path)
+            elif platform.system() == "Darwin":
+                subprocess.call(('open', file_path))
+            else:
+                subprocess.call(('xdg-open', file_path))
+        except Exception as e:
+            print(f"无法打开文件: {str(e)}")

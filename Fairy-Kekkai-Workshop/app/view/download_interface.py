@@ -100,7 +100,7 @@ class DownloadInterface(ScrollArea):
                 break
 
         dialog = CustomMessageBox(
-            title=f"请补全视频URL", 
+            title=f"请输入视频ID", 
             text=f"https://www.youtube.com/watch?v=", 
             parent= main_window if main_window else self.window(),
             minwidth=400,
