@@ -121,12 +121,12 @@ class MainWindow(MSFluentWindow):
 
     def showMessageBox(self):
         w = MessageBox(
-            '支持项目',
-            '现在团队人手紧缺，如果感兴趣的话请加入我们',
+            self.tr('支持项目'),
+            self.tr('现在团队人手紧缺，如果感兴趣的话请加入我们'),
             self
         )
-        w.yesButton.setText('访问仓库')
-        w.cancelButton.setText('下次一定')
+        w.yesButton.setText(self.tr('访问仓库'))
+        w.cancelButton.setText(self.tr('下次一定'))
 
         if w.exec():
             QDesktopServices.openUrl(QUrl("https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"))

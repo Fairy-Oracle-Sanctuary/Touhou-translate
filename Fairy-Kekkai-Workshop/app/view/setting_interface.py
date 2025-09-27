@@ -13,6 +13,7 @@ from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QWidget, QLabel, QFileDialog
 
+from ..service.event_bus import event_bus
 from ..service.config import cfg, isWin11
 # from ..service.setting import HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR
 # from ..common.signal_bus import signalBus
@@ -52,6 +53,29 @@ class SettingInterface(ScrollArea):
             ],
             parent=self.personalGroup
         )
+        self.accentColorCard = ComboBoxSettingCard(
+            cfg.accentColor,
+            FIF.PALETTE,
+            self.tr('主题色'),
+            self.tr('调整应用的主题颜色'),
+            texts=[
+                self.tr('海沫绿'),
+                self.tr('跟随系统设置')
+            ],
+            parent=self.personalGroup
+        )
+        self.zoomCard = ComboBoxSettingCard(
+            cfg.dpiScale,
+            FIF.ZOOM,
+            self.tr("界面缩放"),
+            self.tr("调整组件和字体的大小"),
+            texts=[
+                "100%", "125%", "150%", "175%", "200%",
+                self.tr("跟随系统设置")
+            ],
+            parent=self.personalGroup
+        )
+
         self.__initWidget()
 
     def __initWidget(self):
@@ -74,6 +98,8 @@ class SettingInterface(ScrollArea):
         self.settingLabel.move(36, 40)
 
         self.personalGroup.addSettingCard(self.themeCard)
+        self.personalGroup.addSettingCard(self.zoomCard)
+        self.personalGroup.addSettingCard(self.accentColorCard)
 
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
@@ -86,12 +112,7 @@ class SettingInterface(ScrollArea):
 
     def _showRestartTooltip(self):
         """ show restart tooltip """
-        InfoBar.success(
-            self.tr('Updated successfully'),
-            self.tr('Configuration takes effect after restart'),
-            duration=1500,
-            parent=self
-        )
+        event_bus.notification_service.show_success("更新成功", "配置在重启软件后生效")
 
     def _onM3U8DLPathCardClicked(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("Choose N_m3u8DL-RE"))
@@ -124,6 +145,8 @@ class SettingInterface(ScrollArea):
 
     def _connectSignalToSlot(self):
         """ connect signal to slot """
+        cfg.appRestartSig.connect(self._showRestartTooltip)
+
         # personalization
         cfg.themeChanged.connect(setTheme)
         cfg.accentColor.valueChanged.connect(self._onAccentColorChanged)
