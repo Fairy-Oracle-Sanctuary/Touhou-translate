@@ -15,7 +15,8 @@ from ..components.system_tray import SystemTray
 
 from .home_interface import HomeInterface
 from .project_interface import ProjectInterface
-from .download_interface import DownloadInterface  # 假设你有一个播放列表界面
+from .download_interface import DownloadInterface
+from .setting_interface import SettingInterface
 
 from ..resource import resource_rc
 
@@ -37,6 +38,7 @@ class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
         setTheme(Theme.LIGHT)
+        # setTheme(Theme.DARK)
         # 初始化通知服务
         self.notification_service = NotificationService(self)
         
@@ -54,6 +56,7 @@ class MainWindow(MSFluentWindow):
         # self.homeInterface = HomeInterface(self.notification_service, self)
         self.projectInterface = ProjectInterface(self)
         self.downloadInterface = DownloadInterface(self)  
+        self.settingInterface = SettingInterface(self)  
 
         # 连接信号
         # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
@@ -89,6 +92,8 @@ class MainWindow(MSFluentWindow):
             selectable=False,
             position=NavigationItemPosition.BOTTOM,
         )
+        self.addSubInterface(
+            self.settingInterface, FIF.SETTING, '设置', FIF.SETTING, NavigationItemPosition.BOTTOM)        
 
         # self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 

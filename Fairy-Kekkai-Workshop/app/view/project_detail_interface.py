@@ -2,7 +2,7 @@
 from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, 
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
                         InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton,
-                        FlowLayout, MessageBox)
+                        FlowLayout, MessageBox, isDarkTheme)
 from PySide6.QtCore import Qt, Signal, QUrl, QTimer, QThread
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame, QApplication
@@ -42,7 +42,7 @@ class ProjectDetailInterface(ScrollArea):
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.view.setObjectName('projectDetailView')
-        self.setStyleSheet("#projectDetailView {background-color: transparent;}")
+        self.enableTransparentBackground()   
 
         #连接信号
         self.downloadPic.connect(lambda pic_url, save_path: self.downloadPicture(pic_url, save_path))
@@ -273,19 +273,33 @@ class FileItemWidget(QFrame):
         self.setFixedHeight(60)
         self.setFrameShape(QFrame.Box)
         self.setFrameShadow(QFrame.Raised)
-        self.setStyleSheet("""
-            FileItemWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 5px;
-                margin: 2px;
-                padding: 5px;
-                background-color: white;
-            }
-            FileItemWidget:hover {
-                background-color: #f5f5f5;
-            }
-        """)
-        
+        if not isDarkTheme():
+            self.setStyleSheet("""
+                FileItemWidget {
+                    border: 1px solid #e0e0e0;
+                    border-radius: 5px;
+                    margin: 2px;
+                    padding: 5px;
+                    background-color: white;
+                }
+                FileItemWidget:hover {
+                    background-color: #f5f5f5;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                FileItemWidget {
+                    border: 1px solid #404040;
+                    border-radius: 5px;
+                    margin: 2px;
+                    padding: 5px;
+                    background-color: #323232;
+                }
+                FileItemWidget:hover {
+                    background-color: #2a2a2a;
+                }
+            """)
+
         self._initUI(icon)
     
     def _initUI(self, icon):
@@ -295,11 +309,17 @@ class FileItemWidget(QFrame):
         # 文件图标和名称
         iconWidget = IconWidget(icon.icon(), self)
         fileNameLabel = BodyLabel(self.file_name, self)
-        fileNameLabel.setStyleSheet("""
-            margin-left: 10px;
-            color: black;  /* 确保文件名是黑色 */
-        """)
-        
+        if not isDarkTheme():
+            fileNameLabel.setStyleSheet("""
+                margin-left: 10px;
+                color: black;
+            """)
+        else:
+            fileNameLabel.setStyleSheet("""
+                margin-left: 10px;
+                color: white;
+            """)
+
 
         # 状态指示器
         statusLabel = QLabel("✓" if self.file_exists else "✗", self)

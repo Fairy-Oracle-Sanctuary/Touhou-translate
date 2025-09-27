@@ -4,7 +4,9 @@
 *.aac
 *.spec
 __pycache__
-Fairy-Kekkai-Workshop/
+AppData/
+Fairy-Kekkai-Workshop/build/
+Fairy-Kekkai-Workshop/dist/
 build/
 CLI/
 _internal/
