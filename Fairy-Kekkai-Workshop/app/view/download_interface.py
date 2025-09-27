@@ -17,6 +17,7 @@ import json
 from datetime import datetime
 import time
 import re
+import requests
 
 from ..components.dialog import CustomMessageBox
 
@@ -364,6 +365,28 @@ class DownloadThread(QThread):
         self.is_cancelled = False
     
     def run(self):
+        # 先测试能否访问youtube
+        # 先测试能否访问youtube
+        try:
+            # 设置超时时间为10秒
+            resp = requests.get("https://www.youtube.com", timeout=10)
+            if resp.status_code != 200:
+                self.finished_signal.emit(False, f"无法访问YouTube，HTTP状态码: {resp.status_code}")
+                return
+                
+        except requests.exceptions.Timeout:
+            self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
+            return
+        except requests.exceptions.ConnectionError:
+            self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
+            return
+        except requests.exceptions.RequestException as e:
+            self.finished_signal.emit(False, f"网络错误: {str(e)}")
+            return
+        except Exception as e:
+            self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
+            return
+                    
         self.task.status = "下载中"
         self.task.start_time = datetime.now()
         
@@ -384,6 +407,7 @@ class DownloadThread(QThread):
                 self.task.filename = f"{info.get('title', '未知标题')}.{info.get('ext', 'mp4')}"
                 
                 # 开始下载
+                ydl.cache.remove()
                 ydl.download([self.task.url])
                 
             if not self.is_cancelled:
