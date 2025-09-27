@@ -1,11 +1,13 @@
 from qfluentwidgets import (NavigationItemPosition, MessageBox, setTheme, Theme, MSFluentWindow,
-                            NavigationAvatarWidget, qrouter, SubtitleLabel, setFont)
+                            NavigationAvatarWidget, qrouter, SubtitleLabel, setFont, FluentTranslator)
 from qfluentwidgets import FluentIcon as FIF
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QApplication
-from PySide6.QtCore import Qt, QUrl, QSharedMemory
+from PySide6.QtCore import Qt, QUrl, QSharedMemory, QTranslator
 from PySide6.QtGui import QIcon, QDesktopServices
 import sys
+import os
 
+from app.service.config import cfg
 
 def is_app_running():
     """检查应用程序是否已经在运行"""
@@ -28,6 +30,11 @@ def main():
         print("应用程序已经在运行中")
         return 1
     
+    # 界面缩放
+    if cfg.get(cfg.dpiScale) != "Auto":
+        os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+        os.environ["QT_SCALE_FACTOR"] = str(cfg.get(cfg.dpiScale))
+
     # 创建应用程序实例
     app = QApplication(sys.argv)
     app.setApplicationName("Fairy-Kekkai-Workshop")

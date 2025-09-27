@@ -38,6 +38,13 @@ def isWin11():
 class Config(QConfig):
     """ Config of application """
 
+    # main window
+    micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())
+    dpiScale = OptionsConfigItem(
+        "MainWindow", "DpiScale", "Auto", OptionsValidator([1, 1.25, 1.5, 1.75, 2, "Auto"]), restart=True)
+    language = OptionsConfigItem(
+    "MainWindow", "Language", Language.AUTO, OptionsValidator(Language), LanguageSerializer(), restart=True)
+
     accentColor = OptionsConfigItem(
         "MainWindow", "AccentColor", "#009faa", OptionsValidator(["#009faa", "Auto"]))
 
