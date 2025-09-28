@@ -37,8 +37,6 @@ class Widget(QFrame):
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
-        setTheme(Theme.LIGHT)
-        # setTheme(Theme.DARK)
         # 初始化通知服务
         self.notification_service = NotificationService(self)
         
@@ -111,13 +109,6 @@ class MainWindow(MSFluentWindow):
         desktop = screen.availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w//2 - self.width()//2, h//2 - self.height()//2)
-
-    def switch_to_download_interface(self):
-        """切换到播放列表界面"""
-        # 设置导航栏当前项为播放列表界面
-        # self.navigationInterface.setCurrentItem(self.playlistInterface.objectName())
-        # 切换到播放列表界面
-        self.stackedWidget.setCurrentWidget(self.downloadInterface)
 
     def showMessageBox(self):
         w = MessageBox(
