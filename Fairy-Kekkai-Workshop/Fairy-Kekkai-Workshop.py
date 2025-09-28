@@ -52,12 +52,5 @@ def main():
 if __name__ == "__main__":
     sys.exit(main())
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     w = MainWindow()
-#     w.show()
-#     app.exec()
-
-
 # Fairy-Kekkai-Workshop
 # pip install --upgrade yt-dlp
