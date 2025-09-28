@@ -38,7 +38,7 @@ def main():
     # 创建应用程序实例
     app = QApplication(sys.argv)
     app.setApplicationName("Fairy-Kekkai-Workshop")
-    app.setApplicationVersion("1.0.1")
+    app.setApplicationVersion("1.2.0")
     app.setOrganizationName("Fairy-Kekkai")
     
     # 创建并显示主窗口
