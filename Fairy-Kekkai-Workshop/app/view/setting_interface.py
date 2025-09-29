@@ -13,9 +13,9 @@ from PySide6.QtCore import Qt, Signal, QUrl, QStandardPaths
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QWidget, QLabel, QFileDialog
 
-from ..service.event_bus import event_bus
-from ..service.config import cfg, isWin11
-# from ..service.setting import HELP_URL, FEEDBACK_URL, AUTHOR, VERSION, YEAR
+from ..common.event_bus import event_bus
+from ..common.config import cfg, isWin11
+from ..common.setting import AUTHOR, VERSION, YEAR
 # from ..common.signal_bus import signalBus
 # from ..common.icon import Logo
 
@@ -39,7 +39,7 @@ class SettingInterface(ScrollArea):
         # setting label
         self.settingLabel = TitleLabel(self.tr("设置"), self)
 
-        # personalization
+        # 个性化
         self.personalGroup = SettingCardGroup(
             self.tr('个性化'), self.scrollWidget)
         self.themeCard = ComboBoxSettingCard(
@@ -76,6 +76,17 @@ class SettingInterface(ScrollArea):
             parent=self.personalGroup
         )
 
+        # 关于
+        self.aboutGroup = SettingCardGroup(self.tr('关于'), self.scrollWidget)
+        self.aboutCard = PrimaryPushSettingCard(
+            self.tr('检查更新'),
+            ":/app/images/logo.png",
+            self.tr('关于'),
+            f"{YEAR}, {AUTHOR}. " +
+            self.tr('当前版本') + " v" + VERSION,
+            self.aboutGroup
+        )
+
         self.__initWidget()
 
     def __initWidget(self):
@@ -101,10 +112,13 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.accentColorCard)
 
+        self.aboutGroup.addSettingCard(self.aboutCard)
+
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
         self.expandLayout.addWidget(self.personalGroup)
+        self.expandLayout.addWidget(self.aboutGroup)
 
         # adjust icon size
         # for card in self.findChildren(SettingCard):
@@ -144,10 +158,12 @@ class SettingInterface(ScrollArea):
                 setThemeColor(color, save=False)
 
     def _connectSignalToSlot(self):
-        """ connect signal to slot """
+        """ 绑定信号 """
         cfg.appRestartSig.connect(self._showRestartTooltip)
 
-        # personalization
+        # 个性化
         cfg.themeChanged.connect(setTheme)
         cfg.accentColor.valueChanged.connect(self._onAccentColorChanged)
 
+        # 检查更新
+        self.aboutCard.clicked.connect(event_bus.checkUpdateSig)

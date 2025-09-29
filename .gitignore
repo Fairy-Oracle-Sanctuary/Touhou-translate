@@ -4,6 +4,7 @@
 *.aac
 *.spec
 __pycache__
+Output/
 AppData/
 Fairy-Kekkai-Workshop/build/
 Fairy-Kekkai-Workshop/dist/
@@ -12,3 +13,4 @@ CLI/
 _internal/
 .__jianying_export_temp_folder__
 Fairy-Kekkai-Workshop.exe
+LICENSE.txt

@@ -14,8 +14,8 @@ import requests
 
 from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox
 
-from ..service.event_bus import event_bus
-from ..service.events import EventBuilder
+from ..common.event_bus import event_bus
+from ..common.events import EventBuilder
 
 class ProjectDetailInterface(ScrollArea):
     """项目详情界面"""
@@ -198,6 +198,7 @@ class ProjectDetailInterface(ScrollArea):
             error1="请输入标题",
             error2="请输入视频url",
             )
+        dialog.LineEdit_1.setText(f"{self.project.project_subtitle[self.card_id][folder_num-1]}")
         dialog.LineEdit_2.setText(f"{self.project.project_video_url[self.card_id][folder_num-1]}")
         if dialog.exec():
             self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
@@ -590,56 +591,3 @@ class FileListWidget(QWidget):
             widget.deleteLater()
         self.fileWidgets.clear()
 
-class FileOpenThread(QThread):
-    """打开文件的线程"""
-    
-    # 定义信号，用于在主线程中执行GUI操作
-    openFileRequested = Signal(str)  # 文件路径
-    uploadFileRequested = Signal(str)  # 文件路径
-    
-    def __init__(self, file_path, parent=None):
-        super().__init__(parent)
-        self.file_path = file_path
-    
-    def run(self):
-        """线程执行函数"""
-        # 检查文件是否存在
-        if os.path.exists(self.file_path):
-            # 文件存在，尝试打开
-            file_ext = os.path.splitext(self.file_path)[1].lower()
-            
-            if file_ext == '.srt':
-                # 对于字幕文件，使用文本编辑器打开
-                self.openTextFile(self.file_path)
-            else:
-                # 对于其他文件，使用系统默认程序打开
-                success = QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
-                if not success:
-                    self.fallbackOpenFile(self.file_path)
-        else:
-            # 文件不存在，发射信号请求上传
-            self.uploadFileRequested.emit(self.file_path)
-    
-    def openTextFile(self, file_path):
-        """使用文本编辑器打开文件"""
-        try:
-            if platform.system() == "Windows":
-                os.system(f'notepad "{file_path}"')
-            elif platform.system() == "Darwin":
-                subprocess.call(('open', '-a', 'TextEdit', file_path))
-            else:
-                subprocess.call(('xdg-open', file_path))
-        except Exception as e:
-            print(f"打开文件失败: {str(e)}")
-    
-    def fallbackOpenFile(self, file_path):
-        """备用的文件打开方式"""
-        try:
-            if platform.system() == "Windows":
-                os.startfile(file_path)
-            elif platform.system() == "Darwin":
-                subprocess.call(('open', file_path))
-            else:
-                subprocess.call(('xdg-open', file_path))
-        except Exception as e:
-            print(f"无法打开文件: {str(e)}")

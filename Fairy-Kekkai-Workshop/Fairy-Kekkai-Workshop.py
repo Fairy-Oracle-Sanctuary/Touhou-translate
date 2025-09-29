@@ -7,7 +7,7 @@ from PySide6.QtGui import QIcon, QDesktopServices
 import sys
 import os
 
-from app.service.config import cfg
+from app.common.config import cfg
 
 def is_app_running():
     """检查应用程序是否已经在运行"""
@@ -38,7 +38,7 @@ def main():
     # 创建应用程序实例
     app = QApplication(sys.argv)
     app.setApplicationName("Fairy-Kekkai-Workshop")
-    app.setApplicationVersion("1.2.0")
+    app.setApplicationVersion("1.3.0")
     app.setOrganizationName("Fairy-Kekkai")
     
     # 创建并显示主窗口

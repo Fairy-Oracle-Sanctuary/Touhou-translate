@@ -3,6 +3,11 @@ import sys
 from pathlib import Path
 from PySide6.QtCore import QStandardPaths
 
+AUTHOR = 'baby2016'
+VERSION = '1.3.0'
+YEAR = '2025'
+
+RELEASE_URL = 'https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases'
 
 CONFIG_FOLDER = Path('AppData').absolute()
 
