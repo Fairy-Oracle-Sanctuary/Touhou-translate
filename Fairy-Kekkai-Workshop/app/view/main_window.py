@@ -9,8 +9,12 @@ from PySide6.QtSql import QSqlDatabase
 from qfluentwidgets import NavigationItemPosition, MSFluentWindow, SplashScreen, MessageBox, InfoBarIcon, SubtitleLabel, setFont, InfoBarPosition, setTheme, Theme
 from qfluentwidgets import FluentIcon as FIF
 
-from ..service.event_bus import event_bus
-from ..service.infobar import NotificationService
+from ..service.version_service import VersionService
+
+from ..common.setting import RELEASE_URL
+from ..common.event_bus import event_bus
+
+from ..components.infobar import NotificationService
 from ..components.system_tray import SystemTray
 
 from .home_interface import HomeInterface
@@ -20,23 +24,13 @@ from .setting_interface import SettingInterface
 
 from ..resource import resource_rc
 
-class Widget(QFrame):
-
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent=parent)
-
-        self.label = SubtitleLabel(text, self)
-        self.hBoxLayout = QHBoxLayout(self)
-
-        setFont(self.label, 24)
-        self.label.setAlignment(Qt.AlignCenter)
-        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignCenter)
-        self.setObjectName(text.replace(' ', '-'))
-
 
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        # 初始化版本服务
+        self.versionManager = VersionService()
+
         # 初始化通知服务
         self.notification_service = NotificationService(self)
         
@@ -67,8 +61,9 @@ class MainWindow(MSFluentWindow):
         # 设置应用程序不在最后一个窗口关闭时退出
         QApplication.setQuitOnLastWindowClosed(False)
         
-        # 连接托盘信号
+        # 连接信号
         self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
+        event_bus.checkUpdateSig.connect(self.checkUpdate)
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -169,6 +164,34 @@ class MainWindow(MSFluentWindow):
                 3000
             )
     
+    def checkUpdate(self):
+        if self.versionManager.hasNewVersion():
+            self.showMessageBox(
+                self.tr('检测到新版本'),
+                self.tr('新版本')+f" {self.versionManager.lastestVersion} " +self.tr('可用，你是否要下载新版本？'),
+                True,
+                lambda: QDesktopServices.openUrl(QUrl(RELEASE_URL))
+            )
+        else:
+            self.showMessageBox(
+                self.tr('没有新版本'),
+                self.tr(
+                    'Fairy Kekkai Workshop 已是最新版本'),
+            )
+
+    def showMessageBox(self, title: str, content: str, showYesButton=False, yesSlot=None):
+        """ show message box """
+        w = MessageBox(title, content, self)
+        w.yesButton.setText(self.tr('确定'))
+        w.cancelButton.setText(self.tr('关闭'))
+        if not showYesButton:
+            w.cancelButton.setText(self.tr('关闭'))
+            w.yesButton.hide()
+            w.buttonLayout.insertStretch(0, 1)
+
+        if w.exec() and yesSlot is not None:
+            yesSlot()
+
     def on_tray_message_clicked(self):
         """托盘消息被点击时的处理"""
         self.show_main_window_from_tray()

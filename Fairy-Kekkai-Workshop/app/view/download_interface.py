@@ -21,8 +21,8 @@ import requests
 
 from ..components.dialog import CustomMessageBox
 
-from ..service.event_bus import event_bus
-from ..service.events import EventBuilder
+from ..common.event_bus import event_bus
+from ..common.events import EventBuilder
 
 class DownloadInterface(ScrollArea):
     """下载界面"""
@@ -330,135 +330,6 @@ class DownloadInterface(ScrollArea):
         )
         self.addDownloadTask(task)
 
-class DownloadTask:
-    """下载任务类"""
-    _id_counter = 0
-
-    def __init__(self, url, download_path, file_name, quality='best', project_name="", episode_num=0):
-        self.url = url
-        self.download_path = download_path
-        self.file_name = file_name
-        self.quality = quality
-        self.project_name = project_name
-        self.episode_num = episode_num
-        self.status = "等待中"  # 等待中, 下载中, 已完成, 失败
-        self.progress = 0
-        self.speed = ""
-        self.filename = ""
-        self.start_time = None
-        self.end_time = None
-        self.error_message = ""
-
-        DownloadTask._id_counter += 1
-        self.id = DownloadTask._id_counter
-
-class DownloadThread(QThread):
-    """下载线程"""
-    
-    # 定义信号
-    progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 文件名
-    finished_signal = Signal(bool, str)  # 成功/失败, 消息
-    
-    def __init__(self, task):
-        super().__init__()
-        self.task = task
-        self.is_cancelled = False
-    
-    def run(self):
-        # 先测试能否访问youtube
-        # 先测试能否访问youtube
-        try:
-            # 设置超时时间为10秒
-            resp = requests.get("https://www.youtube.com", timeout=10)
-            if resp.status_code != 200:
-                self.finished_signal.emit(False, f"无法访问YouTube，HTTP状态码: {resp.status_code}")
-                return
-                
-        except requests.exceptions.Timeout:
-            self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
-            return
-        except requests.exceptions.ConnectionError:
-            self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
-            return
-        except requests.exceptions.RequestException as e:
-            self.finished_signal.emit(False, f"网络错误: {str(e)}")
-            return
-        except Exception as e:
-            self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
-            return
-                    
-        self.task.status = "下载中"
-        self.task.start_time = datetime.now()
-        
-        try:
-            # 创建下载选项
-            ydl_opts = {
-                'format': 'bv[ext=mp4]+ba[ext=m4a]',
-                'embedmetadata': True,
-                'merge_output_format': 'mp4',
-                'outtmpl': f'{self.task.download_path if self.task.file_name else self.task.download_path+"/%(title)s.%(ext)s"}',
-                'progress_hooks': [self.progress_hook],
-            }
-
-            # 开始下载
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                # 获取视频信息
-                info = ydl.extract_info(self.task.url, download=False)
-                self.task.filename = f"{info.get('title', '未知标题')}.{info.get('ext', 'mp4')}"
-                
-                # 开始下载
-                ydl.cache.remove()
-                ydl.download([self.task.url])
-                
-            if not self.is_cancelled:
-                self.task.status = "已完成"
-                self.task.end_time = datetime.now()
-                self.finished_signal.emit(True, "下载完成")
-                
-        except Exception as e:
-            if not self.is_cancelled:
-                self.task.status = "失败"
-                self.task.error_message = str(e)
-                self.task.end_time = datetime.now()
-                self.finished_signal.emit(False, f"下载失败: {str(e)}")
-    
-    def progress_hook(self, d):
-        """进度回调函数"""
-        if self.is_cancelled:
-            raise Exception("下载已取消")
-        
-        # 获取视频名称
-        video_name = d.get('filename', d.get('info_dict', {}).get('title', '未知视频'))
-        if video_name and not self.task.filename:
-            self.task.filename = video_name
-            print(video_name)
-
-        if d['status'] == 'downloading':
-            # 计算下载进度
-            if 'total_bytes' in d and d['total_bytes']:
-                percent = int(d['downloaded_bytes'] * 100 / d['total_bytes'])
-                speed = d.get('_speed_str', 'N/A').split()
-                speed = speed[-1][0:-4]
-                self.task.progress = percent
-                self.task.speed = speed
-                self.progress_signal.emit(percent, speed, self.task.filename)
-            elif 'total_bytes_estimate' in d and d['total_bytes_estimate']:
-                percent = int(d['downloaded_bytes'] * 100 / d['total_bytes_estimate'])
-                speed = d.get('_speed_str', 'N/A')
-                self.task.progress = percent
-                self.task.speed = speed
-                self.progress_signal.emit(percent, speed, self.task.filename)
-            else:
-                self.progress_signal.emit(0, "未知速度", self.task.filename)
-        
-        elif d['status'] == 'finished':
-            self.task.progress = 100
-            self.progress_signal.emit(100, "完成", self.task.filename)
-    
-    def cancel(self):
-        """取消下载"""
-        self.is_cancelled = True
-
 class DownloadItemWidget(SimpleCardWidget):
     """下载任务项组件"""
 
@@ -676,4 +547,135 @@ class DownloadItemWidget(SimpleCardWidget):
         """移除任务"""
         # 发送移除任务信号
         self.removeTaskSignal.emit(self.task.id)
+
+
+class DownloadTask:
+    """下载任务类"""
+    _id_counter = 0
+
+    def __init__(self, url, download_path, file_name, quality='best', project_name="", episode_num=0):
+        self.url = url
+        self.download_path = download_path
+        self.file_name = file_name
+        self.quality = quality
+        self.project_name = project_name
+        self.episode_num = episode_num
+        self.status = "等待中"  # 等待中, 下载中, 已完成, 失败
+        self.progress = 0
+        self.speed = ""
+        self.filename = ""
+        self.start_time = None
+        self.end_time = None
+        self.error_message = ""
+
+        DownloadTask._id_counter += 1
+        self.id = DownloadTask._id_counter
+
+
+class DownloadThread(QThread):
+    """下载线程"""
+    
+    # 定义信号
+    progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 文件名
+    finished_signal = Signal(bool, str)  # 成功/失败, 消息
+    
+    def __init__(self, task):
+        super().__init__()
+        self.task = task
+        self.is_cancelled = False
+    
+    def run(self):
+        # 先测试能否访问youtube
+        # 先测试能否访问youtube
+        try:
+            # 设置超时时间为10秒
+            resp = requests.get("https://www.youtube.com", timeout=10)
+            if resp.status_code != 200:
+                self.finished_signal.emit(False, f"无法访问YouTube，HTTP状态码: {resp.status_code}")
+                return
+                
+        except requests.exceptions.Timeout:
+            self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
+            return
+        except requests.exceptions.ConnectionError:
+            self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
+            return
+        except requests.exceptions.RequestException as e:
+            self.finished_signal.emit(False, f"网络错误: {str(e)}")
+            return
+        except Exception as e:
+            self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
+            return
+                    
+        self.task.status = "下载中"
+        self.task.start_time = datetime.now()
+        
+        try:
+            # 创建下载选项
+            ydl_opts = {
+                'format': 'bv[ext=mp4]+ba[ext=m4a]',
+                'embedmetadata': True,
+                'merge_output_format': 'mp4',
+                'outtmpl': f'{self.task.download_path if self.task.file_name else self.task.download_path+"/%(title)s.%(ext)s"}',
+                'progress_hooks': [self.progress_hook],
+            }
+
+            # 开始下载
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # 获取视频信息
+                info = ydl.extract_info(self.task.url, download=False)
+                self.task.filename = f"{info.get('title', '未知标题')}.{info.get('ext', 'mp4')}"
+                
+                # 开始下载
+                ydl.cache.remove()
+                ydl.download([self.task.url])
+                
+            if not self.is_cancelled:
+                self.task.status = "已完成"
+                self.task.end_time = datetime.now()
+                self.finished_signal.emit(True, "下载完成")
+                
+        except Exception as e:
+            if not self.is_cancelled:
+                self.task.status = "失败"
+                self.task.error_message = str(e)
+                self.task.end_time = datetime.now()
+                self.finished_signal.emit(False, f"下载失败: {str(e)}")
+    
+    def progress_hook(self, d):
+        """进度回调函数"""
+        if self.is_cancelled:
+            raise Exception("下载已取消")
+        
+        # 获取视频名称
+        video_name = d.get('filename', d.get('info_dict', {}).get('title', '未知视频'))
+        if video_name and not self.task.filename:
+            self.task.filename = video_name
+            print(video_name)
+
+        if d['status'] == 'downloading':
+            # 计算下载进度
+            if 'total_bytes' in d and d['total_bytes']:
+                percent = int(d['downloaded_bytes'] * 100 / d['total_bytes'])
+                speed = d.get('_speed_str', 'N/A').split()
+                speed = speed[-1][0:-4]
+                self.task.progress = percent
+                self.task.speed = speed
+                self.progress_signal.emit(percent, speed, self.task.filename)
+            elif 'total_bytes_estimate' in d and d['total_bytes_estimate']:
+                percent = int(d['downloaded_bytes'] * 100 / d['total_bytes_estimate'])
+                speed = d.get('_speed_str', 'N/A')
+                self.task.progress = percent
+                self.task.speed = speed
+                self.progress_signal.emit(percent, speed, self.task.filename)
+            else:
+                self.progress_signal.emit(0, "未知速度", self.task.filename)
+        
+        elif d['status'] == 'finished':
+            self.task.progress = 100
+            self.progress_signal.emit(100, "完成", self.task.filename)
+    
+    def cancel(self):
+        """取消下载"""
+        self.is_cancelled = True
 

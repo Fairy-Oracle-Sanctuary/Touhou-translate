@@ -15,10 +15,10 @@ from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLa
 
 import os
 
-from ..service.project import Project
-from ..service.event_bus import event_bus
-from ..service.events import EventBuilder
-from ..service.infobar import NotificationService
+from ..service.project_service import Project
+from ..common.event_bus import event_bus
+from ..common.events import EventBuilder
+from ..components.infobar import NotificationService
 
 from ..components.dialog import AddProject
 from .project_detail_interface import ProjectDetailInterface

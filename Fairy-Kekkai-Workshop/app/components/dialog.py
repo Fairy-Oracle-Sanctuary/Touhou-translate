@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 
 from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
 
-from ..service.event_bus import event_bus
+from ..common.event_bus import event_bus
 
 class AddProject(MessageBoxBase):
     """添加新项目"""
