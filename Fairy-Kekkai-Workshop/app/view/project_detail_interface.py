@@ -80,10 +80,17 @@ class ProjectDetailInterface(ScrollArea):
         self.project = project
 
         # 清空当前布局
-        for i in reversed(range(self.vBoxLayout.count())): 
-            widget = self.vBoxLayout.itemAt(i).widget()
+        while self.vBoxLayout.count():
+            item = self.vBoxLayout.takeAt(0)
+            widget = item.widget()
             if widget:
-                widget.setParent(None)
+                widget.deleteLater()
+            else:
+                sub_layout = item.layout()
+                if sub_layout:
+                    self.clearLayout(sub_layout)
+                else:
+                    del item
         
         # 创建返回按钮
         backButton = PrimaryPushButton("返回项目列表", self.view)
@@ -94,7 +101,7 @@ class ProjectDetailInterface(ScrollArea):
         refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, self.project, isMessage=True))
         
         # 创建项目标题
-        projectTitle = TitleLabel(os.path.basename(project_path), self.view)        
+        projectTitle = TitleLabel(os.path.basename(project_path), self.view) 
         projectTitle.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         # 创建文件列表容器
@@ -133,7 +140,6 @@ class ProjectDetailInterface(ScrollArea):
             openurlButton.clicked.connect(lambda checked, url=self.project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
             
             folderTitleLayout.addWidget(folderLabel)
-            folderTitleLayout.addStretch()
             folderTitleLayout.addWidget(editTitleButton)
             folderTitleLayout.addWidget(openurlButton)
             
