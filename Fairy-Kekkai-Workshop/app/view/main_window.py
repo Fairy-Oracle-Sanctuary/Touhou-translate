@@ -81,7 +81,7 @@ class MainWindow(MSFluentWindow):
             routeKey='Help',
             icon=FIF.HELP,
             text='帮助',
-            onClick=self.showMessageBox,
+            onClick=self.showHelpBox,
             selectable=False,
             position=NavigationItemPosition.BOTTOM,
         )
@@ -105,7 +105,7 @@ class MainWindow(MSFluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w//2 - self.width()//2, h//2 - self.height()//2)
 
-    def showMessageBox(self):
+    def showHelpBox(self):
         w = MessageBox(
             self.tr('支持项目'),
             self.tr('现在团队人手紧缺，如果感兴趣的话请加入我们'),

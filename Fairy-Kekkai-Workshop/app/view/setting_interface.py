@@ -75,14 +75,14 @@ class SettingInterface(ScrollArea):
             ],
             parent=self.personalGroup
         )
-
+        
         # 关于
         self.aboutGroup = SettingCardGroup(self.tr('关于'), self.scrollWidget)
         self.aboutCard = PrimaryPushSettingCard(
             self.tr('检查更新'),
             ":/app/images/logo.png",
             self.tr('关于'),
-            f"{YEAR}, {AUTHOR}. " +
+            '© ' + self.tr('Copyright') + f" {YEAR}, {AUTHOR}. " +
             self.tr('当前版本') + " v" + VERSION,
             self.aboutGroup
         )

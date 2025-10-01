@@ -1,5 +1,5 @@
 import os
-from PySide6.QtWidgets import QGridLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QWidget, QApplication
 from PySide6.QtCore import Qt
 
 from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
@@ -112,7 +112,7 @@ class CustomMessageBox(MessageBoxBase):
 class CustomDoubleMessageBox(MessageBoxBase):
     """ Custom message box """
 
-    def __init__(self, title, input1, input2, text1, text2, error1, error2, parent=None):
+    def __init__(self, title, input1, input2, text1, text2, error1, error2, minwidth=400, parent=None):
         super().__init__(parent)
         self.error1 = error1
         self.error2 = error2
@@ -148,7 +148,7 @@ class CustomDoubleMessageBox(MessageBoxBase):
         self.cancelButton.setText("取消")
 
         # 设置最小宽度
-        self.widget.setMinimumWidth(400)
+        self.widget.setMinimumWidth(minwidth)
 
         # 设置列拉伸，使输入框能够扩展
         grid_layout.setColumnStretch(1, 1)
