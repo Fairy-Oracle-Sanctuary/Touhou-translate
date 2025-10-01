@@ -1,15 +1,16 @@
 import os
 import shutil
+from pathlib import Path
 
 class Project():
     def __init__(self):
         self.project_subtitle_isTranslated = []
         self.project_video_url = []
+        self.projects_location = os.path.abspath('.')
         self.project_path = self.get_project_paths('.')
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
         self.project_subtitle = self.get_project_subtitles()
-        # print(self.project_title)
 
     def get_project_paths(self, directory):
         '''
@@ -53,7 +54,6 @@ class Project():
     def get_project_subtitles(self):
         '''获取每集的标题'''
         project_subtitles = []
-        self.project_subtitle_isTranslated = []
 
         for path in self.project_path:
             try:
@@ -123,13 +123,16 @@ class Project():
         try:
             import shutil
             shutil.rmtree(project_path)
-            self.project_path = self.get_project_paths('.')
-            self.project_name = self.get_project_names()
-            self.project_title = self.get_project_titles()
+            self.__init__()
             return True
         except Exception:
             return False
     
+    def change_name(self, path, name):
+        """更改项目文件名"""
+        os.rename(path, Path(path).parent / name)
+        self.__init__()
+
     def change_subtitle(self, id, num, text, offset=0):
         file_path = self.project_path[id] + '/标题.txt'
         if self.project_subtitle_isTranslated[id]:
@@ -179,15 +182,26 @@ class Project():
             print(f"发生错误: {str(e)}")
             return False
 
+    def is_project(self, folder_path):
+        """判断文件夹是否为一个合法的项目"""
+        try:
+            with open(folder_path+'/标题.txt'):
+                return True
+        except Exception:
+            return False
+
+
+project = Project()
 
 if __name__ == "__main__":
     proj = Project()
-    print(proj.project_path)
-    # print(proj.project_name)
+    print(proj.projects_location)
+    # print(proj.project_path)
+    # print(proj.project_subtitle_isTranslated)
     # print(proj.project_title)
     # print(proj.project_subtitle_isTranslated)
     # print(proj.project_video_url)
     # proj.change_subtitle(5, 7, "雪中萌发的春天1")
-
+    # proj.change_name(proj.project_name[0], "东方永梦樱1")
 
     

@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细信息，请参阅帮助文档！
 
 #define MyAppName "Fairy Kekkai Workshop"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Fairy Oracle Sanctuary"
 #define MyAppURL "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 #define MyAppExeName "Fairy-Kekkai-Workshop.exe"
@@ -35,7 +35,7 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 LicenseFile=D:\东方project\projects\LICENSE.txt
 ; 取消注释以下行以在非管理员安装模式下运行 (仅为当前用户安装)。
-;PrivilegesRequired=lowest
+; PrivilegesRequired=admin
 OutputBaseFilename=mysetup
 SolidCompression=yes
 WizardStyle=modern

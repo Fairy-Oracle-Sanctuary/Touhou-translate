@@ -6,7 +6,7 @@ from enum import Enum
 from PySide6.QtCore import QLocale, QStandardPaths
 from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, BoolValidator,
                             OptionsValidator, Theme, FolderValidator, ConfigSerializer, RangeConfigItem,
-                            RangeValidator)
+                            RangeValidator, FolderListValidator)
 
 from .setting import CONFIG_FILE, EXE_SUFFIX
 from pathlib import Path
@@ -29,6 +29,9 @@ class Config(QConfig):
     accentColor = OptionsConfigItem(
         "MainWindow", "AccentColor", "#009faa", OptionsValidator(["#009faa", "Auto"]))
 
+    # project
+    linkProject = ConfigItem("Project", "LinkProject", [], FolderListValidator())
+    
 cfg = Config()
 cfg.themeMode.value = Theme.AUTO
 qconfig.load(str(CONFIG_FILE.absolute()), cfg)

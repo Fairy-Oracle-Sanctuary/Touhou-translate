@@ -1,3 +1,10 @@
+"""
+以下文件中的代码用到了仓库(https://github.com/zhiyiYo/Fluent-M3U8)中的源码
+Fairy-Kekkai-Workshop/app/view/setting_interface.py
+Fairy-Kekkai-Workshop/app/service/version_service.py
+Fairy-Kekkai-Workshop/app/common/setting.py
+"""
+
 from qfluentwidgets import (NavigationItemPosition, MessageBox, setTheme, Theme, MSFluentWindow,
                             NavigationAvatarWidget, qrouter, SubtitleLabel, setFont, FluentTranslator)
 from qfluentwidgets import FluentIcon as FIF

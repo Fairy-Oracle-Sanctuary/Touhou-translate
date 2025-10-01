@@ -14,13 +14,17 @@ from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QWidget, QLabel, QFileDialog, QHBoxLayout, QVBoxLayout, QStackedWidget, QApplication
 
 import os
+import shutil
+from pathlib import Path
 
-from ..service.project_service import Project
+from ..service.project_service import project
+
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
+
 from ..components.infobar import NotificationService
 
-from ..components.dialog import AddProject
+from ..components.dialog import AddProject, CustomDoubleMessageBox
 from .project_detail_interface import ProjectDetailInterface
 
 class ProjectInterface(ScrollArea):
@@ -28,7 +32,6 @@ class ProjectInterface(ScrollArea):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
-        self.project = Project()
 
         self._initWidgets()
 
@@ -43,7 +46,7 @@ class ProjectInterface(ScrollArea):
         self.projectListLayout = QVBoxLayout(self.projectListPage)
         
         # 项目详情页面
-        self.projectDetailInterface = ProjectDetailInterface(self.project)
+        self.projectDetailInterface = ProjectDetailInterface()
         
         # 初始化页面
         self.stackedWidget.addWidget(self.projectListPage)
@@ -87,15 +90,23 @@ class ProjectInterface(ScrollArea):
     def _connectSignalToSlot(self):
         self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
+        self.topButtonCard.importProjectButton.clicked.connect(self.importProjectCard)
         self.topButtonCard.refreshButton.clicked.connect(lambda: self.refreshProjectList(isMessage=True))
         self.projectDeleted.connect(self.deleteProject)
 
     def addNewProjectCard(self):
         """添加新的项目卡片"""
-        dialog = AddProject(self)
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+
+        dialog = AddProject(parent=main_window if main_window else self.window())
         if dialog.exec():
             dialog.yesButton.setDisabled(True)
-            self.project.creat_files(
+            project.creat_files(
                 dialog.nameInput.text().strip(),
                 int(dialog.numInput.text().strip()),
                 dialog.titleInput.text().strip(),                
@@ -105,7 +116,25 @@ class ProjectInterface(ScrollArea):
             pass
         self.refreshProjectList(isMessage=False)
         
-    
+    def importProjectCard(self):
+        """导入新项目"""
+        folder_path = QFileDialog.getExistingDirectory(
+            self,                   
+            "选择文件夹",
+            "",                      
+            QFileDialog.ShowDirsOnly
+        )
+        if not project.is_project(folder_path):
+            event_bus.notification_service.show_error("错误", f"{folder_path} 并不是一个合法的项目")
+            return
+        if folder_path:
+            try:
+                shutil.copytree(f'{folder_path}', f'{project.projects_location}/{Path(folder_path).name}')
+                self.refreshProjectList(False)
+                event_bus.notification_service.show_success("成功", f"已添加 {folder_path}")
+            except Exception as e:
+                event_bus.notification_service.show_error("错误", f"{e}")
+
     def addProjectFromPlaylist(self):
         """根据播放列表新建项目 - 触发页面跳转"""
         # 发出信号，通知主窗口切换到播放列表界面
@@ -121,29 +150,31 @@ class ProjectInterface(ScrollArea):
         card_id = 0
 
         # 重新加载项目
-        self.project = Project()
-        for project_num in range(len(self.project.project_title)):
+        project.__init__()
+        for project_num in range(len(project.project_title)):
             self.addProjectCard(
+                project,
                 ":/app/images/logo.png", 
-                self.project.project_name[project_num], 
-                self.project.project_title[project_num],
+                project.project_name[project_num], 
+                project.project_title[project_num],
                 card_id,
-                self.project.project_path[card_id],
+                project.project_path[card_id],
             )
             card_id += 1
         if isMessage:
             event_bus.notification_service.show_success("成功", "已刷新项目列表")
 
-    def addProjectCard(self, icon, title, content, id, path):
+    def addProjectCard(self, project, icon, title, content, id, path):
         """添加项目卡片到布局"""
-        project_card = ProjectCard(icon, title, content, id, path)
+        project_card = ProjectCard(project, icon, title, content, id, path)
         project_card.openProjectSignal.connect(self.openProjectDetail)  # 连接信号
+        project_card.refreshProject.connect(lambda isMessage: self.refreshProjectList(isMessage))  # 连接信号
         self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
 
     def openProjectDetail(self, project_ifm):
         """打开项目详情页面"""
         # 加载项目详情
-        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1], self.project)
+        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1])
 
         # 切换到项目详情页面
         self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
@@ -167,10 +198,9 @@ class ProjectInterface(ScrollArea):
         # )
 
     def deleteProject(self, project_path):
-        isSuccess = self.project.delete_project(project_path)
-        name = project_path.split('\\')[-1]
+        isSuccess = project.delete_project(project_path)
         if isSuccess:
-            event_bus.notification_service.show_success("成功", f"项目-{name}-已删除")
+            event_bus.notification_service.show_success("成功", f"项目 {project_path} 已删除")
         else:
             event_bus.notification_service.show_error("错误", f"删除项目失败")
         self.refreshProjectList(isMessage=False)
@@ -184,12 +214,13 @@ class TopButtonCard(CardWidget):
         super().__init__(parent)
         # 创建三个按钮
         self.newProjectButton = PushButton('新建项目', self)
+        self.importProjectButton = PushButton('导入项目', self)
         # self.newFromPlaylistButton = PushButton('根据播放列表新建项目', self)
         self.refreshButton = PrimaryPushButton('刷新项目列表', self)
         
         # 设置按钮样式
         self.newProjectButton.setFixedWidth(120)
-        # self.newFromPlaylistButton.setFixedWidth(180)
+        self.importProjectButton.setFixedWidth(120)
         self.refreshButton.setFixedWidth(120)
         
         # 创建水平布局
@@ -199,6 +230,7 @@ class TopButtonCard(CardWidget):
         
         # 添加按钮到布局
         self.hBoxLayout.addWidget(self.newProjectButton)
+        self.hBoxLayout.addWidget(self.importProjectButton)
         # self.hBoxLayout.addWidget(self.newFromPlaylistButton)
         self.hBoxLayout.addStretch(1)  # 添加弹性空间
         self.hBoxLayout.addWidget(self.refreshButton)
@@ -208,13 +240,13 @@ class TopButtonCard(CardWidget):
 
 
 class ProjectCard(CardWidget):
-    # 打开项目信号
     openProjectSignal = Signal(list)
-    
-    def __init__(self, icon, title, content, id, path, parent=None):
+    refreshProject = Signal(bool)
+    def __init__(self, project, icon, title, content, id, path, parent=None):
         super().__init__(parent)
         self.main_window = event_bus.project_interface
-        #同步卡片id和路径
+        #同步
+        self.project = project
         self.card_id = id
         self.path = path
 
@@ -224,12 +256,14 @@ class ProjectCard(CardWidget):
         self.contentLabel = CaptionLabel(content, self)
         self.contentLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.openButton = PrimaryPushButton('打开项目', self)
+        self.editButton = TransparentToolButton(FluentIcon.EDIT, self)
         self.moreButton = TransparentToolButton(FluentIcon.MORE, self)
 
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
 
         self.openButton.clicked.connect(self.openProject)
+        self.editButton.clicked.connect(self.editProject)
         self.moreButton.clicked.connect(self.showFlyout)
 
         self.setFixedHeight(73)
@@ -250,13 +284,42 @@ class ProjectCard(CardWidget):
 
         self.hBoxLayout.addStretch(1)
         self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
+        self.hBoxLayout.addWidget(self.editButton, 0, Qt.AlignRight)
         self.hBoxLayout.addWidget(self.moreButton, 0, Qt.AlignRight)
-
-        self.moreButton.setFixedSize(32, 32)
 
     def openProject(self):
         """打开项目"""
         self.openProjectSignal.emit([self.path, self.card_id])
+
+    def editProject(self):
+        """修改文件夹名和原标题"""
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+
+        dialog = CustomDoubleMessageBox(
+            title="修改项目文件名和原标题",
+            input1="文件夹名:",
+            input2="原标题:",
+            text1=f"{project.project_name[self.card_id]}",
+            text2=f"{project.project_title[self.card_id]}",
+            error1="请输入文件夹名",
+            error2="请输入原标题",
+            parent=main_window if main_window else self.window(),
+            )
+        dialog.LineEdit_1.setText(f"{project.project_name[self.card_id]}")
+        dialog.LineEdit_2.setText(f"{project.project_title[self.card_id]}")
+
+        if dialog.exec():
+            project.change_name(f"{project.project_path[self.card_id]}/{project.project_title[self.card_id]}.txt", dialog.LineEdit_2.text()+'.txt')
+            project.change_name(f"{project.project_path[self.card_id]}", dialog.LineEdit_1.text())
+            self.refreshProject.emit(False)
+            event_bus.notification_service.show_success("成功", "已修改项目文件名和原标题")
+        else:
+            pass
 
     def showFlyout(self):
         flyout_view = CustomFlyoutView(self.path)

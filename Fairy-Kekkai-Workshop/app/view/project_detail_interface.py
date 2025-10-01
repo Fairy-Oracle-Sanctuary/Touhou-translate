@@ -12,10 +12,12 @@ import subprocess
 import platform
 import requests
 
-from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox
+from ..service.project_service import project
 
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
+
+from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox
 
 class ProjectDetailInterface(ScrollArea):
     """项目详情界面"""
@@ -24,14 +26,13 @@ class ProjectDetailInterface(ScrollArea):
     backToProjectListSignal = Signal()
     # 图片下载信号
     downloadPic = Signal(str, str)  
-    def __init__(self, project, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
 
         self.vBoxLayout = QVBoxLayout(self.view)
 
         self.path = ''
-        self.project = project
         self.card_id = -1
         self.current_project_path = None  # 添加当前项目路径存储
 
@@ -66,18 +67,17 @@ class ProjectDetailInterface(ScrollArea):
         if success:
             event_bus.notification_service.show_success("成功", f"图片已下载到: {save_path}")
             # 刷新项目详情页面
-            self.loadProject(self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id, project)
         else:
             event_bus.notification_service.show_error("错误", message)
             
-    def loadProject(self, project_path, id, project, isMessage=False):
+    def loadProject(self, project_path, id, isMessage=False):
         """加载项目详情"""
         # 存储当前项目路径
         self.current_project_path = project_path
         
         # 同步参数
         self.card_id = id
-        self.project = project
 
         # 清空当前布局
         while self.vBoxLayout.count():
@@ -98,7 +98,7 @@ class ProjectDetailInterface(ScrollArea):
 
         # 创建刷新按钮
         refreshButton = PushButton("刷新项目列表", self.view)
-        refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, self.project, isMessage=True))
+        refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, project, isMessage=True))
         
         # 创建项目标题
         projectTitle = TitleLabel(os.path.basename(project_path), self.view) 
@@ -126,7 +126,7 @@ class ProjectDetailInterface(ScrollArea):
             folderTitleLayout.setContentsMargins(0, 0, 0, 0)
             
             # 文件夹标题
-            folderLabel = StrongBodyLabel(f"第 {folder_num} 集 - {self.project.project_subtitle[self.card_id][folder_num-1]}", folderTitleWidget)
+            folderLabel = StrongBodyLabel(f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num-1]}", folderTitleWidget)
             folderLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
             
             # 编辑标题按钮
@@ -136,8 +136,8 @@ class ProjectDetailInterface(ScrollArea):
 
             # 打开链接标签
             openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
-            openurlButton.setToolTip(f"打开本集链接: {self.project.project_video_url[self.card_id][folder_num-1]}")
-            openurlButton.clicked.connect(lambda checked, url=self.project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
+            openurlButton.setToolTip(f"打开本集链接: {project.project_video_url[self.card_id][folder_num-1]}")
+            openurlButton.clicked.connect(lambda checked, url=project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
             
             folderTitleLayout.addWidget(folderLabel)
             folderTitleLayout.addWidget(editTitleButton)
@@ -146,7 +146,7 @@ class ProjectDetailInterface(ScrollArea):
             fileListLayout.addWidget(folderTitleWidget)
             
             # 创建自定义文件列表widget
-            fileListWidget = FileListWidget(self.view, self.project, self.card_id, folder_num, fileListContainer)
+            fileListWidget = FileListWidget(self.view, self.card_id, folder_num, fileListContainer)
             fileListWidget.setMinimumHeight(300)
             
             # 连接文件删除信号到刷新函数
@@ -183,7 +183,7 @@ class ProjectDetailInterface(ScrollArea):
     def delayedRefreshProject(self):
         """延迟刷新项目详情页面"""
         if self.current_project_path:
-            self.loadProject(self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id, project)
     
     def editEpisodeTitle(self, folder_num):
         """编辑指定集的标题"""
@@ -198,19 +198,19 @@ class ProjectDetailInterface(ScrollArea):
             title=f"编辑第 {folder_num} 集的标题和视频URL", 
             input1="标题:",
             input2="URL:",
-            text1=f"{self.project.project_subtitle[self.card_id][folder_num-1]}", 
-            text2=f"{self.project.project_video_url[self.card_id][folder_num-1]}", 
+            text1=f"{project.project_subtitle[self.card_id][folder_num-1]}", 
+            text2=f"{project.project_video_url[self.card_id][folder_num-1]}", 
             parent= main_window if main_window else self.window(),
             error1="请输入标题",
             error2="请输入视频url",
             )
-        dialog.LineEdit_1.setText(f"{self.project.project_subtitle[self.card_id][folder_num-1]}")
-        dialog.LineEdit_2.setText(f"{self.project.project_video_url[self.card_id][folder_num-1]}")
+        dialog.LineEdit_1.setText(f"{project.project_subtitle[self.card_id][folder_num-1]}")
+        dialog.LineEdit_2.setText(f"{project.project_video_url[self.card_id][folder_num-1]}")
         if dialog.exec():
-            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
-            self.project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_2.text().strip(), offset=1)
+            project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_1.text().strip())
+            project.change_subtitle(self.card_id, folder_num, dialog.LineEdit_2.text().strip(), offset=1)
             event_bus.notification_service.show_success("成功", f"编辑第 {folder_num} 集标题和视频url成功")
-            self.loadProject(self.current_project_path, self.card_id, self.project)
+            self.loadProject(self.current_project_path, self.card_id)
         else:
             pass
         
@@ -266,10 +266,9 @@ class ImageDownloadThread(QThread):
 class FileItemWidget(QFrame):
     """自定义文件项widget"""
     # fileDeleted = Signal()
-    def __init__(self, window, project, card_id, folder_num, file_name, file_path, icon, file_exists, donwload_need, parent=None):
+    def __init__(self, window, card_id, folder_num, file_name, file_path, icon, file_exists, donwload_need, parent=None):
         super().__init__(parent)
         self.main_window = window
-        self.project = project
         self.card_id = card_id
         self.folder_num = folder_num
         self.file_name = file_name
@@ -439,7 +438,7 @@ class FileItemWidget(QFrame):
             parent=self.window(),
             minwidth=450,
         )
-        v = self.project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
+        v = project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
         if v and "youtube" not in v:
             dialog.LineEdit.setText(v)
 
@@ -469,7 +468,7 @@ class FileItemWidget(QFrame):
             parent=self.window(),
             minwidth=450,
         )
-        v = self.project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
+        v = project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
         if v and "youtube" not in v:
             dialog.LineEdit.setText(v)
 
@@ -491,18 +490,17 @@ class FileItemWidget(QFrame):
 
 class FileListWidget(QWidget):
     """自定义文件列表widget"""
-    def __init__(self, window, project, card_id, folder_num, parent=None):
+    def __init__(self, window, card_id, folder_num, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.main_window = window
-        self.project = project
         self.card_id = card_id
         self.folder_num = folder_num
         self.fileWidgets = []
 
     def addFileItem(self, file_name, file_path, icon, file_exists, download_need):
         """添加文件项"""
-        fileWidget = FileItemWidget(self.main_window, self.project, self.card_id, self.folder_num, file_name, file_path, icon, file_exists, download_need, self)
+        fileWidget = FileItemWidget(self.main_window, self.card_id, self.folder_num, file_name, file_path, icon, file_exists, download_need, self)
         fileWidget.setCursor(Qt.PointingHandCursor)
         
         # 连接点击事件（整个widget的点击）
