@@ -98,7 +98,7 @@ class ProjectDetailInterface(ScrollArea):
 
         # 创建刷新按钮
         refreshButton = PushButton("刷新项目列表", self.view)
-        refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, project, isMessage=True))
+        refreshButton.clicked.connect(lambda: self.loadProject(self.current_project_path, self.card_id, isMessage=True))
         
         # 创建项目标题
         projectTitle = TitleLabel(os.path.basename(project_path), self.view) 

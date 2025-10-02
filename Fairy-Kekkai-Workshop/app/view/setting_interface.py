@@ -76,6 +76,15 @@ class SettingInterface(ScrollArea):
             parent=self.personalGroup
         )
         
+        # 项目
+        # self.projectGroup = SettingCardGroup(self.tr('项目'), self.scrollWidget)
+        # self.linkProject = FolderListSettingCard(
+        #     cfg.linkProject,
+        #     "已连接的项目",
+        #     directory=QStandardPaths.writableLocation(QStandardPaths.MusicLocation),
+        #     parent=self.projectGroup
+        # )
+
         # 关于
         self.aboutGroup = SettingCardGroup(self.tr('关于'), self.scrollWidget)
         self.aboutCard = PrimaryPushSettingCard(
@@ -112,12 +121,15 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.accentColorCard)
 
+        # self.projectGroup.addSettingCard(self.linkProject)
+
         self.aboutGroup.addSettingCard(self.aboutCard)
 
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
         self.expandLayout.addWidget(self.personalGroup)
+        # self.expandLayout.addWidget(self.projectGroup)
         self.expandLayout.addWidget(self.aboutGroup)
 
         # adjust icon size
