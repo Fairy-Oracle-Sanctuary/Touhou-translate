@@ -2,9 +2,12 @@ import os
 import shutil
 from pathlib import Path
 
+from ..common.config import cfg
+
 class Project():
     def __init__(self):
         self.project_subtitle_isTranslated = []
+        self.isLink = []
         self.project_video_url = []
         self.projects_location = os.path.abspath('.')
         self.project_path = self.get_project_paths('.')
@@ -32,14 +35,26 @@ class Project():
                 
                 # 检查目录是否在排除列表中 并且目录中是否有核心文件
                 if dir_name not in ban_names and os.path.exists(full_path+'\\标题.txt'):
-                    project_paths.append(full_path)
+                    self.isLink.append(False)
+                    project_paths.append(Path(full_path))
+
+        # 处理外部路径
+        link_paths = cfg.linkProject.get("project_link")
+        true_paths = []
+        for path in link_paths:
+            if self.is_project(path):
+                self.isLink.append(True)
+                true_paths.append(path)
+            project_paths.append(Path(path))
+        cfg.linkProject.set("project_link", true_paths)
+
         return project_paths
     
     def get_project_names(self):
         '''获取工程名'''
         project_names = []
         for name in self.project_path:
-            project_names.append(name.split('\\')[-1])
+            project_names.append(name.name)
         return project_names
     
     def get_project_titles(self):
@@ -57,7 +72,7 @@ class Project():
 
         for path in self.project_path:
             try:
-                with open(path + "/标题.txt", "r", encoding="utf-8") as f:
+                with open(path / "标题.txt", "r", encoding="utf-8") as f:
                     is_subtitle = False
                     subtitles = []
                     video_urls = []
@@ -124,13 +139,17 @@ class Project():
             import shutil
             shutil.rmtree(project_path)
             self.__init__()
-            return True
-        except Exception:
-            return False
+            return [True, '']
+        except Exception as e:
+            return [False, e]
     
     def change_name(self, path, name):
         """更改项目文件名"""
-        os.rename(path, Path(path).parent / name)
+        try:
+            os.rename(path, Path(path).parent / name)
+            return [True, '']
+        except Exception as e:
+            return [False, str(e)]
         self.__init__()
 
     def change_subtitle(self, id, num, text, offset=0):
@@ -195,7 +214,6 @@ project = Project()
 
 if __name__ == "__main__":
     proj = Project()
-    print(proj.projects_location)
     # print(proj.project_path)
     # print(proj.project_subtitle_isTranslated)
     # print(proj.project_title)

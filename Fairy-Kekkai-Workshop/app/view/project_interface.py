@@ -19,6 +19,7 @@ from pathlib import Path
 
 from ..service.project_service import project
 
+from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
 
@@ -124,16 +125,42 @@ class ProjectInterface(ScrollArea):
             "",                      
             QFileDialog.ShowDirsOnly
         )
-        if not project.is_project(folder_path):
-            event_bus.notification_service.show_error("错误", f"{folder_path} 并不是一个合法的项目")
-            return
+        
         if folder_path:
-            try:
-                shutil.copytree(f'{folder_path}', f'{project.projects_location}/{Path(folder_path).name}')
-                self.refreshProjectList(False)
-                event_bus.notification_service.show_success("成功", f"已添加 {folder_path}")
-            except Exception as e:
-                event_bus.notification_service.show_error("错误", f"{e}")
+            if not project.is_project(folder_path):
+                event_bus.notification_service.show_error("错误", f"{folder_path} 并不是一个合法的项目")
+                return
+            title = "选择导入模式"
+            content = "是否要把整个项目文件夹复制过来"
+            folder_path = Path(folder_path)
+            path =  f'{project.projects_location}\{folder_path.name}'
+            # 获取应用程序的顶级窗口
+            main_window = None
+            for widget in QApplication.topLevelWidgets():
+                if widget.isWindow() and widget.isVisible():
+                    main_window = widget
+                    break
+            
+            dialog = MessageBox(title, content, main_window)
+            dialog.yesButton.setText("复制")
+            dialog.cancelButton.setText("只连接路径")
+
+            if dialog.exec():
+                try:
+                    shutil.copytree(str(folder_path), path)
+                    self.refreshProjectList(False)
+                    event_bus.notification_service.show_success("成功", f"已添加 {path}")
+                except Exception as e:
+                    event_bus.notification_service.show_error("错误", f"{e}")
+            else:
+                project_path = cfg.linkProject.get("project_link")
+                if folder_path in project_path or folder_path in project.project_path:
+                    event_bus.notification_service.show_error("错误", f"已导入此路径 {folder_path}")
+                else:
+                    project_path.append(str(folder_path))
+                    cfg.linkProject.set("project_link", project_path)
+                    self.refreshProjectList(False)
+                    event_bus.notification_service.show_success("成功", f"已添加 {folder_path}")
 
     def addProjectFromPlaylist(self):
         """根据播放列表新建项目 - 触发页面跳转"""
@@ -159,14 +186,15 @@ class ProjectInterface(ScrollArea):
                 project.project_title[project_num],
                 card_id,
                 project.project_path[card_id],
+                isLink=project.isLink[card_id],
             )
             card_id += 1
         if isMessage:
             event_bus.notification_service.show_success("成功", "已刷新项目列表")
 
-    def addProjectCard(self, project, icon, title, content, id, path):
+    def addProjectCard(self, project, icon, title, content, id, path, isLink=False):
         """添加项目卡片到布局"""
-        project_card = ProjectCard(project, icon, title, content, id, path)
+        project_card = ProjectCard(project, icon, title, content, id, path, isLink=isLink)
         project_card.openProjectSignal.connect(self.openProjectDetail)  # 连接信号
         project_card.refreshProject.connect(lambda isMessage: self.refreshProjectList(isMessage))  # 连接信号
         self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
@@ -199,11 +227,18 @@ class ProjectInterface(ScrollArea):
 
     def deleteProject(self, project_path):
         isSuccess = project.delete_project(project_path)
-        if isSuccess:
+        if isSuccess[0]:
             event_bus.notification_service.show_success("成功", f"项目 {project_path} 已删除")
         else:
-            event_bus.notification_service.show_error("错误", f"删除项目失败")
+            event_bus.notification_service.show_error("错误", f"删除项目失败: {isSuccess[-1]}")
         self.refreshProjectList(isMessage=False)
+
+    def cancelLinkProject(self, project_path):
+        link_path = cfg.linkProject.get("project_link")
+        link_path.remove(project_path)
+        cfg.linkProject.set("project_link", link_path)
+        self.refreshProjectList(isMessage=False)
+        event_bus.notification_service.show_success("成功", f"已解除项目 {project_path} 的连接")
 
     def showProjectList(self):
         """显示项目列表页面"""
@@ -242,13 +277,14 @@ class TopButtonCard(CardWidget):
 class ProjectCard(CardWidget):
     openProjectSignal = Signal(list)
     refreshProject = Signal(bool)
-    def __init__(self, project, icon, title, content, id, path, parent=None):
+    def __init__(self, project, icon, title, content, id, path, isLink=False, parent=None):
         super().__init__(parent)
         self.main_window = event_bus.project_interface
         #同步
         self.project = project
         self.card_id = id
         self.path = path
+        self.isLink = isLink
 
         self.iconWidget = IconWidget(icon)
         self.titleLabel = BodyLabel(title, self)
@@ -283,6 +319,11 @@ class ProjectCard(CardWidget):
         self.hBoxLayout.addLayout(self.vBoxLayout)
 
         self.hBoxLayout.addStretch(1)
+        if isLink:
+            self.linkButton = TransparentToolButton(FluentIcon.LINK, self)
+            self.linkButton.setToolTip(f"{self.path}")
+            self.hBoxLayout.addWidget(self.linkButton, 0, Qt.AlignRight)
+
         self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
         self.hBoxLayout.addWidget(self.editButton, 0, Qt.AlignRight)
         self.hBoxLayout.addWidget(self.moreButton, 0, Qt.AlignRight)
@@ -314,16 +355,40 @@ class ProjectCard(CardWidget):
         dialog.LineEdit_2.setText(f"{project.project_title[self.card_id]}")
 
         if dialog.exec():
-            project.change_name(f"{project.project_path[self.card_id]}/{project.project_title[self.card_id]}.txt", dialog.LineEdit_2.text()+'.txt')
-            project.change_name(f"{project.project_path[self.card_id]}", dialog.LineEdit_1.text())
+            # 修改原标题
+            isSuccess_1 = project.change_name(
+                f"{project.project_path[self.card_id]}/{project.project_title[self.card_id]}.txt", 
+                dialog.LineEdit_2.text()+'.txt'
+                )
+            if not isSuccess_1[0]:
+                event_bus.notification_service.show_error("错误", isSuccess_1[-1])
+            
+            # 连接文件则需要特殊处理
+            if self.isLink:
+                link_path = cfg.linkProject.get("project_link")
+                cfg.linkProject.set(
+                    "project_link", 
+                    [str(Path(f"{project.project_path[self.card_id]}").with_name(dialog.LineEdit_1.text())) if item == str(Path(f"{project.project_path[self.card_id]}")) else item for item in link_path]
+                    )
+
+            # 修改文件名
+            isSuccess_2 = project.change_name(
+                f"{project.project_path[self.card_id]}", 
+                dialog.LineEdit_1.text()
+                )
+            if not isSuccess_2[0]:
+                event_bus.notification_service.show_error("错误", isSuccess_2[-1])
+
             self.refreshProject.emit(False)
-            event_bus.notification_service.show_success("成功", "已修改项目文件名和原标题")
+            if isSuccess_1[0] and isSuccess_2[0]:
+                event_bus.notification_service.show_success("成功", "已修改项目文件名和原标题")
         else:
             pass
 
     def showFlyout(self):
-        flyout_view = CustomFlyoutView(self.path)
+        flyout_view = CustomFlyoutView(self.path, isLink=self.isLink)
         flyout_view.deleteRequested.connect(self.handleDeleteRequest)
+        flyout_view.cancelLinkRequested.connect(self.handleCancelLinkRequest)
         flyout = Flyout.make(flyout_view, self.moreButton, self, aniType=FlyoutAnimationType.PULL_UP)
         flyout_view.setFlyout(flyout)  # 设置Flyout引用
 
@@ -336,28 +401,46 @@ class ProjectCard(CardWidget):
                 break
             parent = parent.parent()
 
+    def handleCancelLinkRequest(self, project_path):
+        """处理删除请求"""
+        parent = self.parent()
+        while parent:
+            if isinstance(parent, ProjectInterface):
+                parent.cancelLinkProject(project_path)
+                break
+            parent = parent.parent()
+
 class CustomFlyoutView(FlyoutViewBase):
     deleteRequested = Signal(str)
-    def __init__(self, path, parent=None):
+    cancelLinkRequested = Signal(str)
+    def __init__(self, path, isLink=False, parent=None):
         super().__init__(parent)
-        self.path = path
+        self.path = Path(path)
         self.mainwindow = event_bus.project_interface
+        self.isLink = isLink
         self.flyout = None  # 用于存储Flyout引用
 
         self.vBoxLayout = QVBoxLayout(self)
         self.openButton = PrimaryPushButton('打开项目路径')
-        self.deleteButton = PushButton('永久删除项目')
 
         self.openButton.clicked.connect(self.openProjectPath)
-        self.deleteButton.clicked.connect(self.delateProjectConfirm)
 
         self.openButton.setFixedWidth(140)
-        self.deleteButton.setFixedWidth(140)
         
         self.vBoxLayout.setSpacing(12)
         self.vBoxLayout.setContentsMargins(20, 16, 20, 16)
         self.vBoxLayout.addWidget(self.openButton)
-        self.vBoxLayout.addWidget(self.deleteButton)
+
+        if isLink:
+            self.cancelLinkButton = PushButton('取消项目连接')
+            self.cancelLinkButton.setFixedWidth(140)
+            self.cancelLinkButton.clicked.connect(self.cancelLinkProjectConfirm)
+            self.vBoxLayout.addWidget(self.cancelLinkButton)
+        else:
+            self.deleteButton = PushButton('永久删除项目')
+            self.deleteButton.setFixedWidth(140)
+            self.deleteButton.clicked.connect(self.delateProjectConfirm)
+            self.vBoxLayout.addWidget(self.deleteButton)
     
     def setFlyout(self, flyout):
         """设置Flyout引用"""
@@ -394,6 +477,29 @@ class CustomFlyoutView(FlyoutViewBase):
         dialog.yesButton.setText("确定")
         dialog.cancelButton.setText("取消")
         if dialog.exec():
-            self.deleteRequested.emit(self.path)
+            self.deleteRequested.emit(str(self.path))
+        else:
+            pass
+
+    def cancelLinkProjectConfirm(self):
+        '''取消项目连接'''
+        if self.flyout:
+            self.flyout.hide()  # 先关闭Flyout
+            
+        title = "确认取消连接"
+        content = "确定要取消连接项目吗？此操作并不会删除文件。"
+        
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+        
+        dialog = MessageBox(title, content, main_window)
+        dialog.yesButton.setText("确定")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            self.cancelLinkRequested.emit(str(self.path))
         else:
             pass
