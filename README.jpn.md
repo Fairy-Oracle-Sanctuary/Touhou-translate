@@ -15,7 +15,7 @@
 | 3 | 東方永夢桜 | 《东方永梦樱》 | [YouTubeリンク](https://www.youtube.com/playlist?list=PLmc6eO_qCE4nYR7tYmTsppAF1CTxhcrTP) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/6449310) |
 | 4 | 自殺未遂したらレミリアと付き合うことに？！ | 《自杀未遂后竟然和蕾米莉亚开始交往了》 | [YouTubeリンク](https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/6466841) |
 | 5 | 拾われた執事の俺が主のレミリアと付き合うことに！？ | 《被捡回来的管家我竟要和主人蕾米莉亚交往了》 | [YouTubeリンク](https://youtube.com/playlist?list=PLuabzLomQRYVdcxxhc8Y47EAzF790gZOz) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/) |
-| 6 | いじめられてる男の子を助ける天使の妹 | 《拯救被欺凌男孩的天使妹妹》 | [YouTubeリンク](https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh) | `進行中` |
+| 6 | いじめられてる男の子を助ける天使の妹 | 《拯救被欺凌男孩的天使妹妹》 | [YouTubeリンク](https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh) | `完了/未アップロード` |
 | 7 | ヴォルガが幻想入り | 《沃尔加幻想入》 | [YouTubeリンク](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | `進行中` |
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTubeリンク](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `進行中` |
 
