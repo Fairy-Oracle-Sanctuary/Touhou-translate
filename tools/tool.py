@@ -420,7 +420,8 @@ def fix_video_list():
     
     print("\n=== 工程列表 ===")
     for n, project in enumerate(project_paths):
-        print(f"{n+1}.{project.split('\\')[-1]}")
+        project_name = project.split('\\')[-1]
+        print(f"{n+1}.{project_name}")
     check_num = int(input("\n请输入要补充视频的项目序号：")) - 1
 
     #项目名称
