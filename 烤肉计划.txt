@@ -23,7 +23,6 @@ https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V&si=bo7-mw9N
 https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8&si=OOT7VVQqAnADEC6S
 
 ---
-
 色付く恋は、貴方から
 https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0
 (完结)
@@ -36,6 +35,9 @@ https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U&si=Catzryey
 https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj&si=hTEZMe_HiIx18Cy8
 (更新中)
 
+色付く世界は、貴方から
+https://youtube.com/playlist?list=PLwsFUfY3oQWI8gZk654zY575JeUtQl7cE&si=ClVz13nsm_izlqNr
+(更新中)
 
 
 翻译成中文，内容里出现的人名优先匹配《东方project》中的人物，保留原文中的「」，不需要替换为双引号，输出格式按srt来，每个字幕内容都写在一行里，用代码块输出给我

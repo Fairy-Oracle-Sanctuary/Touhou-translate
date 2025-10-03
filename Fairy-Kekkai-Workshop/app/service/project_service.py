@@ -153,7 +153,7 @@ class Project():
         self.__init__()
 
     def change_subtitle(self, id, num, text, offset=0):
-        file_path = self.project_path[id] + '/标题.txt'
+        file_path = str(self.project_path[id]) + '/标题.txt'
         if self.project_subtitle_isTranslated[id]:
             line_number = 4*num + len(self.project_subtitle[id]) - 1
         else:
