@@ -18,7 +18,7 @@ from ..components.infobar import NotificationService
 from ..components.system_tray import SystemTray
 
 from .home_interface import HomeInterface
-from .project_interface import ProjectInterface
+from .project_interface import ProjectStackedInterface
 from .download_interface import DownloadInterface
 from .setting_interface import SettingInterface
 
@@ -46,7 +46,7 @@ class MainWindow(MSFluentWindow):
 
         # 创建页面
         # self.homeInterface = HomeInterface(self.notification_service, self)
-        self.projectInterface = ProjectInterface(self)
+        self.projectInterface = ProjectStackedInterface(self)
         self.downloadInterface = DownloadInterface(self)  
         self.settingInterface = SettingInterface(self)  
 

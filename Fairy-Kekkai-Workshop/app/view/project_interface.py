@@ -28,30 +28,69 @@ from ..components.infobar import NotificationService
 from ..components.dialog import AddProject, CustomDoubleMessageBox
 from .project_detail_interface import ProjectDetailInterface
 
+
+class ProjectStackedInterface(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # 创建堆叠窗口
+        self.stackedWidget = QStackedWidget(self)
+        
+        # 创建项目列表界面和项目详情界面
+        self.projectInterface = ProjectInterface()
+        self.projectDetailInterface = ProjectDetailInterface()
+        
+        # 添加到堆叠窗口
+        self.stackedWidget.addWidget(self.projectInterface)
+        self.stackedWidget.addWidget(self.projectDetailInterface)
+        
+        # 设置布局
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.stackedWidget)
+        
+        # 连接信号
+        self._connectSignalToSlot()
+        
+        self.resize(780, 800)
+        self.setObjectName("ProjectStackedInterface")
+
+    def _connectSignalToSlot(self):
+        """连接信号和槽"""
+        # 项目界面打开项目详情的信号
+        self.projectInterface.openProjectDetailSignal.connect(self.openProjectDetail)
+        # 项目详情界面返回项目列表的信号
+        self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
+    
+    def openProjectDetail(self, project_info):
+        """打开项目详情页面"""
+        # 加载项目详情
+        self.projectDetailInterface.loadProject(project_info[0], project_info[1])
+        # 切换到项目详情页面
+        self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
+        # 通知信息
+        event_bus.notification_service.show_success("打开成功", f"已打开项目 {project_info[0]}")
+
+    def showProjectList(self):
+        """显示项目列表页面"""
+        self.stackedWidget.setCurrentWidget(self.projectInterface)
+    
+    def refreshProjectList(self, isMessage=True):
+        """刷新项目列表"""
+        self.projectInterface.refreshProjectList(isMessage)
+
+
 class ProjectInterface(ScrollArea):
-    projectDeleted = Signal(str) 
+    openProjectDetailSignal = Signal(list)
+    projectDeleted = Signal(str)
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
-
         self._initWidgets()
-
+    
     def _initWidgets(self):
         self.projectsLayout = QVBoxLayout(self.view)
-        
-        # 创建堆叠窗口，用于切换项目列表和项目详情
-        self.stackedWidget = QStackedWidget(self.view)
-        
-        # 项目列表页面
-        self.projectListPage = QWidget()
-        self.projectListLayout = QVBoxLayout(self.projectListPage)
-        
-        # 项目详情页面
-        self.projectDetailInterface = ProjectDetailInterface()
-        
-        # 初始化页面
-        self.stackedWidget.addWidget(self.projectListPage)
-        self.stackedWidget.addWidget(self.projectDetailInterface)
         
         # 创建顶部按钮卡片
         self.topButtonCard = TopButtonCard()
@@ -65,16 +104,13 @@ class ProjectInterface(ScrollArea):
         
         self._initLayout()
         self._connectSignalToSlot()
-
+    
     def _initLayout(self):
-        # 设置项目列表页面布局
-        self.projectListLayout.addWidget(self.topButtonCard)
-        self.projectListLayout.addWidget(self.cardsContainer)
-        self.projectListLayout.setSpacing(10)
-        self.projectListLayout.setContentsMargins(10, 10, 10, 10)
-        
-        # 设置主布局
-        self.projectsLayout.addWidget(self.stackedWidget)
+        # 设置布局 - 现在只有项目列表
+        self.projectsLayout.addWidget(self.topButtonCard)
+        self.projectsLayout.addWidget(self.cardsContainer)
+        self.projectsLayout.setSpacing(10)
+        self.projectsLayout.setContentsMargins(10, 10, 10, 10)
         
         # 初始化项目卡片
         self.refreshProjectList(isMessage=False)
@@ -87,13 +123,21 @@ class ProjectInterface(ScrollArea):
         self.resize(780, 800)
         self.setObjectName("projectInterface")
         self.enableTransparentBackground()
-
+    
     def _connectSignalToSlot(self):
-        self.projectDetailInterface.backToProjectListSignal.connect(self.showProjectList)
+        # 删除与 projectDetailInterface 相关的连接
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
         self.topButtonCard.importProjectButton.clicked.connect(self.importProjectCard)
         self.topButtonCard.refreshButton.clicked.connect(lambda: self.refreshProjectList(isMessage=True))
         self.projectDeleted.connect(self.deleteProject)
+    
+    def addProjectCard(self, project, icon, title, content, id, path, isLink=False):
+        """添加项目卡片到布局"""
+        project_card = ProjectCard(project, icon, title, content, id, path, isLink=isLink)
+        # 修改信号连接，发送到外部的堆叠窗口管理器
+        project_card.openProjectSignal.connect(self.openProjectDetailSignal)
+        project_card.refreshProject.connect(lambda isMessage: self.refreshProjectList(isMessage))
+        self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
 
     def addNewProjectCard(self):
         """添加新的项目卡片"""
@@ -201,13 +245,14 @@ class ProjectInterface(ScrollArea):
 
     def openProjectDetail(self, project_ifm):
         """打开项目详情页面"""
-        # 加载项目详情
-        self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1])
+        self.openProjectDetailSignal.emit(project_ifm)
+        # # 加载项目详情
+        # self.projectDetailInterface.loadProject(project_ifm[0], project_ifm[1])
 
-        # 切换到项目详情页面
-        self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
+        # # 切换到项目详情页面
+        # self.stackedWidget.setCurrentWidget(self.projectDetailInterface)
 
-        event_bus.notification_service.show_success("打开成功", f"已打开项目 {project_ifm[0]}")
+        # event_bus.notification_service.show_success("打开成功", f"已打开项目 {project_ifm[0]}")
 
     def handleDownloadRequest(self, url, download_path, file_name):
         """处理下载请求"""
