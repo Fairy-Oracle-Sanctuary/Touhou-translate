@@ -14,9 +14,9 @@
 | 2 | 紅い月の下で逢いましょう ～レミリアとよふかし～ | 《红月夜的契约————与蕾米莉亚的彻夜醉迷》 | [YouTube链接](https://www.youtube.com/playlist?list=PLFU-QWGTBq-4SsfGQuJBNzmvZtTzN3FoJ) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6324095) |
 | 3 | 東方永夢桜 | 《东方永梦樱》 | [YouTube链接](https://www.youtube.com/playlist?list=PLmc6eO_qCE4nYR7tYmTsppAF1CTxhcrTP) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6449310) |
 | 4 | 自殺未遂したらレミリアと付き合うことに？！ | 《自杀未遂后竟然和蕾米莉亚开始交往了》 | [YouTube链接](https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6466841) |
-| 5 | 拾われた執事の俺が主のレミリアと付き合うことに！？ | 《被捡回来的管家我竟要和主人蕾米莉亚交往了》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYVdcxxhc8Y47EAzF790gZOz) | [BiliBili链接](https://space.bilibili.com/499929312/lists/) |
+| 5 | 拾われた執事の俺が主のレミリアと付き合うことに！？ | 《被捡回来的管家我竟要和主人蕾米莉亚交往了》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYVdcxxhc8Y47EAzF790gZOz) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6466915) |
 | 6 | いじめられてる男の子を助ける天使の妹 | 《拯救被欺凌男孩的天使妹妹》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh) | `已完成/未上传` |
-| 7 | ヴォルガが幻想入り | 《沃尔加幻想入》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | `进行中` |
+| 7 | ヴォルガが幻想入り | 《沃尔加幻想入》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | `已完成/未上传` |
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `进行中` |
 
 **状态说明：**
