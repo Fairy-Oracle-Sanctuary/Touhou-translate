@@ -2,7 +2,7 @@
 from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, 
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
                         InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton,
-                        FlowLayout, MessageBox, isDarkTheme)
+                        FlowLayout, MessageBox, isDarkTheme, PrimaryToolButton)
 from PySide6.QtCore import Qt, Signal, QUrl, QTimer, QThread
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame, QApplication
@@ -17,7 +17,7 @@ from ..service.project_service import project
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
 
-from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox
+from ..components.dialog import CustomMessageBox, CustomDoubleMessageBox, CustomTripleMessageBox
 
 class ProjectDetailInterface(ScrollArea):
     """项目详情界面"""
@@ -70,9 +70,28 @@ class ProjectDetailInterface(ScrollArea):
             self.loadProject(self.current_project_path, self.card_id, project)
         else:
             event_bus.notification_service.show_error("错误", message)
+
+    def _clearLayout(self, layout):
+        """递归清空布局中的所有控件"""
+        if layout is None:
+            return
             
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            
+            if widget is not None:
+                widget.deleteLater()
+            else:
+                # 如果是子布局，递归清空
+                sub_layout = item.layout()
+                if sub_layout is not None:
+                    self._clearLayout(sub_layout)            
+                    
     def loadProject(self, project_path, id, isMessage=False):
         """加载项目详情"""
+        project.__init__()
+
         # 存储当前项目路径
         self.current_project_path = project_path
         
@@ -80,18 +99,13 @@ class ProjectDetailInterface(ScrollArea):
         self.card_id = id
 
         # 清空当前布局
-        while self.vBoxLayout.count():
-            item = self.vBoxLayout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
-            else:
-                sub_layout = item.layout()
-                if sub_layout:
-                    self.clearLayout(sub_layout)
-                else:
-                    del item
-        
+        try:
+            # 递归删除所有子控件
+            self._clearLayout(self.vBoxLayout)
+        except Exception as e:
+            event_bus.notification_service.show_error("错误", f"刷新时出错: {str(e).strip()}")     
+            self.backToProjectListSignal.emit()
+
         # 创建返回按钮
         backButton = PrimaryPushButton("返回项目列表", self.view)
         backButton.clicked.connect(self.backToProjectListSignal.emit)
@@ -108,6 +122,13 @@ class ProjectDetailInterface(ScrollArea):
         fileListContainer = QWidget(self.view)
         fileListLayout = QVBoxLayout(fileListContainer)
         
+        # 底部增加集数按钮
+        hBoxLayout = QHBoxLayout()
+        addButtonBottom = PrimaryToolButton(FluentIcon.ADD)
+        addButtonBottom.setToolTip("插入新的一集")
+        addButtonBottom.clicked.connect(lambda checked, fn=len(project.project_subtitle[self.card_id])+1: self.addEpisode(fn))
+        hBoxLayout.addWidget(addButtonBottom)
+
         # 获取所有子文件夹
         subfolders = []
         for item in os.listdir(project_path):
@@ -128,7 +149,12 @@ class ProjectDetailInterface(ScrollArea):
             # 文件夹标题
             folderLabel = StrongBodyLabel(f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num-1]}", folderTitleWidget)
             folderLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-            
+
+            # 插入按钮
+            addEpisodeButton = TransparentToolButton(FluentIcon.ADD, folderTitleWidget)
+            addEpisodeButton.setToolTip("在这之前插入新的一集")
+            addEpisodeButton.clicked.connect(lambda checked, fn=folder_num: self.addEpisode(fn))
+
             # 编辑标题按钮
             editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
             editTitleButton.setToolTip("编辑本集标题和视频url")
@@ -140,6 +166,7 @@ class ProjectDetailInterface(ScrollArea):
             openurlButton.clicked.connect(lambda checked, url=project.project_video_url[self.card_id][folder_num-1]: self.openUrl(url))
             
             folderTitleLayout.addWidget(folderLabel)
+            folderTitleLayout.addWidget(addEpisodeButton)
             folderTitleLayout.addWidget(editTitleButton)
             folderTitleLayout.addWidget(openurlButton)
             
@@ -174,6 +201,7 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addWidget(refreshButton)
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(fileListContainer)
+        self.vBoxLayout.addLayout(hBoxLayout)
         self.vBoxLayout.addStretch(1)
         event_bus.project_detail_interface = self.view
 
@@ -183,8 +211,72 @@ class ProjectDetailInterface(ScrollArea):
     def delayedRefreshProject(self):
         """延迟刷新项目详情页面"""
         if self.current_project_path:
-            self.loadProject(self.current_project_path, self.card_id, project)
+            self.loadProject(self.current_project_path, self.card_id, isMessage=False)
     
+    def addEpisode(self, folder_num):
+        """增加新集"""
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+        
+        subtitle_isTranslated = project.project_subtitle_isTranslated[self.card_id]
+        if subtitle_isTranslated:
+            dialog = CustomTripleMessageBox(
+                title=f"在第 {folder_num} 集处插入",
+                input1="原标题:",
+                input2="翻译后标题:",
+                input3="视频URL:",
+                text1="请输入原标题",
+                text2="请输入翻译后标题",
+                text3="请输入视频URL",
+                parent= main_window if main_window else self.window(),
+                error1="请输入原标题",
+                error2="请输入翻译后标题",
+                error3="请输入视频URL",
+            )
+        else:
+            dialog = CustomDoubleMessageBox(
+                title=f"在第 {folder_num} 集处插入",
+                input1="原标题:",
+                input2="视频URL:",
+                text1="请输入原标题",
+                text2="请输入视频URL",
+                parent= main_window if main_window else self.window(),
+                error1="请输入原标题",
+                error2="请输入视频URL",
+            )
+
+        if dialog.exec():
+            if subtitle_isTranslated:
+                result = project.addEpisode(
+                    self.card_id, 
+                    folder_num, 
+                    dialog.LineEdit_1.text().strip(),
+                    dialog.LineEdit_2.text().strip(),
+                    dialog.LineEdit_3.text().strip(),
+                    isTranslated=True
+                    )
+            else:
+                result = project.addEpisode(
+                    self.card_id, 
+                    folder_num, 
+                    dialog.LineEdit_1.text().strip(),
+                    "",
+                    dialog.LineEdit_2.text().strip(),
+                    isTranslated=False
+                    )
+       
+            if result[0]:
+                self.loadProject(self.current_project_path, self.card_id, isMessage=False)
+                event_bus.notification_service.show_success("成功", f"已插入新的一集")
+            else:
+                event_bus.notification_service.show_error("错误", result[-1])
+        else:
+            pass
+
     def editEpisodeTitle(self, folder_num):
         """编辑指定集的标题"""
         # 获取应用程序的顶级窗口

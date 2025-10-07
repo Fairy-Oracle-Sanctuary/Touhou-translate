@@ -9,7 +9,7 @@ class Project():
         self.project_subtitle_isTranslated = []
         self.isLink = []
         self.project_video_url = []
-        self.projects_location = os.path.abspath('.')
+        self.projects_location = Path(os.path.abspath('.'))
         self.project_path = self.get_project_paths('.')
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
@@ -17,7 +17,7 @@ class Project():
 
     def get_project_paths(self, directory):
         '''
-        获取projects文件夹下所有子文件夹的完整路径，排除特定文件夹
+        获取projects文件夹下所有子文件夹的完整路径,排除特定文件夹
         '''
         project_paths = []
         ban_names = [".git", "tools", "Fairy-Kekkai-Workshop", "_internal"]  # 要排除的文件夹名称
@@ -195,11 +195,11 @@ class Project():
             return True
         
         except FileNotFoundError:
-            print(f"错误: 文件 {file_path} 不存在")
-            return False
+            e = f"错误: 文件 {file_path} 不存在"
+            return [False,str(e).strip()]
+        
         except Exception as e:
-            print(f"发生错误: {str(e)}")
-            return False
+            return [False,str(e).strip()]
 
     def is_project(self, folder_path):
         """判断文件夹是否为一个合法的项目"""
@@ -208,6 +208,50 @@ class Project():
                 return True
         except Exception:
             return False
+
+    def addEpisode(self, id, episode_num, origin_title, trans_title, video_url, isTranslated = False):
+        """增加新集"""
+        file_path = str(self.project_path[id]) + '/标题.txt'
+        try:
+            # 读取文件所有行
+            with open(file_path, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+
+                if isTranslated:
+                    line_number = len(self.project_subtitle[id]) + 4 * (episode_num-1)
+                    lines.insert(line_number, origin_title + '\n')
+                    lines.insert(line_number, trans_title + '\n')
+                    lines.insert(line_number, video_url + '\n')
+                    lines.insert(line_number, '\n')
+                    lines.insert(id, origin_title + '\n')
+                else:
+                    line_number = len(self.project_subtitle[id]) + 3 * (episode_num-1)
+                    lines.insert(line_number, origin_title + '\n')
+                    lines.insert(line_number, video_url + '\n')
+                    lines.insert(line_number, '\n')
+                    lines.insert(id, origin_title + '\n')
+
+            # 将修改后的内容写回文件
+            with open(file_path, 'w', encoding='utf-8') as file:
+                file.writelines(lines)
+            
+            for sub_folder in range(len(self.project_subtitle[id]), episode_num-1, -1):
+                os.rename(
+                    str(self.project_path[id]) + f'/{sub_folder}', 
+                    str(self.project_path[id]) + f'/{sub_folder+1}'
+                    )
+                
+            os.makedirs(str(self.project_path[id]) + f'/{episode_num}')
+
+
+            return [True, '']
+
+        except FileNotFoundError:
+            e = f"错误: 文件 {file_path} 不存在"
+            return [False, str(e).strip()]
+        
+        except Exception as e:
+            return [False, str(e).strip()]
 
 
 project = Project()

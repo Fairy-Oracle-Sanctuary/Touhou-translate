@@ -103,7 +103,7 @@ class DownloadInterface(ScrollArea):
             title=f"请输入视频ID", 
             text=f"https://www.youtube.com/watch?v=", 
             parent= main_window if main_window else self.window(),
-            minwidth=400,
+            min_width=400,
             )
         if dialog.exec():
             url = dialog.LineEdit.text().strip()
