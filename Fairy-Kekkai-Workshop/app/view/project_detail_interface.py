@@ -1,7 +1,7 @@
 # coding:utf-8
 from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, 
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
-                        InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton,
+                        InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton, SimpleCardWidget,
                         FlowLayout, MessageBox, isDarkTheme, PrimaryToolButton)
 from PySide6.QtCore import Qt, Signal, QUrl, QTimer, QThread
 from PySide6.QtGui import QDesktopServices
@@ -155,6 +155,11 @@ class ProjectDetailInterface(ScrollArea):
             addEpisodeButton.setToolTip("在这之前插入新的一集")
             addEpisodeButton.clicked.connect(lambda checked, fn=folder_num: self.addEpisode(fn))
 
+            # 删除按钮
+            deleteButton = TransparentToolButton(FluentIcon.DELETE, folderTitleWidget)
+            deleteButton.setToolTip("删除这一集(不可撤销)")
+            deleteButton.clicked.connect(lambda checked, fn=folder_num: self.deleteEpisode(fn))
+            
             # 编辑标题按钮
             editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
             editTitleButton.setToolTip("编辑本集标题和视频url")
@@ -167,6 +172,7 @@ class ProjectDetailInterface(ScrollArea):
             
             folderTitleLayout.addWidget(folderLabel)
             folderTitleLayout.addWidget(addEpisodeButton)
+            folderTitleLayout.addWidget(deleteButton)
             folderTitleLayout.addWidget(editTitleButton)
             folderTitleLayout.addWidget(openurlButton)
             
@@ -276,6 +282,26 @@ class ProjectDetailInterface(ScrollArea):
                 event_bus.notification_service.show_error("错误", result[-1])
         else:
             pass
+    
+    def deleteEpisode(self, folder_num):
+        """删除一集"""
+        title = "确认删除"
+        content = "确定要删除这一集吗？此操作不可撤销。"
+        
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+        
+        dialog = MessageBox(title, content, main_window)
+        dialog.yesButton.setText("确定")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            pass
+        else:
+            pass
 
     def editEpisodeTitle(self, folder_num):
         """编辑指定集的标题"""
@@ -355,9 +381,8 @@ class ImageDownloadThread(QThread):
         except Exception as e:
             self.downloadFinished.emit(False, f"发生未知错误: {e}", self.save_path)
 
-class FileItemWidget(QFrame):
-    """自定义文件项widget"""
-    # fileDeleted = Signal()
+class FileItemWidget(SimpleCardWidget):
+    """自定义文件项widget，使用QFluentWidgets控件"""
     def __init__(self, window, card_id, folder_num, file_name, file_path, icon, file_exists, donwload_need, parent=None):
         super().__init__(parent)
         self.main_window = window
@@ -367,57 +392,44 @@ class FileItemWidget(QFrame):
         self.file_path = file_path
         self.file_exists = file_exists
         self.download_need = donwload_need
-        
+
         self.setFixedHeight(60)
-        self.setFrameShape(QFrame.Box)
-        self.setFrameShadow(QFrame.Raised)
+        self.setObjectName('fileItemCard')
         if not isDarkTheme():
             self.setStyleSheet("""
-                FileItemWidget {
-                    border: 1px solid #e0e0e0;
-                    border-radius: 5px;
-                    margin: 2px;
-                    padding: 5px;
+                #fileItemCard {
                     background-color: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 6px;
+                    margin: 2px;
                 }
-                FileItemWidget:hover {
+                #fileItemCard:hover {
                     background-color: #f5f5f5;
                 }
             """)
         else:
             self.setStyleSheet("""
-                FileItemWidget {
-                    border: 1px solid #404040;
-                    border-radius: 5px;
-                    margin: 2px;
-                    padding: 5px;
+                #fileItemCard {
                     background-color: #323232;
+                    border: 1px solid #404040;
+                    border-radius: 6px;
+                    margin: 2px;
                 }
-                FileItemWidget:hover {
+                #fileItemCard:hover {
                     background-color: #2a2a2a;
                 }
             """)
 
         self._initUI(icon)
-    
+
     def _initUI(self, icon):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 5, 10, 5)
-        
+
         # 文件图标和名称
         iconWidget = IconWidget(icon.icon(), self)
         fileNameLabel = BodyLabel(self.file_name, self)
-        if not isDarkTheme():
-            fileNameLabel.setStyleSheet("""
-                margin-left: 10px;
-                color: black;
-            """)
-        else:
-            fileNameLabel.setStyleSheet("""
-                margin-left: 10px;
-                color: white;
-            """)
-
+        fileNameLabel.setStyleSheet("margin-left: 10px;")
 
         # 状态指示器
         statusLabel = QLabel("✓" if self.file_exists else "✗", self)
@@ -432,30 +444,31 @@ class FileItemWidget(QFrame):
         # 按钮区域
         buttonLayout = QHBoxLayout()
         buttonLayout.setSpacing(5)
-        
-        # 打开文件路径按钮
-        self.openPathBtn = TransparentToolButton(FluentIcon.FOLDER, self)
-        self.openPathBtn.setToolTip("打开文件所在路径")
-        self.openPathBtn.clicked.connect(self.openFileLocation)
-        
-        # 删除文件按钮
-        self.deleteBtn = TransparentToolButton(FluentIcon.DELETE, self)
-        self.deleteBtn.setToolTip("删除文件")
-        self.deleteBtn.clicked.connect(self.deleteFile)
-        
-        # 只有文件存在时才启用删除按钮
-        self.deleteBtn.setEnabled(self.file_exists)
-        
-        # 下载快捷键 只在封面和mp4文件缺失时并需要下载才启用
+
+        # 下载按钮（仅在需要且文件不存在时显示）
         if self.download_need and not self.file_exists:
             self.downloadBtn = TransparentToolButton(FluentIcon.DOWNLOAD, self)
             self.downloadBtn.setToolTip("下载缺失的文件")
+            self.downloadBtn.setFixedSize(32, 32)
             self.downloadBtn.clicked.connect(self.donwloadFile)
             buttonLayout.addWidget(self.downloadBtn)
 
+        # 打开文件路径按钮
+        self.openPathBtn = TransparentToolButton(FluentIcon.FOLDER, self)
+        self.openPathBtn.setToolTip("打开文件所在路径")
+        self.openPathBtn.setFixedSize(32, 32)
+        self.openPathBtn.clicked.connect(self.openFileLocation)
+
+        # 删除文件按钮
+        self.deleteBtn = TransparentToolButton(FluentIcon.DELETE, self)
+        self.deleteBtn.setToolTip("删除文件")
+        self.deleteBtn.setFixedSize(32, 32)
+        self.deleteBtn.clicked.connect(self.deleteFile)
+        self.deleteBtn.setEnabled(self.file_exists)
+
         buttonLayout.addWidget(self.openPathBtn)
         buttonLayout.addWidget(self.deleteBtn)
-        
+
         layout.addWidget(iconWidget)
         layout.addWidget(fileNameLabel)
         layout.addStretch()
