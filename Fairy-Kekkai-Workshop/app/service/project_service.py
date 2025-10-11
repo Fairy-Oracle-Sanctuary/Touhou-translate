@@ -1,5 +1,3 @@
-import os
-import shutil
 from pathlib import Path
 
 from ..common.config import cfg
@@ -9,35 +7,23 @@ class Project():
         self.project_subtitle_isTranslated = []
         self.isLink = []
         self.project_video_url = []
-        self.projects_location = Path(os.path.abspath('.'))
-        self.project_path = self.get_project_paths('.')
+        self.projects_location = Path.cwd()
+        self.project_path = self.get_project_paths()
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
         self.project_subtitle = self.get_project_subtitles()
 
-    def get_project_paths(self, directory):
+    def get_project_paths(self):
         '''
         获取projects文件夹下所有子文件夹的完整路径,排除特定文件夹
         '''
         project_paths = []
-        ban_names = [".git", "tools", "Fairy-Kekkai-Workshop", "_internal"]  # 要排除的文件夹名称
-        
-        # 确保目录路径是绝对路径
-        directory = os.path.abspath(directory)
-        
-        for item in os.listdir(directory):
-            full_path = os.path.join(directory, item)
-            
-            # 只处理目录，不处理文件
-            if os.path.isdir(full_path):
-                # 获取目录的基本名称（最后一部分）
-                dir_name = os.path.basename(full_path)
                 
-                # 检查目录是否在排除列表中 并且目录中是否有核心文件
-                if dir_name not in ban_names and os.path.exists(full_path+'\\标题.txt'):
-                    self.isLink.append(False)
-                    project_paths.append(Path(full_path))
-
+        for item in self.projects_location.iterdir():
+            if item.is_dir() and Path(item / '标题.txt').exists():
+                project_paths.append(item)
+                self.isLink.append(False)
+            
         # 处理外部路径
         link_paths = cfg.linkProject.get("project_link")
         true_paths = []
@@ -61,10 +47,11 @@ class Project():
         '''获取原标题'''
         project_titles = []
         for project in self.project_path:
-            for dir in os.listdir(project):
-                if dir.endswith(".txt") and not dir.startswith("标题."):
-                    project_titles.append(dir.split('.')[0])
-        return project_titles
+            project_dir = Path(project)
+            for file_path in project_dir.iterdir():
+                if file_path.is_file() and file_path.suffix == ".txt" and not file_path.name.startswith("标题."):
+                    project_titles.append(file_path.stem)
+        return project_titles    
     
     def get_project_subtitles(self):
         '''获取每集的标题'''
@@ -103,36 +90,36 @@ class Project():
         return project_subtitles
 
     def creat_files(self, project_name, subfolder_count, label):
-        """创建工程文件夹"""
-        os.makedirs(project_name)
-        print(f"已创建工程文件夹: {project_name}")
+        """
+        创建工程文件夹
+
+        参数:
+            project_name: 项目名称
+            subfolder_count: 子文件数量
+            label: 系列原标题
+        """
+        project_path = Path(project_name)
+        project_path.mkdir(parents=True, exist_ok=True)
 
         # 创建子文件夹
         for i in range(1, subfolder_count + 1):
-            subfolder_path = os.path.join(project_name, str(i))
-            os.makedirs(subfolder_path)
-            print(f"已创建子文件夹: {i}")
+            subfolder_path = project_path / str(i)
+            subfolder_path.mkdir(parents=True, exist_ok=True)
 
         # 创建空的标题文件
-        title_file = os.path.join(project_name, "标题.txt")
-        with open(title_file, "w", encoding="utf-8") as f:
+        title_file = project_path / "标题.txt"
+        with title_file.open("w", encoding="utf-8") as f:
             for i in range(1, subfolder_count + 1):
                 f.write(f'{i}\n')
             f.write('\n')
             for i in range(1, subfolder_count + 1):
                 f.write(f'{i}\nhttps://www.youtube.com/watch?v=\n\n')
             f.write('\n---')
-        print("已创建文件: 标题.txt")
 
         # 创建标识文件
-        id_file = os.path.join(project_name, f"{label}.txt")
-        with open(id_file, "w", encoding="utf-8"):
-            pass  # 创建空文件
-        print(f"已创建文件: {label}.txt")
-
-        print(f"\n工程 '{project_name}' 创建完成！")
-        print(f"包含 {subfolder_count} 个子文件夹和 2 个空文件")
-
+        id_file = project_path / f"{label}.txt"
+        id_file.touch()  # 创建空文件
+        
     def delete_project(self, project_path):
         '''删除项目并刷新变量'''
         try:
@@ -146,13 +133,24 @@ class Project():
     def change_name(self, path, name):
         """更改项目文件名"""
         try:
-            os.rename(path, Path(path).parent / name)
+            old_path = Path(path)
+            new_path = old_path.parent / name
+            old_path.rename(new_path)
+            self.__init__()
             return [True, '']
         except Exception as e:
             return [False, str(e)]
-        self.__init__()
 
     def change_subtitle(self, id, num, text, offset=0):
+        """
+        修改项目文件标题
+
+        参数:
+            id: 项目的id
+            num: 第几集
+            text: 修改的内容
+            offset: 指针偏移
+        """
         file_path = str(self.project_path[id]) + '/标题.txt'
         if self.project_subtitle_isTranslated[id]:
             line_number = 4*num + len(self.project_subtitle[id]) - 1
@@ -209,61 +207,65 @@ class Project():
         except Exception:
             return False
 
-    def addEpisode(self, id, episode_num, origin_title, trans_title, video_url, isTranslated = False):
-        """增加新集"""
-        file_path = str(self.project_path[id]) + '/标题.txt'
+    def addEpisode(self, id, episode_num, origin_title, trans_title, video_url, isTranslated=False):
+        """
+        增加新集
+        
+        参数:
+            id: 项目id
+            episode_num: 第几集
+            origin_title: 要插入的原标题
+            trans_title: 要插入的需要翻译的标题
+            video_url: 原视频地址
+            isTranslated: 标题是否被翻译
+        """
+        file_path = self.project_path[id] / '标题.txt'
+        project_dir = self.project_path[id]
+        
         try:
             # 读取文件所有行
-            with open(file_path, 'r', encoding='utf-8') as file:
+            with file_path.open('r', encoding='utf-8') as file:
                 lines = file.readlines()
 
-                if isTranslated:
-                    line_number = len(self.project_subtitle[id]) + 4 * (episode_num-1)
-                    lines.insert(line_number, origin_title + '\n')
-                    lines.insert(line_number, trans_title + '\n')
-                    lines.insert(line_number, video_url + '\n')
-                    lines.insert(line_number, '\n')
-                    lines.insert(id, origin_title + '\n')
-                else:
-                    line_number = len(self.project_subtitle[id]) + 3 * (episode_num-1)
-                    lines.insert(line_number, origin_title + '\n')
-                    lines.insert(line_number, video_url + '\n')
-                    lines.insert(line_number, '\n')
-                    lines.insert(id, origin_title + '\n')
+            length = len(self.project_subtitle[id])
+            if isTranslated:
+                line_number = length + 4 * (episode_num - 1)
+                lines.insert(line_number, origin_title + '\n')
+                lines.insert(line_number, trans_title + '\n')
+                lines.insert(line_number, video_url + '\n')
+                lines.insert(line_number, '\n')
+                lines.insert(id, origin_title + '\n')
+            else:
+                line_number = length + 3 * (episode_num - 1)
+                lines.insert(line_number, origin_title + '\n')
+                lines.insert(line_number, video_url + '\n')
+                lines.insert(line_number, '\n')
+                lines.insert(id, origin_title + '\n')
 
             # 将修改后的内容写回文件
-            with open(file_path, 'w', encoding='utf-8') as file:
+            with file_path.open('w', encoding='utf-8') as file:
                 file.writelines(lines)
             
-            for sub_folder in range(len(self.project_subtitle[id]), episode_num-1, -1):
-                os.rename(
-                    str(self.project_path[id]) + f'/{sub_folder}', 
-                    str(self.project_path[id]) + f'/{sub_folder+1}'
-                    )
-                
-            os.makedirs(str(self.project_path[id]) + f'/{episode_num}')
-
+            # 重命名子文件夹
+            for sub_folder in range(length, episode_num - 1, -1):
+                old_folder = project_dir / str(sub_folder)
+                new_folder = project_dir / str(sub_folder + 1)
+                if old_folder.exists():
+                    old_folder.rename(new_folder)
+            
+            # 创建新子文件夹
+            new_episode_folder = project_dir / str(episode_num)
+            new_episode_folder.mkdir(parents=True, exist_ok=True)
 
             return [True, '']
 
         except FileNotFoundError:
             e = f"错误: 文件 {file_path} 不存在"
             return [False, str(e).strip()]
-        
+            
         except Exception as e:
             return [False, str(e).strip()]
 
 
+
 project = Project()
-
-if __name__ == "__main__":
-    proj = Project()
-    # print(proj.project_path)
-    # print(proj.project_subtitle_isTranslated)
-    # print(proj.project_title)
-    # print(proj.project_subtitle_isTranslated)
-    # print(proj.project_video_url)
-    # proj.change_subtitle(5, 7, "雪中萌发的春天1")
-    # proj.change_name(proj.project_name[0], "东方永梦樱1")
-
-    
