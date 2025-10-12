@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 from ..common.config import cfg
 
@@ -123,7 +124,6 @@ class Project():
     def delete_project(self, project_path):
         '''删除项目并刷新变量'''
         try:
-            import shutil
             shutil.rmtree(project_path)
             self.__init__()
             return [True, '']
@@ -265,6 +265,55 @@ class Project():
             
         except Exception as e:
             return [False, str(e).strip()]
+        
+    def deleteEpisode(self, id, episode_num, isTranslated=False):
+        """
+        增加新集
+        
+        参数:
+            id: 项目id
+            episode_num: 第几集
+            isTranslated: 标题是否被翻译
+        """
+        file_path = self.project_path[id] / '标题.txt'
+        project_dir = self.project_path[id]
+        
+        try:
+            # 读取文件所有行
+            with file_path.open('r', encoding='utf-8') as file:
+                lines = file.readlines()
+
+            length = len(self.project_subtitle[id])
+            if isTranslated:
+                line_number = length + 4 * (episode_num - 1)
+                for _ in range(4):
+                    lines.pop(line_number)
+            else:
+                line_number = length + 3 * (episode_num - 1)
+                for _ in range(3):
+                    lines.pop(line_number)
+
+            lines.pop(episode_num-1)
+
+            # 将修改后的内容写回文件
+            with file_path.open('w', encoding='utf-8') as file:
+                file.writelines(lines)
+
+            # 删除子文件夹
+            shutil.rmtree(project_dir / str(episode_num))
+
+            # 重命名子文件夹
+            for sub_folder in range(episode_num + 1, length + 1):
+                old_folder = project_dir / str(sub_folder)
+                new_folder = project_dir / str(sub_folder - 1)
+                if old_folder.exists():
+                    old_folder.rename(new_folder)
+            
+            return [True, '']
+
+        except Exception as e:
+            return [False, str(e).strip()]
+
 
 
 
