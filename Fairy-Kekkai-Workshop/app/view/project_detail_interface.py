@@ -2,7 +2,7 @@
 from qfluentwidgets import (ScrollArea, CardWidget, IconWidget, BodyLabel, CaptionLabel, 
                            PushButton, PrimaryPushButton, FluentIcon, StrongBodyLabel, 
                         InfoBar, TitleLabel, SubtitleLabel, ListWidget, TransparentToolButton, SimpleCardWidget,
-                        FlowLayout, MessageBox, isDarkTheme, PrimaryToolButton)
+                        FlowLayout, MessageBox, isDarkTheme, PrimaryToolButton, QColor)
 from PySide6.QtCore import Qt, Signal, QUrl, QTimer, QThread
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidgetItem, QFileDialog, QHBoxLayout, QLabel, QFrame, QApplication
@@ -158,6 +158,8 @@ class ProjectDetailInterface(ScrollArea):
             # 删除按钮
             deleteButton = TransparentToolButton(FluentIcon.DELETE, folderTitleWidget)
             deleteButton.setToolTip("删除这一集(不可撤销)")
+            if len(subfolders) <= 1:
+                deleteButton.setDisabled(True)
             deleteButton.clicked.connect(lambda checked, fn=folder_num: self.deleteEpisode(fn))
             
             # 编辑标题按钮
@@ -180,7 +182,7 @@ class ProjectDetailInterface(ScrollArea):
             
             # 创建自定义文件列表widget
             fileListWidget = FileListWidget(self.view, self.card_id, folder_num, fileListContainer)
-            fileListWidget.setMinimumHeight(300)
+            fileListWidget.setMinimumHeight(270)
             
             # 连接文件删除信号到刷新函数
             # fileListWidget.fileDeleted.connect(self.delayedRefreshProject)
@@ -299,7 +301,12 @@ class ProjectDetailInterface(ScrollArea):
         dialog.yesButton.setText("确定")
         dialog.cancelButton.setText("取消")
         if dialog.exec():
-            pass
+            result = project.deleteEpisode(self.card_id, folder_num)
+            if result[0]:
+                self.loadProject(self.current_project_path, self.card_id, isMessage=False)
+                event_bus.notification_service.show_success("成功", f"已删除第 {folder_num} 集")
+            else:
+                event_bus.notification_service.show_error("错误", result[-1])
         else:
             pass
 
@@ -351,6 +358,13 @@ class ProjectDetailInterface(ScrollArea):
     def openUrl(self, url):
         QDesktopServices.openUrl(QUrl(url))
 
+    def showEvent(self, event):
+        """每次切换到该界面时自动刷新项目详情"""
+        super().showEvent(event)
+        # 只有在 current_project_path 和 card_id 已经设置的情况下才刷新
+        if self.current_project_path and self.card_id != -1:
+            self.loadProject(self.current_project_path, self.card_id, isMessage=False)
+
 class ImageDownloadThread(QThread):
     """图片下载线程"""
     
@@ -393,7 +407,7 @@ class FileItemWidget(SimpleCardWidget):
         self.file_exists = file_exists
         self.download_need = donwload_need
 
-        self.setFixedHeight(60)
+        self.setFixedHeight(50)
         self.setObjectName('fileItemCard')
         if not isDarkTheme():
             self.setStyleSheet("""
@@ -429,7 +443,16 @@ class FileItemWidget(SimpleCardWidget):
         # 文件图标和名称
         iconWidget = IconWidget(icon.icon(), self)
         fileNameLabel = BodyLabel(self.file_name, self)
-        fileNameLabel.setStyleSheet("margin-left: 10px;")
+        if not isDarkTheme():
+            fileNameLabel.setStyleSheet("""
+                margin-left: 10px;
+                color: black;
+            """)
+        else:
+            fileNameLabel.setStyleSheet("""
+                margin-left: 10px;
+                color: white;
+            """)
 
         # 状态指示器
         statusLabel = QLabel("✓" if self.file_exists else "✗", self)
