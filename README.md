@@ -16,17 +16,21 @@
 | 4 | 自殺未遂したらレミリアと付き合うことに？！ | 《自杀未遂后竟然和蕾米莉亚开始交往了》 | [YouTube链接](https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6466841) |
 | 5 | 拾われた執事の俺が主のレミリアと付き合うことに！？ | 《被捡回来的管家我竟要和主人蕾米莉亚交往了》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYVdcxxhc8Y47EAzF790gZOz) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6466915) |
 | 6 | いじめられてる男の子を助ける天使の妹 | 《拯救被欺凌男孩的天使妹妹》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh) | `已完成/未上传` |
-| 7 | ヴォルガが幻想入り | 《沃尔加幻想入》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | `已完成/未上传` |
-| 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `进行中` |
+| 7 | ヴォルガが幻想入り | 《幻想入沃尔加》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6525221) |
+| 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `暂停中` |
+| 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `进行中` |
+| 10 | 色付く世界は、貴方から | 《世界因你而多彩》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWI8gZk654zY575JeUtQl7cE) | `待开始` |
+| 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `待开始` |
 
 **状态说明：**
 - `BiliBili链接`：已上传/正在上传。
 - `未上传`：一期都没有上传。
 - `待开始`：计划内，尚未开始翻译或制作。
 - `进行中`：正在翻译、校对或制作字幕/视频。
+- `暂停中`：因为难度过大或者事务繁忙等原因暂时关闭。
 - `已完成`：已完成并发布。✅
 - `已放弃`：因故放弃翻译。❌
-
+  
 ## 🎯 转载地址
 
 作品翻译完成后，将转载至以下平台： 
