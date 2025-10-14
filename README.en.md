@@ -18,8 +18,8 @@ This project plans to translate and repost the following works:
 | 6 | いじめられてる男の子を助ける天使の妹 | 《拯救被欺凌男孩的天使妹妹》 | [YouTube Link](https://youtube.com/playlist?list=PLkONYltbNkGdPwu1CVug0NyOROBUShYqh) | `Completed/Not Uploaded` |
 | 7 | ヴォルガが幻想入り | 《幻想入沃尔加》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6525221) |
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `Paused` |
-| 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `In Progress` |
-| 10 | 色付く世界は、貴方から | 《世界因你而多彩》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWI8gZk654zY575JeUtQl7cE) | `Pending` |
+| 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTube链接](https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U) | `In Progress` |
+| 10 | 色付く世界は、貴方から | 《世界因你而多彩》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `Pending` |
 | 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `Pending` |
 
 **Status Explanation:**
