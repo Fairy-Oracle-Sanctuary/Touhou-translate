@@ -57,6 +57,31 @@ If you have any suggestions, found translation errors, or are the original autho
 *   **Email:** [`2185823427@qq.com`]
 *   **Bilibili Direct Message:** [`Baby2016`]
 
+## 🛠️ Scripts & Tools Introduction
+
+This repository houses a collection of self-developed auxiliary scripts and tools designed to enhance the efficiency of the translation, organization, and publication workflow.
+
+### Fairy-Kekkai-Workshop
+
+`Fairy-Kekkai-Workshop` is our self-developed integrated Python tool, featuring the following core functionalities:
+
+- **Project Management**: Easily manage the progress, resources, and metadata of various translation projects.
+- **Resource Downloading**: Built-in YouTube video downloader supporting batch retrieval from playlists.
+- **Resource Organization**: Automatically categorizes and organizes project-related asset files such as images and audio.
+
+### Tools Directory
+
+The `tools` directory contains several practical utilities, currently offering:
+
+- **One-Click Playlist Resource Download**: Quickly fetches all video resources from a specified playlist.
+- Other auxiliary functions, which will be gradually integrated into the main `Fairy-Kekkai-Workshop` tool in the future.
+
+### 🚧 Upcoming Features
+
+- **Enhanced Project Management**: A more intuitive and efficient interface and user experience for managing projects.
+- **Hardcoded Subtitle Extraction**: Utilizes OCR technology to quickly recognize and extract hardcoded subtitle text from videos.
+- **Smart Initial Timing Generation**: Automatically generates preliminary subtitle timings based on speech recognition, significantly reducing the manual effort required for initial timing.
+
 ---
 
 **Thanks to all the original authors for their wonderful creations, and to everyone who participates in and follows this project!**
