@@ -90,7 +90,8 @@ class ProjectDetailInterface(ScrollArea):
                     
     def loadProject(self, project_path, id, isMessage=False):
         """加载项目详情"""
-        project.__init__()
+        project.project_title = project.get_project_titles()
+        project.project_subtitle = project.get_project_subtitles()
 
         # 存储当前项目路径
         self.current_project_path = project_path
@@ -564,7 +565,7 @@ class FileItemWidget(SimpleCardWidget):
             title=f"下载第 {self.folder_num} 集封面",
             text="请输入视频id: https://www.youtube.com/watch?v=",
             parent=self.window(),
-            minwidth=450,
+            min_width=450,
         )
         v = project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
         if v and "youtube" not in v:
@@ -594,7 +595,7 @@ class FileItemWidget(SimpleCardWidget):
             title=f"下载第 {self.folder_num} 集生肉视频",
             text="请输入视频id: https://www.youtube.com/watch?v=",
             parent=self.window(),
-            minwidth=450,
+            min_width=450,
         )
         v = project.project_video_url[self.card_id][self.folder_num-1].split("=")[-1]
         if v and "youtube" not in v:
