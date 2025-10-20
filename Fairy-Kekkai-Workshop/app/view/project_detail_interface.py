@@ -90,8 +90,7 @@ class ProjectDetailInterface(ScrollArea):
                     
     def loadProject(self, project_path, id, isMessage=False):
         """加载项目详情"""
-        project.project_title = project.get_project_titles()
-        project.project_subtitle = project.get_project_subtitles()
+        project.refresh_project(id)
 
         # 存储当前项目路径
         self.current_project_path = project_path
