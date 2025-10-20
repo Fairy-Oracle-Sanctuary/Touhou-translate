@@ -3,6 +3,7 @@
 *.part
 *.aac
 __pycache__
+.vscode/
 Output/
 AppData/
 Fairy-Kekkai-Workshop/build/

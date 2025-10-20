@@ -89,6 +89,46 @@ class Project():
                 return []
         
         return project_subtitles
+    
+    def refresh_project(self, id):
+        """
+        刷新项目
+
+        参数:
+            id: 项目的id
+        """
+        # 刷新项目名
+        self.project_name[id] = self.project_path[id].name
+
+        # 刷新原标题
+        project_dir = self.project_path[id]
+        title = ""
+        for file_path in project_dir.iterdir():
+            if file_path.is_file() and file_path.suffix == ".txt" and not file_path.name.startswith("标题."):
+                title = file_path.stem
+                break
+        self.project_title[id] = title
+
+        # 刷新每集标题
+        subtitles = []
+        try:
+            with open(project_dir / "标题.txt", "r", encoding="utf-8") as f:
+                is_subtitle = False
+                subtitle_num = 0
+                content = f.readlines()
+                for n, line in enumerate(content):
+                    if line == '\n' and not is_subtitle:
+                        subtitle_num = n
+                        is_subtitle = True
+                    elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
+                        subtitles.append(content[n-2].replace('\n', ''))
+                        subtitle_num -= 1
+                    elif line == '\n' and is_subtitle and subtitle_num <= 0:
+                        break
+        except Exception:
+            subtitles = []
+        self.project_subtitle[id] = subtitles
+        
 
     def creat_files(self, project_name, subfolder_count, label):
         """

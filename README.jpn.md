@@ -19,7 +19,7 @@
 | 7 | ヴォルガが幻想入り | 《幻想入沃尔加》 | [YouTube链接](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | [BiliBili链接](https://space.bilibili.com/499929312/lists/6525221) |
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube链接](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `一時停止中` |
 | 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTube链接](https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U) | `完了/未アップロード` |
-| 10 | 色付く世界は、貴方から | 《世界因你而多彩》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `未開始` |
+| 10 | 色付く世界は、貴方から | 《世界因你而多彩第一季》 | [YouTube链接](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `進行中` |
 | 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTube链接](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `未開始` |
 
 **ステータス説明:**
