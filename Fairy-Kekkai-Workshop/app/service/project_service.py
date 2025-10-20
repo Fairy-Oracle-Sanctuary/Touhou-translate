@@ -5,11 +5,12 @@ from ..common.config import cfg
 
 class Project():
     def __init__(self):
-        self.project_subtitle_isTranslated = []
         self.isLink = []
-        self.project_video_url = []
         self.projects_location = Path.cwd()
         self.project_path = self.get_project_paths()
+        self.project_num = self.project_path.__len__()
+        self.project_video_url = [[] for _ in range(self.project_num)]
+        self.project_subtitle_isTranslated = [[] for _ in range(self.project_num)]
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
         self.project_subtitle = self.get_project_subtitles()
@@ -37,59 +38,75 @@ class Project():
 
         return project_paths
     
+
     def get_project_names(self):
         '''获取工程名'''
         project_names = []
-        for name in self.project_path:
-            project_names.append(name.name)
+        for id in range(self.project_num):
+            project_names.append(self.get_name(id))
         return project_names
     
+    def get_name(self, id):
+        '''获取单个工程名'''
+        return self.project_path[id].name
+    
+
     def get_project_titles(self):
         '''获取原标题'''
         project_titles = []
-        for project in self.project_path:
-            project_dir = Path(project)
-            for file_path in project_dir.iterdir():
-                if file_path.is_file() and file_path.suffix == ".txt" and not file_path.name.startswith("标题."):
-                    project_titles.append(file_path.stem)
+        for id in range(self.project_num):
+            project_titles.append(self.get_title(id))
         return project_titles    
     
+    def get_title(self, id):
+        '''获取单个工程原标题'''
+        project_folder = self.project_path[id]
+        for file_path in project_folder.iterdir():
+            if file_path.is_file() and file_path.suffix == ".txt" and not file_path.name.startswith("标题."):
+                return file_path.stem
+    
+
     def get_project_subtitles(self):
         '''获取每集的标题'''
         project_subtitles = []
 
         for path in self.project_path:
-            try:
-                with open(path / "标题.txt", "r", encoding="utf-8") as f:
-                    is_subtitle = False
-                    subtitles = []
-                    video_urls = []
-                    subtitle_num = 0
-
-                    content = f.readlines()
-                    for n, line in enumerate(content):
-                        if line == '\n' and not is_subtitle:
-                            subtitle_num = n
-                            if content[n+3] != '\n':
-                                self.project_subtitle_isTranslated.append(True)
-                            else:
-                                self.project_subtitle_isTranslated.append(False)
-                            is_subtitle = True
-                        elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
-                            video_urls.append(content[n-1].replace('\n', ''))
-                            subtitles.append(content[n-2].replace('\n', ''))
-                            # print(subtitle_num)
-                            subtitle_num -= 1
-                        elif line == '\n' and is_subtitle and subtitle_num <= 0:
-                            break
-                    
-                    self.project_video_url.append(video_urls)
-                    project_subtitles.append(subtitles)
-            except Exception:
-                return []
-        
+            subtitles = self.get_subtitle(self.project_path.index(path))
+            project_subtitles.append(subtitles)
         return project_subtitles
     
+    def get_subtitle(self, id):
+        '''获取单个工程的标题'''
+        try:
+            with open(self.project_path[id] / "标题.txt", "r", encoding="utf-8") as f:
+                is_subtitle = False
+                subtitles = []
+                video_urls = []
+                subtitle_num = 0
+
+                content = f.readlines()
+                for n, line in enumerate(content):
+                    if line == '\n' and not is_subtitle:
+                        subtitle_num = n
+                        if content[n+3] != '\n':
+                            self.project_subtitle_isTranslated.append(True)
+                        else:
+                            self.project_subtitle_isTranslated.append(False)
+                        is_subtitle = True
+                    elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
+                        video_urls.append(content[n-1].replace('\n', ''))
+                        subtitles.append(content[n-2].replace('\n', ''))
+                        # print(subtitle_num)
+                        subtitle_num -= 1
+                    elif line == '\n' and is_subtitle and subtitle_num <= 0:
+                        break
+                
+                self.project_video_url[id] = video_urls
+                return subtitles
+        except Exception:
+            return []
+
+
     def refresh_project(self, id):
         """
         刷新项目
@@ -98,38 +115,15 @@ class Project():
             id: 项目的id
         """
         # 刷新项目名
-        self.project_name[id] = self.project_path[id].name
+        self.project_name[id] = self.get_name(id)
 
         # 刷新原标题
-        project_dir = self.project_path[id]
-        title = ""
-        for file_path in project_dir.iterdir():
-            if file_path.is_file() and file_path.suffix == ".txt" and not file_path.name.startswith("标题."):
-                title = file_path.stem
-                break
-        self.project_title[id] = title
+        self.project_title[id] = self.get_title(id)
 
-        # 刷新每集标题
-        subtitles = []
-        try:
-            with open(project_dir / "标题.txt", "r", encoding="utf-8") as f:
-                is_subtitle = False
-                subtitle_num = 0
-                content = f.readlines()
-                for n, line in enumerate(content):
-                    if line == '\n' and not is_subtitle:
-                        subtitle_num = n
-                        is_subtitle = True
-                    elif line == '\n' and is_subtitle and subtitle_num > 0 or len(content) == n+1:
-                        subtitles.append(content[n-2].replace('\n', ''))
-                        subtitle_num -= 1
-                    elif line == '\n' and is_subtitle and subtitle_num <= 0:
-                        break
-        except Exception:
-            subtitles = []
-        self.project_subtitle[id] = subtitles
+        # 刷新每集标题        
+        self.project_subtitle[id] = self.get_subtitle(id)
+
         
-
     def creat_files(self, project_name, subfolder_count, label):
         """
         创建工程文件夹
