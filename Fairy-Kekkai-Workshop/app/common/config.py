@@ -91,6 +91,10 @@ class Config(QConfig):
         "MainWindow", "BackgroundRect", 0, RangeValidator(0, 200)
     )
 
+    # project
+
+    linkProject = ProjectConfig()
+
     # download
     ytdlpPath = ConfigItem(
         "Download", "YTDLPPath", str(Path(f"tools/yt-dlp{EXE_SUFFIX}").absolute())
@@ -98,9 +102,6 @@ class Config(QConfig):
     ffmpegPath = ConfigItem(
         "Download", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute())
     )
-
-    # project
-    linkProject = ProjectConfig()
 
 
 cfg = Config()

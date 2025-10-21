@@ -20,6 +20,8 @@ from qfluentwidgets import (
     FluentIcon,
     IconWidget,
     MessageBox,
+    PipsPager,
+    PipsScrollButtonDisplayMode,
     PrimaryPushButton,
     PrimaryToolButton,
     PushButton,
@@ -58,6 +60,14 @@ class ProjectDetailInterface(ScrollArea):
         self.path = ""
         self.card_id = -1
         self.current_project_path = None  # 添加当前项目路径存储
+
+        # 分页相关变量
+        self.current_page = 1
+        self.items_per_page = 5  # 每页显示5集
+        self.total_episodes = 0
+        self.subfolders = []
+        self.topPipsPager = None
+        self.bottomPipsPager = None
 
         self._initWidgets()
 
@@ -117,6 +127,18 @@ class ProjectDetailInterface(ScrollArea):
                 if sub_layout is not None:
                     self._clearLayout(sub_layout)
 
+    def get_subfolders(self, project_path):
+        """获取所有子文件夹"""
+        subfolders = []
+        for item in os.listdir(project_path):
+            item_path = os.path.join(project_path, item)
+            if os.path.isdir(item_path) and item.isdigit():  # 只处理数字命名的文件夹
+                subfolders.append((int(item), item_path))
+
+        # 按数字排序
+        subfolders.sort(key=lambda x: x[0])
+        return subfolders
+
     def loadProject(self, project_path, id, isMessage=False):
         """加载项目详情"""
         project.refresh_project(id)
@@ -126,6 +148,10 @@ class ProjectDetailInterface(ScrollArea):
 
         # 同步参数
         self.card_id = id
+
+        # 获取所有子文件夹
+        self.subfolders = self.get_subfolders(project_path)
+        self.total_episodes = len(self.subfolders)
 
         # 清空当前布局
         try:
@@ -155,128 +181,186 @@ class ProjectDetailInterface(ScrollArea):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
 
+        # 创建分页信息标签
+        total_pages = (
+            self.total_episodes + self.items_per_page - 1
+        ) // self.items_per_page
+        page_info_label = BodyLabel(
+            f"共 {self.total_episodes} 集，第 {self.current_page}/{total_pages} 页",
+            self.view,
+        )
+
+        # 创建顶部PipsPager分页控件
+        if self.total_episodes > self.items_per_page:
+            self.topPipsPager = PipsPager(self)
+            self.topPipsPager.setPageNumber(total_pages)
+            self.topPipsPager.setCurrentIndex(self.current_page - 1)
+            self.topPipsPager.setVisibleNumber(total_pages if total_pages <= 5 else 5)
+            self.topPipsPager.setNextButtonDisplayMode(
+                PipsScrollButtonDisplayMode.ALWAYS
+            )
+            self.topPipsPager.setPreviousButtonDisplayMode(
+                PipsScrollButtonDisplayMode.ALWAYS
+            )
+            self.topPipsPager.currentIndexChanged.connect(self.on_pips_page_changed)
+
         # 创建文件列表容器
         fileListContainer = QWidget(self.view)
         fileListLayout = QVBoxLayout(fileListContainer)
 
+        # 计算当前页的起始和结束索引
+        start_index = (self.current_page - 1) * self.items_per_page
+        end_index = min(start_index + self.items_per_page, self.total_episodes)
+
+        # 为当前页的子文件夹创建文件列表
+        for i in range(start_index, end_index):
+            folder_num, folder_path = self.subfolders[i]
+            self._create_episode_widget(folder_num, folder_path, fileListLayout)
+
+        # 创建底部PipsPager分页控件
+        if self.total_episodes > self.items_per_page:
+            self.bottomPipsPager = PipsPager(self)
+            self.bottomPipsPager.setPageNumber(total_pages)
+            self.bottomPipsPager.setCurrentIndex(self.current_page - 1)
+            self.bottomPipsPager.setVisibleNumber(
+                total_pages if total_pages <= 5 else 5
+            )
+            self.bottomPipsPager.setNextButtonDisplayMode(
+                PipsScrollButtonDisplayMode.ALWAYS
+            )
+            self.bottomPipsPager.setPreviousButtonDisplayMode(
+                PipsScrollButtonDisplayMode.ALWAYS
+            )
+            self.bottomPipsPager.currentIndexChanged.connect(self.on_pips_page_changed)
+
         # 底部增加集数按钮
         hBoxLayout = QHBoxLayout()
-        addButtonBottom = PrimaryToolButton(FluentIcon.ADD)
-        addButtonBottom.setToolTip("插入新的一集")
-        addButtonBottom.clicked.connect(
-            lambda checked,
-            fn=len(project.project_subtitle[self.card_id]) + 1: self.addEpisode(fn)
-        )
-        hBoxLayout.addWidget(addButtonBottom)
-
-        # 获取所有子文件夹
-        subfolders = []
-        for item in os.listdir(project_path):
-            item_path = os.path.join(project_path, item)
-            if os.path.isdir(item_path) and item.isdigit():  # 只处理数字命名的文件夹
-                subfolders.append((int(item), item_path))
-
-        # 按数字排序
-        subfolders.sort(key=lambda x: x[0])
-
-        # 为每个子文件夹创建文件列表
-        for folder_num, folder_path in subfolders:
-            # 创建文件夹标题容器（水平布局，包含标题和编辑按钮）
-            folderTitleWidget = QWidget(fileListContainer)
-            folderTitleLayout = QHBoxLayout(folderTitleWidget)
-            folderTitleLayout.setContentsMargins(0, 0, 0, 0)
-
-            # 文件夹标题
-            folderLabel = StrongBodyLabel(
-                f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num - 1]}",
-                folderTitleWidget,
-            )
-            folderLabel.setTextInteractionFlags(
-                Qt.TextInteractionFlag.TextSelectableByMouse
-            )
-
-            # 插入按钮
-            addEpisodeButton = TransparentToolButton(FluentIcon.ADD, folderTitleWidget)
-            addEpisodeButton.setToolTip("在这之前插入新的一集")
-            addEpisodeButton.clicked.connect(
-                lambda checked, fn=folder_num: self.addEpisode(fn)
-            )
-
-            # 删除按钮
-            deleteButton = TransparentToolButton(FluentIcon.DELETE, folderTitleWidget)
-            deleteButton.setToolTip("删除这一集(不可撤销)")
-            if len(subfolders) <= 1:
-                deleteButton.setDisabled(True)
-            deleteButton.clicked.connect(
-                lambda checked, fn=folder_num: self.deleteEpisode(fn)
-            )
-
-            # 编辑标题按钮
-            editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
-            editTitleButton.setToolTip("编辑本集标题和视频url")
-            editTitleButton.clicked.connect(
-                lambda checked, fn=folder_num: self.editEpisodeTitle(fn)
-            )
-
-            # 打开链接标签
-            openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
-            openurlButton.setToolTip(
-                f"打开本集链接: {project.project_video_url[self.card_id][folder_num - 1]}"
-            )
-            openurlButton.clicked.connect(
+        if self.current_page == total_pages:
+            addButtonBottom = PrimaryToolButton(FluentIcon.ADD)
+            addButtonBottom.setToolTip("插入新的一集")
+            addButtonBottom.clicked.connect(
                 lambda checked,
-                url=project.project_video_url[self.card_id][
-                    folder_num - 1
-                ]: self.openUrl(url)
+                fn=len(project.project_subtitle[self.card_id]) + 1: self.addEpisode(fn)
             )
-
-            folderTitleLayout.addWidget(folderLabel)
-            folderTitleLayout.addWidget(addEpisodeButton)
-            folderTitleLayout.addWidget(deleteButton)
-            folderTitleLayout.addWidget(editTitleButton)
-            folderTitleLayout.addWidget(openurlButton)
-
-            fileListLayout.addWidget(folderTitleWidget)
-
-            # 创建自定义文件列表widget
-            fileListWidget = FileListWidget(
-                self.view, self.card_id, folder_num, fileListContainer
-            )
-            fileListWidget.setMinimumHeight(270)
-
-            # 连接文件删除信号到刷新函数
-            # fileListWidget.fileDeleted.connect(self.delayedRefreshProject)
-
-            # 定义期望的文件
-            expected_files = [
-                ("封面.jpg", FluentIcon.PHOTO, True),
-                ("生肉.mp4", FluentIcon.VIDEO, True),
-                ("熟肉.mp4", FluentIcon.VIDEO, False),
-                ("原文.srt", FluentIcon.DOCUMENT, False),
-                ("译文.srt", FluentIcon.DOCUMENT, False),
-            ]
-
-            # 检查文件是否存在并添加到列表
-            for file_name, icon, donwload_need in expected_files:
-                file_path = os.path.join(folder_path, file_name)
-                file_exists = os.path.exists(file_path)
-                fileListWidget.addFileItem(
-                    file_name, file_path, icon, file_exists, donwload_need
-                )
-
-            fileListLayout.addWidget(fileListWidget)
+            hBoxLayout.addWidget(addButtonBottom)
 
         # 设置布局
         self.vBoxLayout.addWidget(backButton)
         self.vBoxLayout.addWidget(refreshButton)
         self.vBoxLayout.addWidget(projectTitle)
+        self.vBoxLayout.addWidget(page_info_label)
+
+        # 添加顶部PipsPager分页控件
+        if self.topPipsPager:
+            top_pager_layout = QHBoxLayout()
+            top_pager_layout.addStretch(1)
+            top_pager_layout.addWidget(self.topPipsPager)
+            top_pager_layout.addStretch(1)
+            self.vBoxLayout.addLayout(top_pager_layout)
+
         self.vBoxLayout.addWidget(fileListContainer)
+
+        # 添加底部PipsPager分页控件
+        if self.bottomPipsPager:
+            bottom_pager_layout = QHBoxLayout()
+            bottom_pager_layout.addStretch(1)
+            bottom_pager_layout.addWidget(self.bottomPipsPager)
+            bottom_pager_layout.addStretch(1)
+            self.vBoxLayout.addLayout(bottom_pager_layout)
+
         self.vBoxLayout.addLayout(hBoxLayout)
         self.vBoxLayout.addStretch(1)
         event_bus.project_detail_interface = self.view
 
         if isMessage:
             event_bus.notification_service.show_success("成功", "已刷新文件列表")
+
+    def _create_episode_widget(self, folder_num, folder_path, parent_layout):
+        """创建单集的小部件"""
+        # 创建文件夹标题容器（水平布局，包含标题和编辑按钮）
+        folderTitleWidget = QWidget()
+        folderTitleLayout = QHBoxLayout(folderTitleWidget)
+        folderTitleLayout.setContentsMargins(0, 0, 0, 0)
+
+        # 文件夹标题
+        folderLabel = StrongBodyLabel(
+            f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num - 1]}",
+            folderTitleWidget,
+        )
+        folderLabel.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+
+        # 插入按钮
+        addEpisodeButton = TransparentToolButton(FluentIcon.ADD, folderTitleWidget)
+        addEpisodeButton.setToolTip("在这之前插入新的一集")
+        addEpisodeButton.clicked.connect(
+            lambda checked, fn=folder_num: self.addEpisode(fn)
+        )
+
+        # 删除按钮
+        deleteButton = TransparentToolButton(FluentIcon.DELETE, folderTitleWidget)
+        deleteButton.setToolTip("删除这一集(不可撤销)")
+        if len(self.subfolders) <= 1:
+            deleteButton.setDisabled(True)
+        deleteButton.clicked.connect(
+            lambda checked, fn=folder_num: self.deleteEpisode(fn)
+        )
+
+        # 编辑标题按钮
+        editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
+        editTitleButton.setToolTip("编辑本集标题和视频url")
+        editTitleButton.clicked.connect(
+            lambda checked, fn=folder_num: self.editEpisodeTitle(fn)
+        )
+
+        # 打开链接标签
+        openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
+        openurlButton.setToolTip(
+            f"打开本集链接: {project.project_video_url[self.card_id][folder_num - 1]}"
+        )
+        openurlButton.clicked.connect(
+            lambda checked,
+            url=project.project_video_url[self.card_id][folder_num - 1]: self.openUrl(
+                url
+            )
+        )
+
+        folderTitleLayout.addWidget(folderLabel)
+        folderTitleLayout.addWidget(addEpisodeButton)
+        folderTitleLayout.addWidget(deleteButton)
+        folderTitleLayout.addWidget(editTitleButton)
+        folderTitleLayout.addWidget(openurlButton)
+
+        parent_layout.addWidget(folderTitleWidget)
+
+        # 创建自定义文件列表widget
+        fileListWidget = FileListWidget(self.view, self.card_id, folder_num)
+        fileListWidget.setMinimumHeight(270)
+
+        # 定义期望的文件
+        expected_files = [
+            ("封面.jpg", FluentIcon.PHOTO, True),
+            ("生肉.mp4", FluentIcon.VIDEO, True),
+            ("熟肉.mp4", FluentIcon.VIDEO, False),
+            ("原文.srt", FluentIcon.DOCUMENT, False),
+            ("译文.srt", FluentIcon.DOCUMENT, False),
+        ]
+
+        # 检查文件是否存在并添加到列表
+        for file_name, icon, donwload_need in expected_files:
+            file_path = os.path.join(folder_path, file_name)
+            file_exists = os.path.exists(file_path)
+            fileListWidget.addFileItem(
+                file_name, file_path, icon, file_exists, donwload_need
+            )
+
+        parent_layout.addWidget(fileListWidget)
+
+    def on_pips_page_changed(self, index):
+        """PipsPager分页改变时的处理"""
+        self.current_page = index + 1  # PipsPager索引从0开始，我们内部从1开始
+        self.loadProject(self.current_project_path, self.card_id, isMessage=False)
 
     def delayedRefreshProject(self):
         """延迟刷新项目详情页面"""
