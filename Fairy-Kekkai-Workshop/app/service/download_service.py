@@ -1,0 +1,565 @@
+# coding:utf-8
+import os
+import re
+from datetime import datetime
+
+import requests
+from app.common.config import cfg
+from PySide6.QtCore import QProcess, Qt, QThread, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
+from qfluentwidgets import (
+    CaptionLabel,
+    FluentIcon,
+    IconWidget,
+    MessageBox,
+    PillPushButton,
+    ProgressBar,
+    SimpleCardWidget,
+    StrongBodyLabel,
+    TransparentToolButton,
+)
+
+from ..common.event_bus import event_bus
+
+
+class DownloadItemWidget(SimpleCardWidget):
+    """下载任务项组件"""
+
+    # 定义信号
+    removeTaskSignal = Signal(int)  # 任务ID
+    retryDownloadSignal = Signal(int)  # 任务ID
+
+    def __init__(self, task, parent=None):
+        super().__init__(parent)
+        self.task = task
+        self.download_thread = None
+
+        self.setFixedHeight(120)
+
+        self._initUI()
+
+    def _initUI(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(15, 10, 15, 10)
+
+        # 第一行：标题和状态
+        titleLayout = QHBoxLayout()
+
+        # 文件图标
+        iconWidget = IconWidget(FluentIcon.VIDEO, self)
+
+        # 标题和项目信息
+        titleInfoLayout = QVBoxLayout()
+        self.titleLabel = StrongBodyLabel("视频下载", self)
+
+        projectInfo = StrongBodyLabel(f"{self.task.download_path}", self)
+
+        titleInfoLayout.addWidget(self.titleLabel)
+        titleInfoLayout.addWidget(projectInfo)
+
+        # 状态标签
+        statusPill = PillPushButton(self.task.status, self)
+        statusPill.setDisabled(True)
+        statusPill.setChecked(True)
+        self.updateStatusStyle(statusPill)
+
+        titleLayout.addWidget(iconWidget)
+        titleLayout.addLayout(titleInfoLayout)
+        titleLayout.addStretch()
+        titleLayout.addWidget(statusPill)
+
+        # 第二行：进度条和速度
+        progressLayout = QHBoxLayout()
+
+        self.progressBar = ProgressBar(self)
+        self.progressBar.setValue(self.task.progress)
+
+        speedLabel = CaptionLabel(self.task.speed or "初始化中", self)
+
+        progressLayout.addWidget(self.progressBar, 4)
+        progressLayout.addWidget(speedLabel, 1)
+
+        # 第三行：URL信息和操作按钮
+        infoLayout = QHBoxLayout()
+
+        urlLabel = CaptionLabel(
+            f"URL: {self.task.url[:50]}..."
+            if len(self.task.url) > 50
+            else f"URL: {self.task.url}",
+            self,
+        )
+        urlLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+        # 操作按钮
+        buttonLayout = QHBoxLayout()
+
+        self.openFolderBtn = TransparentToolButton(FluentIcon.FOLDER, self)
+        self.openFolderBtn.setToolTip("打开文件夹")
+        self.openFolderBtn.setVisible(self.task.status == "已完成")
+        self.openFolderBtn.clicked.connect(self.openFolder)
+
+        self.cancelBtn = TransparentToolButton(FluentIcon.CLOSE, self)
+        self.cancelBtn.setToolTip("取消下载")
+        self.cancelBtn.setVisible(self.task.status == "下载中")
+        self.cancelBtn.clicked.connect(self.cancelDownload)
+
+        self.retryBtn = TransparentToolButton(FluentIcon.SYNC, self)
+        self.retryBtn.setToolTip("重新下载")
+        self.retryBtn.setVisible(self.task.status == "失败")
+        self.retryBtn.clicked.connect(self.retryDownload)
+
+        self.removeBtn = TransparentToolButton(FluentIcon.DELETE, self)
+        self.removeBtn.setToolTip("移除任务")
+        self.removeBtn.setDisabled(True)
+        self.removeBtn.clicked.connect(self.removeTask)
+
+        buttonLayout.addWidget(self.openFolderBtn)
+        buttonLayout.addWidget(self.cancelBtn)
+        buttonLayout.addWidget(self.retryBtn)
+        buttonLayout.addWidget(self.removeBtn)
+
+        infoLayout.addWidget(urlLabel)
+        infoLayout.addStretch()
+        infoLayout.addLayout(buttonLayout)
+
+        # 添加所有布局
+        layout.addLayout(titleLayout)
+        layout.addLayout(progressLayout)
+        layout.addLayout(infoLayout)
+
+    def updateStatusStyle(self, statusPill):
+        """更新状态标签样式"""
+        if self.task.status == "等待中":
+            statusPill.setProperty("isSecondary", True)
+        elif self.task.status == "下载中":
+            statusPill.setProperty("isPrimary", True)
+        elif self.task.status == "已完成":
+            statusPill.setProperty("isSuccess", True)
+        elif self.task.status == "失败":
+            statusPill.setProperty("isError", True)
+        statusPill.setStyle(statusPill.style())
+
+    def updateProgress(self, progress, speed, filename):
+        """更新进度"""
+        self.task.progress = progress
+        self.task.speed = speed
+        if filename and not self.task.filename:
+            self.task.filename = filename
+            self.titleLabel.setText(self.task.filename)
+
+        self.progressBar.setValue(progress)
+
+        # 更新状态标签
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(0)
+            if isinstance(item, QHBoxLayout):
+                for j in range(item.count()):
+                    widget = item.itemAt(j).widget()
+                    if isinstance(widget, PillPushButton):
+                        self.updateStatusStyle(widget)
+                        break
+                break
+
+        # 更新速度标签
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(1)
+            if isinstance(item, QHBoxLayout):
+                for j in range(item.count()):
+                    widget = item.itemAt(j).widget()
+                    if isinstance(widget, CaptionLabel):
+                        widget.setText(f"{progress}% {speed}")
+                        break
+                break
+
+    def updateStatus(self, status, success=True, error_message=""):
+        """更新状态"""
+        self.task.status = status
+        if not success:
+            self.task.error_message = error_message
+
+        # 更新状态标签
+        for i in range(self.layout().count()):
+            item = self.layout().itemAt(0)
+            if isinstance(item, QHBoxLayout):
+                for j in range(item.count()):
+                    widget = item.itemAt(j).widget()
+                    if isinstance(widget, PillPushButton):
+                        widget.setText(status)
+                        self.updateStatusStyle(widget)
+                        break
+                break
+
+        # 显示/隐藏按钮
+        self.openFolderBtn.setVisible(status == "已完成")
+        self.cancelBtn.setVisible(status == "下载中")
+        self.retryBtn.setVisible(status == "失败")
+
+        if status == "已完成":
+            self.removeBtn.setDisabled(False)
+        if status == "失败":
+            self.removeBtn.setDisabled(False)
+
+    def openFolder(self):
+        """打开文件夹"""
+        if os.path.exists(self.task.download_path):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(self.task.download_path))
+
+    def cancelDownload(self):
+        """取消下载"""
+        # 添加确认对话框
+        box = MessageBox("确认取消", "确定要取消这个下载任务吗？", self.window())
+        box.yesButton.setText("确定")
+        box.cancelButton.setText("取消")
+        if box.exec():
+            # 如果任务正在下载，找到对应的下载线程并取消
+            if self.download_thread and self.download_thread.isRunning():
+                self.download_thread.cancel()
+                # 等待线程安全结束
+                # self.download_thread.wait(1000)  # 最多等待1秒
+
+            # 更新任务状态
+            self.task.status = "已取消"
+            self.task.progress = 0
+            self.task.speed = ""
+            self.task.end_time = datetime.now()
+
+            # 更新UI状态
+            self.updateStatus("已取消")
+
+            # 恢复按钮
+            self.removeBtn.setDisabled(False)
+            self.retryBtn.setVisible(True)
+
+            # 显示取消提示
+            event_bus.notification_service.show_info(
+                "下载已取消", f"任务 '{self.task.filename}' 已被取消"
+            )
+
+    def retryDownload(self):
+        """重新下载"""
+        # 发送重新下载信号
+        self.retryDownloadSignal.emit(self.task.id)
+
+    def removeTask(self):
+        """移除任务"""
+        # 发送移除任务信号
+        self.removeTaskSignal.emit(self.task.id)
+
+
+class DownloadTask:
+    """下载任务类"""
+
+    _id_counter = 0
+
+    def __init__(
+        self,
+        url,
+        download_path,
+        file_name,
+        quality="best",
+        project_name="",
+        episode_num=0,
+    ):
+        self.url = url
+        self.download_path = download_path
+        self.file_name = file_name
+        self.quality = quality
+        self.project_name = project_name
+        self.episode_num = episode_num
+        self.status = "等待中"  # 等待中, 下载中, 已完成, 失败
+        self.progress = 0
+        self.speed = ""
+        self.filename = ""
+        self.start_time = None
+        self.end_time = None
+        self.error_message = ""
+
+        DownloadTask._id_counter += 1
+        self.id = DownloadTask._id_counter
+
+
+class DownloadThread(QThread):
+    """下载线程 - 使用QProcess版本"""
+
+    progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 文件名
+    finished_signal = Signal(bool, str)  # 成功/失败, 消息
+
+    def __init__(self, task):
+        super().__init__()
+        self.task = task
+        self.is_cancelled = False
+        self.process = None
+        self.output_lines = []  # 存储输出用于错误诊断
+
+    def run(self):
+        # 网络检查部分保持不变
+        try:
+            resp = requests.get("https://www.youtube.com", timeout=3)
+            if resp.status_code != 200:
+                self.finished_signal.emit(
+                    False, f"无法访问YouTube，HTTP状态码: {resp.status_code}"
+                )
+                return
+        except requests.exceptions.Timeout:
+            self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
+            return
+        except requests.exceptions.ConnectionError:
+            self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
+            return
+        except requests.exceptions.RequestException as e:
+            self.finished_signal.emit(False, f"网络错误: {str(e)}")
+            return
+        except Exception as e:
+            self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
+            return
+
+        self.task.status = "下载中"
+        self.task.start_time = datetime.now()
+
+        try:
+            # 获取yt-dlp.exe路径
+            ytdlp_path = cfg.get(cfg.ytdlpPath)
+            if not os.path.exists(ytdlp_path):
+                self.finished_signal.emit(False, f"yt-dlp.exe不存在: {ytdlp_path}")
+                return
+
+            # 确保下载目录存在
+            os.makedirs(self.task.download_path, exist_ok=True)
+
+            # 构建命令
+            cmd = [
+                ytdlp_path,
+                self.task.url,
+                "-f",
+                "best[height<=1080]",
+                "--merge-output-format",
+                "mp4",
+                "--embed-metadata",
+                "--newline",
+                "--no-part",
+                "--no-mtime",
+                "--no-warnings",
+                "--ignore-errors",
+            ]
+
+            # 添加输出路径
+            if self.task.file_name:
+                output_path = os.path.join(self.task.download_path, self.task.file_name)
+                cmd.extend(["-o", output_path])
+            else:
+                output_template = os.path.join(
+                    self.task.download_path, "%(title)s.%(ext)s"
+                )
+                cmd.extend(["-o", output_template])
+
+            # 创建QProcess
+            self.process = QProcess()
+
+            # 连接信号
+            self.process.readyReadStandardOutput.connect(self.handle_stdout)
+            self.process.readyReadStandardError.connect(self.handle_stderr)
+            self.process.finished.connect(self.handle_finished)
+            self.process.errorOccurred.connect(self.handle_error)
+
+            # 设置程序和工作目录
+            self.process.setProgram(ytdlp_path)
+            self.process.setArguments(cmd[1:])  # 去掉程序路径本身
+
+            # 启动进程
+            self.process.start()
+
+            # 等待进程完成（在事件循环中）
+            self.exec()
+
+        except Exception as e:
+            if not self.is_cancelled:
+                error_msg = f"下载失败: {str(e)}"
+                if self.output_lines:
+                    error_msg += "\n输出日志:\n" + "\n".join(self.output_lines[-10:])
+
+                self.task.status = "失败"
+                self.task.error_message = error_msg
+                self.task.end_time = datetime.now()
+                self.finished_signal.emit(False, error_msg)
+
+    def handle_stdout(self):
+        """处理标准输出"""
+        if not self.process:
+            return
+
+        data = (
+            self.process.readAllStandardOutput().data().decode("utf-8", errors="ignore")
+        )
+        lines = data.split("\n")
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            self.output_lines.append(line)
+
+            if self.is_cancelled:
+                return
+
+            # 解析进度信息
+            progress_match = self.parse_progress_line(line)
+            if progress_match:
+                percent, speed = progress_match
+                self.task.progress = percent
+                self.task.speed = speed
+                self.progress_signal.emit(percent, speed, self.task.filename)
+
+            # 提取文件名
+            if not hasattr(self, "filename_extracted") or not self.filename_extracted:
+                if self.extract_filename(line):
+                    self.filename_extracted = True
+
+    def handle_stderr(self):
+        """处理标准错误输出"""
+        if not self.process:
+            return
+
+        data = (
+            self.process.readAllStandardError().data().decode("utf-8", errors="ignore")
+        )
+        lines = data.split("\n")
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            self.output_lines.append(line)
+
+            # 错误输出也可能包含进度信息，所以同样解析
+            if self.is_cancelled:
+                return
+
+            progress_match = self.parse_progress_line(line)
+            if progress_match:
+                percent, speed = progress_match
+                self.task.progress = percent
+                self.task.speed = speed
+                self.progress_signal.emit(percent, speed, self.task.filename)
+
+            if not hasattr(self, "filename_extracted") or not self.filename_extracted:
+                if self.extract_filename(line):
+                    self.filename_extracted = True
+
+    def handle_finished(self, exit_code, exit_status):
+        """进程完成处理"""
+        if self.is_cancelled:
+            self.task.status = "已取消"
+            self.finished_signal.emit(False, "下载已取消")
+        elif exit_code == 0:
+            self.task.status = "已完成"
+            self.task.progress = 100
+            self.task.end_time = datetime.now()
+            self.finished_signal.emit(True, "下载完成")
+        else:
+            # 获取详细的错误信息
+            error_detail = self.get_error_detail(exit_code)
+            error_message = f"下载失败，错误码: {exit_code}\n{error_detail}"
+
+            # 添加最后几行输出作为调试信息
+            if self.output_lines:
+                last_lines = "\n".join(self.output_lines[-5:])
+                error_message += f"\n最后输出:\n{last_lines}"
+
+            self.task.status = "失败"
+            self.task.error_message = error_message
+            self.task.end_time = datetime.now()
+            self.finished_signal.emit(False, error_message)
+
+        # 退出事件循环
+        self.quit()
+
+    def handle_error(self, error):
+        """处理进程错误"""
+        if self.is_cancelled:
+            return
+
+        error_map = {
+            QProcess.FailedToStart: "进程启动失败",
+            QProcess.Crashed: "进程崩溃",
+            QProcess.Timedout: "进程超时",
+            QProcess.WriteError: "写入错误",
+            QProcess.ReadError: "读取错误",
+            QProcess.UnknownError: "未知错误",
+        }
+
+        error_msg = error_map.get(error, f"进程错误: {error}")
+        self.finished_signal.emit(False, error_msg)
+
+    def parse_progress_line(self, line):
+        """解析进度行"""
+        # 多种进度格式匹配
+        patterns = [
+            r"\[download\]\s+(\d+\.?\d*)%.*?at\s+([\d.]+\s*[KMGT]?iB/s)",
+            r"\[download\]\s+(\d+\.?\d*)%.*?at\s+([\d.]+\s*[KMGT]?B/s)",
+            r"\[download\]\s+100%",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, line)
+            if match:
+                if pattern == patterns[2]:  # 100%完成
+                    return 100, "完成"
+                else:
+                    percent = float(match.group(1))
+                    speed = match.group(2)
+                    return int(percent), speed
+
+        # 检查下载完成
+        if "100%" in line and "download" in line:
+            return 100, "完成"
+
+        return None
+
+    def extract_filename(self, line):
+        """从输出行提取文件名"""
+        patterns = [
+            r"\[download\] Destination: (.+)",
+            r'\[Merger\] Merging formats into "(.+)"',
+            r"\[info\] (.+): Downloading",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, line)
+            if match:
+                filename = match.group(1)
+                if filename and not self.task.filename:
+                    # 提取纯文件名（去掉路径）
+                    base_name = os.path.basename(filename)
+                    self.task.filename = base_name
+                    self.progress_signal.emit(0, "开始下载", self.task.filename)
+                    return True
+        return False
+
+    def get_error_detail(self, return_code):
+        """根据错误码返回详细的错误信息"""
+        error_codes = {
+            1: "一般错误 - 可能是网络问题、视频不可用或格式不支持",
+            2: "命令行参数错误",
+            3: "提取器错误 - 无法从该网站下载",
+            4: "后处理错误 - 下载后处理失败",
+            5: "网络错误 - 无法连接到网站",
+            6: "认证错误 - 需要登录或会员",
+            7: "提取错误 - 无法提取视频信息",
+            8: "播放列表错误 - 播放列表处理失败",
+            9: "地理限制 - 视频在您所在地区不可用",
+            10: "会员限制 - 需要会员或订阅",
+        }
+
+        return error_codes.get(return_code, f"未知错误代码: {return_code}")
+
+    def cancel(self):
+        """取消下载"""
+        self.is_cancelled = True
+        if self.process and self.process.state() == QProcess.Running:
+            self.process.terminate()
+            # 等待进程结束，最多等待5秒
+            if not self.process.waitForFinished(5000):
+                self.process.kill()

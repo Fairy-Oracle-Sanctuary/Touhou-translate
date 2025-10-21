@@ -1,26 +1,27 @@
 import os
-from PySide6.QtWidgets import QGridLayout, QWidget, QApplication
-from PySide6.QtCore import Qt
 
-from qfluentwidgets import MessageBoxBase, LineEdit, StrongBodyLabel, InfoBar, SubtitleLabel, MessageBox, PrimaryPushButton
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QGridLayout
+from qfluentwidgets import LineEdit, MessageBoxBase, StrongBodyLabel, SubtitleLabel
 
 from ..common.event_bus import event_bus
 
 
 class BaseInputDialog(MessageBoxBase):
     """基础输入对话框，提供通用功能"""
+
     def __init__(self, title, min_width=400, parent=None):
         super().__init__(parent)
         self.titleLabel = SubtitleLabel(title)
         self.viewLayout.addWidget(self.titleLabel)
-        
+
         # 设置按钮文本
         self.yesButton.setText("确定")
         self.cancelButton.setText("取消")
-        
+
         # 设置最小宽度
         self.widget.setMinimumWidth(min_width)
-    
+
     def validate_non_empty(self, fields):
         """验证字段是否非空"""
         errors = []
@@ -28,10 +29,10 @@ class BaseInputDialog(MessageBoxBase):
             if not field_value.strip():
                 errors.append(error_msg)
         return errors
-    
+
     def accept(self):
         """重写接受方法，添加验证逻辑"""
-        if hasattr(self, 'validateInput'):
+        if hasattr(self, "validateInput"):
             errors = self.validateInput()
             if errors:
                 error_message = "\n".join(errors)
@@ -42,7 +43,7 @@ class BaseInputDialog(MessageBoxBase):
 
 class AddProject(BaseInputDialog):
     """添加新项目"""
-    
+
     def __init__(self, parent=None):
         super().__init__("添加新项目", min_width=450, parent=parent)
         self.setup_ui()
@@ -76,7 +77,7 @@ class AddProject(BaseInputDialog):
 
     def validateInput(self):
         errors = []
-        base_path = ''
+        base_path = ""
         project_name = self.nameInput.text()
         subfolder_count = self.numInput.text()
         title = self.titleInput.text()
@@ -85,7 +86,7 @@ class AddProject(BaseInputDialog):
         non_empty_checks = [
             ("项目名称", project_name, "请输入项目名称"),
             ("总集数", subfolder_count, "请输入总集数"),
-            ("原标题", title, "请输入原标题")
+            ("原标题", title, "请输入原标题"),
         ]
         errors.extend(self.validate_non_empty(non_empty_checks))
 
@@ -112,7 +113,7 @@ class CustomMessageBox(BaseInputDialog):
 
     def __init__(self, title, text, min_width=350, parent=None):
         super().__init__(title, min_width, parent)
-        
+
         self.LineEdit = LineEdit()
         self.LineEdit.setPlaceholderText(text)
         self.LineEdit.setClearButtonEnabled(True)
@@ -121,15 +122,26 @@ class CustomMessageBox(BaseInputDialog):
         self.viewLayout.addWidget(self.LineEdit)
 
     def validateInput(self):
-        return self.validate_non_empty([
-            ("输入内容", self.LineEdit.text().strip(), "请输入内容")
-        ])
+        return self.validate_non_empty(
+            [("输入内容", self.LineEdit.text().strip(), "请输入内容")]
+        )
 
 
 class CustomDoubleMessageBox(BaseInputDialog):
     """双输入对话框"""
 
-    def __init__(self, title, input1, input2, text1, text2, error1, error2, min_width=400, parent=None):
+    def __init__(
+        self,
+        title,
+        input1,
+        input2,
+        text1,
+        text2,
+        error1,
+        error2,
+        min_width=400,
+        parent=None,
+    ):
         super().__init__(title, min_width, parent)
         self.error1 = error1
         self.error2 = error2
@@ -164,17 +176,32 @@ class CustomDoubleMessageBox(BaseInputDialog):
         grid_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
     def validateInput(self):
-        return self.validate_non_empty([
-            ("第一个输入", self.LineEdit_1.text().strip(), self.error1),
-            ("第二个输入", self.LineEdit_2.text().strip(), self.error2)
-        ])
+        return self.validate_non_empty(
+            [
+                ("第一个输入", self.LineEdit_1.text().strip(), self.error1),
+                ("第二个输入", self.LineEdit_2.text().strip(), self.error2),
+            ]
+        )
 
 
 class CustomTripleMessageBox(BaseInputDialog):
     """三输入对话框"""
 
-    def __init__(self, title, input1, input2, input3, text1, text2, text3, 
-                 error1, error2, error3, min_width=450, parent=None):
+    def __init__(
+        self,
+        title,
+        input1,
+        input2,
+        input3,
+        text1,
+        text2,
+        text3,
+        error1,
+        error2,
+        error3,
+        min_width=450,
+        parent=None,
+    ):
         super().__init__(title, min_width, parent)
         self.error1 = error1
         self.error2 = error2
@@ -198,9 +225,9 @@ class CustomTripleMessageBox(BaseInputDialog):
         inputs = [
             (self.LineEdit_1, text1),
             (self.LineEdit_2, text2),
-            (self.LineEdit_3, text3)
+            (self.LineEdit_3, text3),
         ]
-        
+
         for line_edit, placeholder in inputs:
             line_edit.setPlaceholderText(placeholder)
             line_edit.setClearButtonEnabled(True)
@@ -220,16 +247,18 @@ class CustomTripleMessageBox(BaseInputDialog):
         grid_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
     def validateInput(self):
-        return self.validate_non_empty([
-            ("第一个输入", self.LineEdit_1.text().strip(), self.error1),
-            ("第二个输入", self.LineEdit_2.text().strip(), self.error2),
-            ("第三个输入", self.LineEdit_3.text().strip(), self.error3)
-        ])
+        return self.validate_non_empty(
+            [
+                ("第一个输入", self.LineEdit_1.text().strip(), self.error1),
+                ("第二个输入", self.LineEdit_2.text().strip(), self.error2),
+                ("第三个输入", self.LineEdit_3.text().strip(), self.error3),
+            ]
+        )
 
     def getInputs(self):
         """获取三个输入框的值"""
         return (
             self.LineEdit_1.text().strip(),
             self.LineEdit_2.text().strip(),
-            self.LineEdit_3.text().strip()
+            self.LineEdit_3.text().strip(),
         )
