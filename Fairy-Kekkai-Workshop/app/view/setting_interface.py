@@ -7,7 +7,9 @@ from qfluentwidgets import (
     ExpandLayout,
     PrimaryPushSettingCard,
     PushSettingCard,
+    RangeSettingCard,
     ScrollArea,
+    SwitchSettingCard,
     TitleLabel,
     setFont,
     setTheme,
@@ -68,9 +70,29 @@ class SettingInterface(ScrollArea):
             texts=["100%", "125%", "150%", "175%", "200%", self.tr("跟随系统设置")],
             parent=self.personalGroup,
         )
+        self.showBackgroundCard = SwitchSettingCard(
+            FIF.BACKGROUND_FILL,
+            self.tr("背景图片"),
+            self.tr("启用或禁用应用背景图片"),
+            configItem=cfg.showBackground,
+            parent=self.personalGroup,
+        )
+        self.backgroundPathCard = PushSettingCard(
+            self.tr("选择文件"),
+            FIF.PHOTO,
+            "选择背景图片",
+            cfg.get(cfg.backgroundPath),
+            self.personalGroup,
+        )
+        self.backgroundRectCard = RangeSettingCard(
+            cfg.backgroundRect,
+            FIF.TRANSPARENT,
+            title="背景透明度",
+            content="调整背景图片的透明度",
+        )
 
         # download
-        self.downloadGroup = SettingCardGroup(self.tr("Download"), self.scrollWidget)
+        self.downloadGroup = SettingCardGroup(self.tr("下载"), self.scrollWidget)
         self.ytdlpPathCard = PushSettingCard(
             self.tr("选择文件"),
             ":/app/images/logo/ytdlp.svg",
@@ -125,6 +147,9 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.accentColorCard)
+        self.personalGroup.addSettingCard(self.showBackgroundCard)
+        self.personalGroup.addSettingCard(self.backgroundPathCard)
+        self.personalGroup.addSettingCard(self.backgroundRectCard)
 
         self.downloadGroup.addSettingCard(self.ytdlpPathCard)
         self.downloadGroup.addSettingCard(self.ffmpegPathCard)
@@ -145,6 +170,16 @@ class SettingInterface(ScrollArea):
     def _showRestartTooltip(self):
         """show restart tooltip"""
         event_bus.notification_service.show_success("更新成功", "配置在重启软件后生效")
+
+    def _backgroundPathCardClicked(self):
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择背景图片"))
+
+        if not path or cfg.get(cfg.backgroundPath) == path:
+            return
+
+        cfg.set(cfg.backgroundPath, path)
+        self.backgroundPathCard.setContent(path)
+        self._showRestartTooltip()
 
     def _onYTDLPPathCardClicked(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("选择ytdlp文件"))
@@ -179,13 +214,14 @@ class SettingInterface(ScrollArea):
         """绑定信号"""
         cfg.appRestartSig.connect(self._showRestartTooltip)
 
-        # 下载
-        self.ytdlpPathCard.clicked.connect(self._onYTDLPPathCardClicked)
-        self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)
-
         # 个性化
         cfg.themeChanged.connect(setTheme)
         cfg.accentColor.valueChanged.connect(self._onAccentColorChanged)
+        self.backgroundPathCard.clicked.connect(self._backgroundPathCardClicked)
+
+        # 下载
+        self.ytdlpPathCard.clicked.connect(self._onYTDLPPathCardClicked)
+        self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)
 
         # 检查更新
         self.aboutCard.clicked.connect(event_bus.checkUpdateSig)

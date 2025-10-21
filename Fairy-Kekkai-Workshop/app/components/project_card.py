@@ -30,6 +30,7 @@ from qfluentwidgets import (
 from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..components.dialog import AddProject, CustomDoubleMessageBox
+from ..resource import resource_rc  # noqa: F401
 from ..service.project_service import project
 
 
