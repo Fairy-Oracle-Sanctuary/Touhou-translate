@@ -8,7 +8,7 @@ from qfluentwidgets import (qconfig, QConfig, ConfigItem, OptionsConfigItem, Boo
                             OptionsValidator, Theme, FolderValidator, ConfigSerializer, RangeConfigItem,
                             RangeValidator, FolderListValidator)
 
-from .setting import CONFIG_FILE, CONFIG_FOLDER
+from .setting import CONFIG_FILE, CONFIG_FOLDER, EXE_SUFFIX
 from pathlib import Path
 import json
 
@@ -59,6 +59,10 @@ class ProjectConfig():
     
 class Config(QConfig):
     """ Config of application """
+
+    # download
+    ytdlpPath = ConfigItem("Download", "YTDLPPath", str(Path(f"tools/yt-dlp{EXE_SUFFIX}").absolute()))
+    ffmpegPath = ConfigItem("Download", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute()))
 
     # main window
     micaEnabled = ConfigItem("MainWindow", "MicaEnabled", isWin11(), BoolValidator())

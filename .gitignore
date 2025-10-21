@@ -8,6 +8,7 @@ Output/
 AppData/
 Fairy-Kekkai-Workshop/build/
 Fairy-Kekkai-Workshop/dist/
+Fairy-Kekkai-Workshop/tools/
 build/
 CLI/
 _internal/
@@ -15,3 +16,4 @@ test/
 .__jianying_export_temp_folder__
 Fairy-Kekkai-Workshop.exe
 LICENSE.txt
+nuitka-crash-report.xml

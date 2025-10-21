@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/app">
         <file>images/logo.png</file>
+        <file>images/logo/FFmpeg.svg</file>
+        <file>images/logo/ytdlp.svg</file>
     </qresource>
 </RCC>

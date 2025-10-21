@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细信息，请参阅帮助文档！
 
 #define MyAppName "Fairy Kekkai Workshop"
-#define MyAppVersion "1.6.1"
+#define MyAppVersion "1.7.0"
 #define MyAppPublisher "Fairy Oracle Sanctuary"
 #define MyAppURL "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 #define MyAppExeName "Fairy-Kekkai-Workshop.exe"
@@ -48,7 +48,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\Users\ZHANGBaoHang\Desktop\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\东方project\projects\Fairy-Kekkai-Workshop\dist\Fairy-Kekkai-Workshop\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "D:\东方project\projects\Fairy-Kekkai-Workshop\dist\Fairy-Kekkai-Workshop.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; 注意：不要在任何共享系统文件上使用 "Flags: ignoreversion" 
 
 [Registry]

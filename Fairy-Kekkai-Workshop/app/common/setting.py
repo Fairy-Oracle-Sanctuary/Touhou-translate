@@ -1,15 +1,14 @@
 # coding: utf-8
 import sys
 from pathlib import Path
-from PySide6.QtCore import QStandardPaths
 
-AUTHOR = 'baby2016'
-VERSION = '1.6.1'
-YEAR = '2025'
+AUTHOR = "baby2016"
+VERSION = "1.7.0"
+YEAR = "2025"
 
-RELEASE_URL = 'https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases'
+RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 
-CONFIG_FOLDER = Path('AppData').absolute()
+CONFIG_FOLDER = Path("AppData").absolute()
 
 CONFIG_FILE = CONFIG_FOLDER / "config.json"
 DB_PATH = CONFIG_FOLDER / "database.db"
