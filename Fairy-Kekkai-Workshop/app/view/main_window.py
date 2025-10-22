@@ -23,6 +23,7 @@ from .download_interface import DownloadStackedInterface
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
 from .setting_interface import SettingInterface
+from .videocr_interface import VideocrStackedInterfaces
 
 
 class MainWindow(MSFluentWindow):
@@ -59,6 +60,7 @@ class MainWindow(MSFluentWindow):
         self.homeInterface = HomeInterface(self)
         self.projectInterface = ProjectStackedInterface(self)
         self.downloadInterface = DownloadStackedInterface(self)
+        self.videoCRInterface = VideocrStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
         # 连接信号
@@ -170,6 +172,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.projectInterface, FIF.FOLDER, "项目")
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
+        self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(

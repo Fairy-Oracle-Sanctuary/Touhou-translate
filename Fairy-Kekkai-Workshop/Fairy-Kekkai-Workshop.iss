@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细信息，请参阅帮助文档！
 
 #define MyAppName "Fairy Kekkai Workshop"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.8.0"
 #define MyAppPublisher "Fairy Oracle Sanctuary"
 #define MyAppURL "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 #define MyAppExeName "Fairy-Kekkai-Workshop.exe"
