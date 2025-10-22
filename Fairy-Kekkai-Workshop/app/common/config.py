@@ -112,7 +112,8 @@ class Config(QConfig):
         "YTDLP",
         "DownloadFormat",
         "mp4",
-        OptionsValidator(["mp4", "best", "worst", "bestvideo", "bestaudio"]),
+        # OptionsValidator(["mp4", "best", "worst", "bestvideo", "bestaudio"]),
+        OptionsValidator(["mp4"]),
         restart=False,
     )
     # 视频质量选择：分辨率选项和最佳/最差选项
@@ -126,6 +127,14 @@ class Config(QConfig):
         ),
         restart=False,
     )
+    # 是否启用系统代理
+    systemProxy = ConfigItem(
+        "YTDLP", "SystemProxy", True, BoolValidator(), restart=False
+    )
+    # 代理设置
+    # 命令行使用: --proxy "http://127.0.0.1:1080"
+    proxyUrl = ConfigItem("YTDLP", "ProxyUrl", "http://127.0.0.1:1080", restart=False)
+
     # 是否下载字幕文件
     # 命令行使用：--write-sub 或 --write-auto-sub (自动生成字幕)
     downloadSubtitles = ConfigItem(
@@ -144,17 +153,17 @@ class Config(QConfig):
     # 是否下载视频缩略图
     # 命令行使用：--write-thumbnail
     downloadThumbnail = ConfigItem(
-        "YTDLP", "DownloadThumbnail", True, BoolValidator(), restart=False
+        "YTDLP", "DownloadThumbnail", False, BoolValidator(), restart=False
     )
     # 是否将缩略图内嵌到视频文件中（需要ffmpeg支持）
     # 命令行使用：--embed-thumbnail
     embedThumbnail = ConfigItem(
-        "YTDLP", "EmbedThumbnail", True, BoolValidator(), restart=False
+        "YTDLP", "EmbedThumbnail", False, BoolValidator(), restart=False
     )
     # 是否下载视频元数据信息
     # 命令行使用：--write-info-json
     downloadMetadata = ConfigItem(
-        "YTDLP", "DownloadMetadata", True, BoolValidator(), restart=False
+        "YTDLP", "DownloadMetadata", False, BoolValidator(), restart=False
     )
     # 并发下载数量，同时下载多个视频时的最大并行数
     # 命令行使用：-N 3 或 --concurrent-fragments 3

@@ -192,7 +192,6 @@ class SettingInterface(ScrollArea):
 
         cfg.set(cfg.backgroundPath, path)
         self.backgroundPathCard.setContent(path)
-        self._showRestartTooltip()
 
     def _onYTDLPPathCardClicked(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("选择ytdlp文件"))

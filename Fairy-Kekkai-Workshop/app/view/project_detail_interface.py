@@ -3,6 +3,7 @@ import os
 import platform
 import shutil
 import subprocess
+from pathlib import Path
 
 import requests
 from PySide6.QtCore import Qt, QThread, QTimer, QUrl, Signal
@@ -754,13 +755,12 @@ class FileItemWidget(SimpleCardWidget):
 
         dialog = CustomMessageBox(
             title=f"下载第 {self.folder_num} 集封面",
-            text="请输入视频id: https://www.youtube.com/watch?v=",
+            text="请输入视频url: https://www.youtube.com/watch?v=",
             parent=self.window(),
             min_width=450,
         )
-        v = project.project_video_url[self.card_id][self.folder_num - 1].split("=")[-1]
-        if v and "youtube" not in v:
-            dialog.LineEdit.setText(v)
+        v = project.project_video_url[self.card_id][self.folder_num - 1]
+        dialog.LineEdit.setText(v)
 
         if dialog.exec():
             video_url = dialog.LineEdit.text().strip()
@@ -781,21 +781,18 @@ class FileItemWidget(SimpleCardWidget):
 
         dialog = CustomMessageBox(
             title=f"下载第 {self.folder_num} 集生肉视频",
-            text="请输入视频id: https://www.youtube.com/watch?v=",
+            text="请输入视频url: https://www.youtube.com/watch?v=",
             parent=self.window(),
             min_width=450,
         )
-        v = project.project_video_url[self.card_id][self.folder_num - 1].split("=")[-1]
-        if v and "youtube" not in v:
-            dialog.LineEdit.setText(v)
+        v = project.project_video_url[self.card_id][self.folder_num - 1]
+        dialog.LineEdit.setText(v)
 
         if dialog.exec():
-            video_url = (
-                "https://www.youtube.com/watch?v=" + dialog.LineEdit.text().strip()
-            )
+            video_url = dialog.LineEdit.text().strip()
             if video_url:
                 # 通过信号发送下载请求
-                download_path = os.path.dirname(self.file_path) + "\生肉.mp4"
+                download_path = Path(self.file_path).parent
                 print(download_path)
                 # 发射信号
                 event_bus.download_requested.emit(

@@ -1,6 +1,7 @@
 # coding:utf-8
 import os
 
+from app.common.config import cfg
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QLabel, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -13,6 +14,7 @@ from qfluentwidgets import (
 )
 
 from ..common.event_bus import event_bus
+from ..components.config_card import YTDLPSettingInterface
 from ..components.dialog import CustomMessageBox
 from ..service.download_service import DownloadItemWidget, DownloadTask, DownloadThread
 
@@ -27,9 +29,11 @@ class DownloadStackedInterface(QWidget):
         self.vBoxLayout = QVBoxLayout(self)
 
         self.downloadInterface = DownloadInterface()
+        self.settingInterface = YTDLPSettingInterface()
 
         # 添加标签页
         self.addSubInterface(self.downloadInterface, "downloadInterface", "下载")
+        self.addSubInterface(self.settingInterface, "settingInterface", "设置")
 
         # 连接信号并初始化当前标签页
         self.stackedWidget.currentChanged.connect(self.onCurrentIndexChanged)
@@ -72,11 +76,13 @@ class DownloadInterface(ScrollArea):
 
         self.download_tasks = []  # 所有下载任务
         self.active_downloads = []  # 活跃的下载线程
-        self.max_concurrent_downloads = 4  # 最大同时下载数
+        self.max_concurrent_downloads = cfg.concurrentDownloads.value  # 最大同时下载数
 
         self._initWidget()
 
         event_bus.download_requested.connect(self.addDownloadFromProject)
+        # 监听配置变化，更新最大并发数
+        cfg.concurrentDownloads.valueChanged.connect(self._updateMaxConcurrentDownloads)
 
     def _initWidget(self):
         self.setWidget(self.view)
@@ -133,10 +139,28 @@ class DownloadInterface(ScrollArea):
         # self.retryDownloadSignal.connect(self.retryDownload)
         # self.removeTaskSignal.connect(self.removeTask)
 
+    def _updateMaxConcurrentDownloads(self, value):
+        """更新最大并发下载数"""
+        self.max_concurrent_downloads = value
+        # 如果当前活跃下载数超过新的限制，需要停止一些任务
+        active_count = len([t for t in self.download_tasks if t.status == "下载中"])
+        if active_count > self.max_concurrent_downloads:
+            # 停止超出限制的任务
+            excess_count = active_count - self.max_concurrent_downloads
+            stopped = 0
+            for task in reversed(self.download_tasks):
+                if task.status == "下载中" and stopped < excess_count:
+                    # 找到对应的线程并停止
+                    for thread in self.active_downloads:
+                        if thread.task.id == task.id:
+                            thread.cancel()
+                            task.status = "等待中"
+                            self.updateTaskUI(task.id)
+                            stopped += 1
+                            break
+
     def showAddDownloadDialog(self):
         """显示添加下载对话框"""
-        # 这里需要从主窗口获取项目信息
-        # 获取应用程序的顶级窗口
         main_window = None
         for widget in QApplication.topLevelWidgets():
             if widget.isWindow() and widget.isVisible():
@@ -144,18 +168,27 @@ class DownloadInterface(ScrollArea):
                 break
 
         dialog = CustomMessageBox(
-            title="请输入视频ID",
-            text="https://www.youtube.com/watch?v=",
+            title="添加下载任务",
+            text="请输入视频URL:",
             parent=main_window if main_window else self.window(),
-            min_width=400,
+            min_width=500,
         )
+
         if dialog.exec():
             url = dialog.LineEdit.text().strip()
+            if not url:
+                event_bus.notification_service.show_warning(
+                    "输入错误", "请输入有效的URL"
+                )
+                return
+
+            # 设置默认下载路径
+            default_download_path = os.path.expanduser(r"~\Downloads")
+
             task = DownloadTask(
-                url="https://www.youtube.com/watch?v=" + url,
-                download_path=os.path.expanduser(r"~\Downloads"),
-                quality="best",
-                file_name="",
+                url=url,
+                download_path=default_download_path,
+                file_name="",  # 使用配置中的输出模板
             )
             self.addDownloadTask(task)
         else:
@@ -199,6 +232,28 @@ class DownloadInterface(ScrollArea):
 
     def startDownload(self, task):
         """开始下载任务"""
+        # 检查 yt-dlp 路径
+        if not os.path.exists(cfg.ytdlpPath.value):
+            event_bus.notification_service.show_error(
+                "配置错误",
+                f"yt-dlp 路径不存在: {cfg.ytdlpPath.value}\n请在设置中配置正确的路径",
+            )
+            task.status = "失败"
+            self.updateTaskUI(task.id)
+            return
+
+        # 检查 ffmpeg 路径（如果需要）
+        # if (
+        #     cfg.embedSubtitles.value or cfg.embedThumbnail.value
+        # ) and not os.path.exists(cfg.ffmpegPath.value):
+        #     event_bus.notification_service.show_error(
+        #         "配置错误",
+        #         f"FFmpeg 路径不存在: {cfg.ffmpegPath.value}\n请在设置中配置正确的路径",
+        #     )
+        #     task.status = "失败"
+        #     self.updateTaskUI(task.id)
+        #     return
+
         # 创建下载线程
         download_thread = DownloadThread(task)
         download_thread.progress_signal.connect(
@@ -214,7 +269,7 @@ class DownloadInterface(ScrollArea):
         for i in range(self.taskListLayout.count()):
             widget = self.taskListLayout.itemAt(i).widget()
             if isinstance(widget, DownloadItemWidget) and widget.task.id == task.id:
-                widget.download_thread = download_thread  # 添加这一行
+                widget.download_thread = download_thread
                 break
 
         # 存储线程引用

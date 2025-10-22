@@ -256,7 +256,7 @@ class DownloadTask:
         self,
         url,
         download_path,
-        file_name,
+        file_name="",
         quality="best",
         project_name="",
         episode_num=0,
@@ -291,6 +291,94 @@ class DownloadThread(QThread):
         self.is_cancelled = False
         self.process = None
         self.output_lines = []  # 存储输出用于错误诊断
+
+    def build_ytdlp_command(self):
+        """根据配置构建 yt-dlp 命令"""
+        cmd = [cfg.ytdlpPath.value]
+
+        # 输出路径和模板
+        if self.task.file_name:
+            output_path = os.path.join(self.task.download_path, self.task.file_name)
+            cmd.extend(["-o", output_path])
+        else:
+            output_template = os.path.join(
+                self.task.download_path, cfg.outputTemplate.value
+            )
+            cmd.extend(["-o", output_template])
+
+        # 格式设置 - 强制 MP4 格式
+        cmd.extend(["-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"])
+
+        # 质量筛选
+        if cfg.downloadQuality.value not in ["best", "worst"]:
+            cmd.extend(["-S", f"res:{cfg.downloadQuality.value}"])
+
+        # 代理设置
+        if not cfg.systemProxy.value and cfg.proxyUrl.value:
+            cmd.extend(["--proxy", cfg.proxyUrl.value])
+
+        # 字幕设置
+        if cfg.downloadSubtitles.value:
+            cmd.append("--write-sub")
+            if cfg.subtitleLanguages.value:
+                cmd.extend(["--sub-langs", cfg.subtitleLanguages.value])
+
+        if cfg.embedSubtitles.value:
+            cmd.append("--embed-subs")
+
+        # 缩略图设置
+        if cfg.downloadThumbnail.value:
+            cmd.append("--write-thumbnail")
+
+        if cfg.embedThumbnail.value:
+            cmd.append("--embed-thumbnail")
+
+        # 元数据设置
+        if cfg.downloadMetadata.value:
+            cmd.append("--write-info-json")
+
+        if cfg.writeDescription.value:
+            cmd.append("--write-description")
+
+        if cfg.writeAnnotations.value:
+            cmd.append("--write-annotations")
+
+        # 下载控制
+        cmd.extend(["-N", str(cfg.concurrentDownloads.value)])
+        cmd.extend(["-R", str(cfg.retryAttempts.value)])
+        cmd.extend(["--socket-timeout", str(cfg.downloadTimeout.value)])
+
+        if cfg.limitDownloadRate.value and cfg.maxDownloadRate.value:
+            cmd.extend(["--limit-rate", cfg.maxDownloadRate.value])
+
+        if cfg.skipExistingFiles.value:
+            cmd.append("--no-overwrites")
+
+        # Cookies 设置
+        if cfg.useCookies.value and cfg.cookiesFile.value:
+            cmd.extend(["--cookies", cfg.cookiesFile.value])
+
+        # 编码器设置
+        if cfg.videoCodec.value != "h264":
+            cmd.extend(["--video-codec", cfg.videoCodec.value])
+
+        if cfg.audioCodec.value != "aac":
+            cmd.extend(["--audio-codec", cfg.audioCodec.value])
+
+        # 添加通用参数
+        cmd.extend(
+            [
+                "--newline",
+                "--no-part",
+                "--no-mtime",
+                "--ignore-errors",
+            ]
+        )
+
+        # 添加 URL
+        cmd.append(self.task.url)
+
+        return cmd
 
     def run(self):
         # 网络检查部分保持不变
@@ -328,30 +416,8 @@ class DownloadThread(QThread):
             os.makedirs(self.task.download_path, exist_ok=True)
 
             # 构建命令
-            cmd = [
-                ytdlp_path,
-                self.task.url,
-                "-f",
-                "best[height<=1080]",
-                "--merge-output-format",
-                "mp4",
-                "--embed-metadata",
-                "--newline",
-                "--no-part",
-                "--no-mtime",
-                "--no-warnings",
-                "--ignore-errors",
-            ]
-
-            # 添加输出路径
-            if self.task.file_name:
-                output_path = os.path.join(self.task.download_path, self.task.file_name)
-                cmd.extend(["-o", output_path])
-            else:
-                output_template = os.path.join(
-                    self.task.download_path, "%(title)s.%(ext)s"
-                )
-                cmd.extend(["-o", output_template])
+            cmd = self.build_ytdlp_command()
+            print(f"执行命令: {' '.join(cmd)}")
 
             # 创建QProcess
             self.process = QProcess()
