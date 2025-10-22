@@ -52,7 +52,7 @@ class VideocrStackedInterfaces(QWidget):
 
         # 添加标签页
         self.addSubInterface(self.videocrInterface, "downloadInterface", "字幕提取")
-        self.addSubInterface(self.settingInterface, "settingInterface", "设置")
+        self.addSubInterface(self.settingInterface, "settingInterface", "高级设置")
 
         # 连接信号并初始化当前标签页
         self.stackedWidget.currentChanged.connect(self.onCurrentIndexChanged)
@@ -92,15 +92,6 @@ class VideoPreviewWidget(CardWidget):
         self.previewLabel = BodyLabel()
         self.previewLabel.setAlignment(Qt.AlignCenter)
         self.previewLabel.setMinimumSize(640, 360)
-        # self.previewLabel.setStyleSheet("""
-        #     BodyLabel {
-        #         border: 2px solid #cccccc;
-        #         border-radius: 8px;
-        #         background: #1e1e1e;
-        #         color: white;
-        #         padding: 20px;
-        #     }
-        # """)
         self.previewLabel.setText("视频预览区域\n\n点击浏览按钮选择视频文件")
 
         # 框选相关变量
@@ -114,6 +105,7 @@ class VideoPreviewWidget(CardWidget):
         # 框选控制按钮
         self.control_layout = QHBoxLayout()
         self.select_btn = PushButton(FluentIcon.MOVE, "框选区域")
+        self.select_btn.setEnabled(False)
         self.clear_selection_btn = PushButton(FluentIcon.CANCEL, "清除框选")
         self.clear_selection_btn.setEnabled(False)
 
@@ -121,8 +113,15 @@ class VideoPreviewWidget(CardWidget):
         self.control_layout.addWidget(self.clear_selection_btn)
         self.control_layout.addStretch()
 
+        # 框选坐标显示
+        self.coords_layout = QHBoxLayout()
+        self.coords_label = CaptionLabel("框选区域坐标: 未选择")
+        self.coords_layout.addWidget(self.coords_label)
+        self.coords_layout.addStretch()
+
         self.vBoxLayout.addWidget(self.previewLabel)
         self.vBoxLayout.addLayout(self.control_layout)
+        self.vBoxLayout.addLayout(self.coords_layout)  # 添加坐标显示
         self.vBoxLayout.setContentsMargins(20, 20, 20, 20)
 
         # 连接信号
@@ -149,6 +148,9 @@ class VideoPreviewWidget(CardWidget):
         if self.previewLabel.text():
             self.previewLabel.setText("")
 
+        # 更新坐标显示
+        self.coords_label.setText("框选区域坐标: 正在选择...")
+
     def _clear_selection(self):
         """清除框选区域"""
         self.selection_rect = None
@@ -157,6 +159,9 @@ class VideoPreviewWidget(CardWidget):
         self.select_btn.setEnabled(True)
         self.previewLabel.setCursor(Qt.ArrowCursor)
         self._update_preview()
+
+        # 更新坐标显示
+        self.coords_label.setText("框选区域坐标: 未选择")
 
     def _on_mouse_press(self, event):
         """处理鼠标按下事件"""
@@ -173,6 +178,22 @@ class VideoPreviewWidget(CardWidget):
         if self.is_selecting:
             self.end_point = event.pos()
             self._update_preview()
+
+            # 实时更新坐标显示
+            if self.current_frame is not None:
+                temp_rect = QRect(
+                    min(self.start_point.x(), self.end_point.x()),
+                    min(self.start_point.y(), self.end_point.y()),
+                    abs(self.end_point.x() - self.start_point.x()),
+                    abs(self.end_point.y() - self.start_point.y()),
+                )
+                original_rect = self._calculate_original_rect(temp_rect)
+                if original_rect:
+                    self.coords_label.setText(
+                        f"框选区域坐标: x={original_rect.x()}, y={original_rect.y()}, "
+                        f"w={original_rect.width()}, h={original_rect.height()}"
+                    )
+
             event.accept()
         else:
             # 调用父类的鼠标移动事件处理
@@ -209,6 +230,43 @@ class VideoPreviewWidget(CardWidget):
         self.previewLabel.setCursor(Qt.ArrowCursor)
         self.is_selecting = False
         self._update_preview()
+
+        # 更新坐标显示
+        if self.selection_rect and self.current_frame is not None:
+            original_rect = self._calculate_original_rect(self.selection_rect)
+            if original_rect:
+                self.coords_label.setText(
+                    f"框选区域坐标: x={original_rect.x()}, y={original_rect.y()}, "
+                    f"w={original_rect.width()}, h={original_rect.height()}"
+                )
+
+    def _calculate_original_rect(self, preview_rect):
+        """计算预览区域矩形对应的原始图像矩形"""
+        if self.current_frame is None or self.current_pixmap is None:
+            return None
+
+        try:
+            # 计算缩放比例
+            original_height, original_width = self.current_frame.shape[:2]
+            preview_width = self.current_pixmap.width()
+            preview_height = self.current_pixmap.height()
+
+            # 计算实际显示区域（保持宽高比）
+            scale_x = original_width / preview_width
+            scale_y = original_height / preview_height
+
+            # 获取框选区域在原始图像中的坐标
+            original_rect = QRect(
+                int(preview_rect.x() * scale_x),
+                int(preview_rect.y() * scale_y),
+                int(preview_rect.width() * scale_x),
+                int(preview_rect.height() * scale_y),
+            )
+
+            return original_rect
+        except Exception as e:
+            print(f"计算原始矩形失败: {e}")
+            return None
 
     def _update_preview(self):
         """更新预览图像，绘制框选区域"""
@@ -292,32 +350,7 @@ class VideoPreviewWidget(CardWidget):
         if not self.selection_rect or self.current_frame is None:
             return None
 
-        try:
-            # 计算缩放比例
-            original_height, original_width = self.current_frame.shape[:2]
-
-            if not self.current_pixmap:
-                return None
-
-            preview_width = self.current_pixmap.width()
-            preview_height = self.current_pixmap.height()
-
-            # 计算实际显示区域（保持宽高比）
-            scale_x = original_width / preview_width
-            scale_y = original_height / preview_height
-
-            # 获取框选区域在原始图像中的坐标
-            original_rect = QRect(
-                int(self.selection_rect.x() * scale_x),
-                int(self.selection_rect.y() * scale_y),
-                int(self.selection_rect.width() * scale_x),
-                int(self.selection_rect.height() * scale_y),
-            )
-
-            return original_rect
-        except Exception as e:
-            print(f"获取选择区域失败: {e}")
-            return None
+        return self._calculate_original_rect(self.selection_rect)
 
     def resizeEvent(self, event):
         """处理窗口大小改变事件"""
@@ -554,6 +587,7 @@ class VideocrInterface(ScrollArea):
             # 加载视频
             self._load_video(file_path)
 
+            self.video_preview.select_btn.setEnabled(True)
             self.start_btn.setEnabled(True)
 
     def _browse_output_file(self):
