@@ -91,6 +91,16 @@ class SettingInterface(ScrollArea):
             content="调整背景图片的透明度",
         )
 
+        # project
+        self.projectGroup = SettingCardGroup(self.tr("项目"), self.scrollWidget)
+        self.detailProjectItemNumCard = RangeSettingCard(
+            cfg.detailProjectItemNum,
+            FIF.DOCUMENT,
+            title=self.tr("项目详情页数量"),
+            content=self.tr("调整项目详情页项目数量"),
+            parent=self.projectGroup,
+        )
+
         # download
         self.downloadGroup = SettingCardGroup(self.tr("下载"), self.scrollWidget)
         self.ytdlpPathCard = PushSettingCard(
@@ -151,6 +161,8 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.backgroundPathCard)
         self.personalGroup.addSettingCard(self.backgroundRectCard)
 
+        self.projectGroup.addSettingCard(self.detailProjectItemNumCard)
+
         self.downloadGroup.addSettingCard(self.ytdlpPathCard)
         self.downloadGroup.addSettingCard(self.ffmpegPathCard)
 
@@ -160,6 +172,7 @@ class SettingInterface(ScrollArea):
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
         self.expandLayout.addWidget(self.personalGroup)
+        self.expandLayout.addWidget(self.projectGroup)
         self.expandLayout.addWidget(self.downloadGroup)
         self.expandLayout.addWidget(self.aboutGroup)
 
