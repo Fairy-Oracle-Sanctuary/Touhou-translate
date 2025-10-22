@@ -19,7 +19,7 @@ from ..common.setting import RELEASE_URL
 from ..components.infobar import NotificationService
 from ..components.system_tray import SystemTray
 from ..service.version_service import VersionService
-from .download_interface import DownloadInterface
+from .download_interface import DownloadStackedInterface
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
 from .setting_interface import SettingInterface
@@ -58,7 +58,7 @@ class MainWindow(MSFluentWindow):
         # 创建页面
         self.homeInterface = HomeInterface(self)
         self.projectInterface = ProjectStackedInterface(self)
-        self.downloadInterface = DownloadInterface(self)
+        self.downloadInterface = DownloadStackedInterface(self)
         self.settingInterface = SettingInterface(self)
 
         # 连接信号

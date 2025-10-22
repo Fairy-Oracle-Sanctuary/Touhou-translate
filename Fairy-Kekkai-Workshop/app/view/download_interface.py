@@ -2,10 +2,11 @@
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QLabel, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
+    Pivot,
     PrimaryPushButton,
     ScrollArea,
     SegmentedWidget,
@@ -14,6 +15,49 @@ from qfluentwidgets import (
 from ..common.event_bus import event_bus
 from ..components.dialog import CustomMessageBox
 from ..service.download_service import DownloadItemWidget, DownloadTask, DownloadThread
+
+
+class DownloadStackedInterface(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # 创建堆叠窗口
+        self.pivot = Pivot(self)
+        self.stackedWidget = QStackedWidget(self)
+        self.vBoxLayout = QVBoxLayout(self)
+
+        self.downloadInterface = DownloadInterface()
+
+        # 添加标签页
+        self.addSubInterface(self.downloadInterface, "downloadInterface", "下载")
+
+        # 连接信号并初始化当前标签页
+        self.stackedWidget.currentChanged.connect(self.onCurrentIndexChanged)
+        self.stackedWidget.setCurrentWidget(self.downloadInterface)
+        self.pivot.setCurrentItem(self.downloadInterface.objectName())
+
+        self.vBoxLayout.setContentsMargins(30, 0, 30, 30)
+        self.vBoxLayout.addWidget(self.pivot, 0, Qt.AlignHCenter)
+        self.vBoxLayout.addWidget(self.stackedWidget)
+
+        self.resize(780, 800)
+        self.setObjectName("DownloadStackedInterfaces")
+
+    def addSubInterface(self, widget: QLabel, objectName: str, text: str):
+        widget.setObjectName(objectName)
+        widget.setAlignment(Qt.AlignCenter)
+        self.stackedWidget.addWidget(widget)
+
+        # 使用全局唯一的 objectName 作为路由键
+        self.pivot.addItem(
+            routeKey=objectName,
+            text=text,
+            onClick=lambda: self.stackedWidget.setCurrentWidget(widget),
+        )
+
+    def onCurrentIndexChanged(self, index):
+        widget = self.stackedWidget.widget(index)
+        self.pivot.setCurrentItem(widget.objectName())
 
 
 class DownloadInterface(ScrollArea):
@@ -28,7 +72,7 @@ class DownloadInterface(ScrollArea):
 
         self.download_tasks = []  # 所有下载任务
         self.active_downloads = []  # 活跃的下载线程
-        self.max_concurrent_downloads = 2  # 最大同时下载数
+        self.max_concurrent_downloads = 4  # 最大同时下载数
 
         self._initWidget()
 

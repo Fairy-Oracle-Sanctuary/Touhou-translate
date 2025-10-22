@@ -33,6 +33,7 @@ from qfluentwidgets import (
     isDarkTheme,
 )
 
+from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
 from ..components.dialog import (
@@ -63,7 +64,7 @@ class ProjectDetailInterface(ScrollArea):
 
         # 分页相关变量
         self.current_page = 1
-        self.items_per_page = 5  # 每页显示5集
+        self.items_per_page = cfg.get(cfg.detailProjectItemNum)
         self.total_episodes = 0
         self.subfolders = []
         self.topPipsPager = None
@@ -143,6 +144,8 @@ class ProjectDetailInterface(ScrollArea):
         """加载项目详情"""
         project.refresh_project(id)
 
+        self.items_per_page = cfg.get(cfg.detailProjectItemNum)
+
         # 存储当前项目路径
         self.current_project_path = project_path
 
@@ -185,6 +188,9 @@ class ProjectDetailInterface(ScrollArea):
         total_pages = (
             self.total_episodes + self.items_per_page - 1
         ) // self.items_per_page
+        self.current_page = (
+            total_pages if self.current_page > total_pages else self.current_page
+        )
         page_info_label = BodyLabel(
             f"共 {self.total_episodes} 集，第 {self.current_page}/{total_pages} 页",
             self.view,
