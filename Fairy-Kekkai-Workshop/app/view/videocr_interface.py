@@ -3,8 +3,7 @@
 from pathlib import Path
 
 import cv2
-from PySide6.QtCore import QPoint, QRect, Qt, QTime
-from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
+from PySide6.QtCore import Qt, QTime
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -13,13 +12,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from qfluentwidgets import (
-    BodyLabel,
     CaptionLabel,
     CardWidget,
-    CheckBox,
     ComboBox,
     ExpandSettingCard,
-    FluentIcon,
     InfoBar,
     InfoBarPosition,
     LineEdit,
@@ -33,6 +29,10 @@ from qfluentwidgets import (
     StrongBodyLabel,
     TextEdit,
 )
+from qfluentwidgets import FluentIcon as FIF
+
+from ..common.setting import videocr_languages_dict
+from ..service.video_service import VideoPreview
 
 
 class VideocrStackedInterfaces(QWidget):
@@ -80,284 +80,6 @@ class VideocrStackedInterfaces(QWidget):
     def onCurrentIndexChanged(self, index):
         widget = self.stackedWidget.widget(index)
         self.pivot.setCurrentItem(widget.objectName())
-
-
-class VideoPreviewWidget(CardWidget):
-    """视频预览组件，支持框选功能"""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.vBoxLayout = QVBoxLayout(self)
-        self.previewLabel = BodyLabel()
-        self.previewLabel.setAlignment(Qt.AlignCenter)
-        self.previewLabel.setMinimumSize(640, 360)
-        self.previewLabel.setText("视频预览区域\n\n点击浏览按钮选择视频文件")
-
-        # 框选相关变量
-        self.selection_rect = None
-        self.is_selecting = False
-        self.start_point = QPoint()
-        self.end_point = QPoint()
-        self.current_frame = None
-        self.current_pixmap = None
-
-        # 框选控制按钮
-        self.control_layout = QHBoxLayout()
-        self.select_btn = PushButton(FluentIcon.MOVE, "框选区域")
-        self.select_btn.setEnabled(False)
-        self.clear_selection_btn = PushButton(FluentIcon.CANCEL, "清除框选")
-        self.clear_selection_btn.setEnabled(False)
-
-        self.control_layout.addWidget(self.select_btn)
-        self.control_layout.addWidget(self.clear_selection_btn)
-        self.control_layout.addStretch()
-
-        # 框选坐标显示
-        self.coords_layout = QHBoxLayout()
-        self.coords_label = CaptionLabel("框选区域坐标: 未选择")
-        self.coords_layout.addWidget(self.coords_label)
-        self.coords_layout.addStretch()
-
-        self.vBoxLayout.addWidget(self.previewLabel)
-        self.vBoxLayout.addLayout(self.control_layout)
-        self.vBoxLayout.addLayout(self.coords_layout)  # 添加坐标显示
-        self.vBoxLayout.setContentsMargins(20, 20, 20, 20)
-
-        # 连接信号
-        self.select_btn.clicked.connect(self._start_selection)
-        self.clear_selection_btn.clicked.connect(self._clear_selection)
-
-        # 安装事件过滤器来捕获鼠标事件
-        self.previewLabel.setMouseTracking(True)
-
-        # 始终使用自定义事件处理器，但根据状态决定是否处理
-        self.previewLabel.mousePressEvent = self._on_mouse_press
-        self.previewLabel.mouseMoveEvent = self._on_mouse_move
-        self.previewLabel.mouseReleaseEvent = self._on_mouse_release
-
-    def _start_selection(self):
-        """开始框选模式"""
-        if self.current_frame is None:
-            return
-
-        self.is_selecting = True
-        self.select_btn.setEnabled(False)
-        self.previewLabel.setCursor(Qt.CrossCursor)
-        # 清除提示文字但保留视频帧
-        if self.previewLabel.text():
-            self.previewLabel.setText("")
-
-        # 更新坐标显示
-        self.coords_label.setText("框选区域坐标: 正在选择...")
-
-    def _clear_selection(self):
-        """清除框选区域"""
-        self.selection_rect = None
-        self.is_selecting = False
-        self.clear_selection_btn.setEnabled(False)
-        self.select_btn.setEnabled(True)
-        self.previewLabel.setCursor(Qt.ArrowCursor)
-        self._update_preview()
-
-        # 更新坐标显示
-        self.coords_label.setText("框选区域坐标: 未选择")
-
-    def _on_mouse_press(self, event):
-        """处理鼠标按下事件"""
-        if event.button() == Qt.LeftButton and self.is_selecting:
-            self.start_point = event.pos()
-            self.end_point = event.pos()
-            event.accept()
-        else:
-            # 调用父类的鼠标按下事件处理
-            super().mousePressEvent(event)
-
-    def _on_mouse_move(self, event):
-        """处理鼠标移动事件"""
-        if self.is_selecting:
-            self.end_point = event.pos()
-            self._update_preview()
-
-            # 实时更新坐标显示
-            if self.current_frame is not None:
-                temp_rect = QRect(
-                    min(self.start_point.x(), self.end_point.x()),
-                    min(self.start_point.y(), self.end_point.y()),
-                    abs(self.end_point.x() - self.start_point.x()),
-                    abs(self.end_point.y() - self.start_point.y()),
-                )
-                original_rect = self._calculate_original_rect(temp_rect)
-                if original_rect:
-                    self.coords_label.setText(
-                        f"框选区域坐标: x={original_rect.x()}, y={original_rect.y()}, "
-                        f"w={original_rect.width()}, h={original_rect.height()}"
-                    )
-
-            event.accept()
-        else:
-            # 调用父类的鼠标移动事件处理
-            super().mouseMoveEvent(event)
-
-    def _on_mouse_release(self, event):
-        """处理鼠标释放事件"""
-        if event.button() == Qt.LeftButton and self.is_selecting:
-            self.end_point = event.pos()
-            self._finalize_selection()
-            event.accept()
-        else:
-            # 调用父类的鼠标释放事件处理
-            super().mouseReleaseEvent(event)
-
-    def _finalize_selection(self):
-        """完成框选"""
-        # 确保矩形是有效的（宽度和高度为正）
-        x1, y1 = self.start_point.x(), self.start_point.y()
-        x2, y2 = self.end_point.x(), self.end_point.y()
-
-        self.selection_rect = QRect(
-            min(x1, x2), min(y1, y2), abs(x2 - x1), abs(y2 - y1)
-        )
-
-        # 如果矩形太小，忽略它
-        if self.selection_rect.width() < 10 or self.selection_rect.height() < 10:
-            self.selection_rect = None
-            self._update_preview()
-            self._clear_selection()
-            return
-
-        self.clear_selection_btn.setEnabled(True)
-        self.previewLabel.setCursor(Qt.ArrowCursor)
-        self.is_selecting = False
-        self._update_preview()
-
-        # 更新坐标显示
-        if self.selection_rect and self.current_frame is not None:
-            original_rect = self._calculate_original_rect(self.selection_rect)
-            if original_rect:
-                self.coords_label.setText(
-                    f"框选区域坐标: x={original_rect.x()}, y={original_rect.y()}, "
-                    f"w={original_rect.width()}, h={original_rect.height()}"
-                )
-
-    def _calculate_original_rect(self, preview_rect):
-        """计算预览区域矩形对应的原始图像矩形"""
-        if self.current_frame is None or self.current_pixmap is None:
-            return None
-
-        try:
-            # 计算缩放比例
-            original_height, original_width = self.current_frame.shape[:2]
-            preview_width = self.current_pixmap.width()
-            preview_height = self.current_pixmap.height()
-
-            # 计算实际显示区域（保持宽高比）
-            scale_x = original_width / preview_width
-            scale_y = original_height / preview_height
-
-            # 获取框选区域在原始图像中的坐标
-            original_rect = QRect(
-                int(preview_rect.x() * scale_x),
-                int(preview_rect.y() * scale_y),
-                int(preview_rect.width() * scale_x),
-                int(preview_rect.height() * scale_y),
-            )
-
-            return original_rect
-        except Exception as e:
-            print(f"计算原始矩形失败: {e}")
-            return None
-
-    def _update_preview(self):
-        """更新预览图像，绘制框选区域"""
-        if self.current_pixmap is None:
-            return
-
-        try:
-            # 创建一个副本进行绘制
-            display_pixmap = self.current_pixmap.copy()
-
-            # 创建绘制器
-            painter = QPainter(display_pixmap)
-            painter.setRenderHint(QPainter.Antialiasing)
-
-            # 如果有框选区域，绘制它
-            if self.selection_rect and not self.is_selecting:
-                pen = QPen(QColor(255, 0, 0), 2)
-                painter.setPen(pen)
-                painter.drawRect(self.selection_rect)
-
-                # 绘制半透明填充
-                fill_color = QColor(255, 0, 0, 50)
-                painter.fillRect(self.selection_rect, fill_color)
-
-            # 如果在绘制过程中，显示临时矩形
-            elif self.is_selecting:
-                temp_rect = QRect(
-                    min(self.start_point.x(), self.end_point.x()),
-                    min(self.start_point.y(), self.end_point.y()),
-                    abs(self.end_point.x() - self.start_point.x()),
-                    abs(self.end_point.y() - self.start_point.y()),
-                )
-
-                pen = QPen(QColor(255, 255, 0), 2, Qt.DashLine)
-                painter.setPen(pen)
-                painter.drawRect(temp_rect)
-
-            painter.end()
-
-            self.previewLabel.setPixmap(display_pixmap)
-        except Exception as e:
-            print(f"更新预览失败: {e}")
-
-    def set_frame(self, frame_data):
-        """设置视频帧"""
-        if frame_data is not None:
-            try:
-                # 将OpenCV图像转换为QPixmap
-                rgb_image = cv2.cvtColor(frame_data, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgb_image.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(
-                    rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888
-                )
-
-                # 创建Pixmap并缩放以适应预览区域
-                pixmap = QPixmap.fromImage(qt_image)
-                self.current_pixmap = pixmap.scaled(
-                    self.previewLabel.width(),
-                    self.previewLabel.height(),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
-                )
-
-                self.current_frame = frame_data
-                self._update_preview()
-            except Exception as e:
-                print(f"设置视频帧失败: {e}")
-                self.current_frame = None
-                self.current_pixmap = None
-                self.previewLabel.clear()
-                self.previewLabel.setText("无法加载视频帧")
-        else:
-            self.current_frame = None
-            self.current_pixmap = None
-            self.previewLabel.clear()
-            self.previewLabel.setText("无法加载视频帧")
-
-    def get_selection_rect(self):
-        """获取框选区域（相对于原始图像的坐标）"""
-        if not self.selection_rect or self.current_frame is None:
-            return None
-
-        return self._calculate_original_rect(self.selection_rect)
-
-    def resizeEvent(self, event):
-        """处理窗口大小改变事件"""
-        super().resizeEvent(event)
-        # 当窗口大小改变时，重新设置当前帧以更新显示
-        if self.current_frame is not None:
-            self.set_frame(self.current_frame)
 
 
 class VideocrInterface(ScrollArea):
@@ -416,7 +138,7 @@ class VideocrInterface(ScrollArea):
         """创建文件选择卡片"""
         # 视频文件选择卡片
         self.videoFileCard = ExpandSettingCard(
-            FluentIcon.VIDEO,
+            FIF.VIDEO,
             "视频文件",
             "选择要提取字幕的视频文件",
             self.fileSelectionGroup,
@@ -435,7 +157,7 @@ class VideocrInterface(ScrollArea):
 
         # 输出文件选择卡片
         self.outputFileCard = ExpandSettingCard(
-            FluentIcon.SAVE, "输出文件", "设置字幕文件保存路径", self.fileSelectionGroup
+            FIF.SAVE, "输出文件", "设置字幕文件保存路径", self.fileSelectionGroup
         )
 
         output_layout = QHBoxLayout()
@@ -453,18 +175,18 @@ class VideocrInterface(ScrollArea):
         """创建OCR设置卡片"""
         # 语言设置卡片
         self.languageCard = ExpandSettingCard(
-            FluentIcon.LANGUAGE, "识别语言", "选择字幕文本的语言", self.settingsGroup
+            FIF.LANGUAGE, "识别语言", "选择字幕文本的语言", self.settingsGroup
         )
 
         self.language_combo = ComboBox()
-        self.language_combo.addItems(["中文", "英文", "日文", "韩文", "法文", "德文"])
-        self.language_combo.setCurrentText("中文")
+        self.language_combo.addItems(videocr_languages_dict.keys())
+        self.language_combo.setCurrentText("中文与英文")
         self.languageCard.viewLayout.addWidget(self.language_combo)
         self.settingsGroup.addSettingCard(self.languageCard)
 
         # 位置设置卡片
         self.positionCard = ExpandSettingCard(
-            FluentIcon.LAYOUT, "字幕位置", "指定字幕在视频中的位置", self.settingsGroup
+            FIF.LAYOUT, "字幕位置", "指定字幕在视频中的位置", self.settingsGroup
         )
 
         self.position_combo = ComboBox()
@@ -472,19 +194,6 @@ class VideocrInterface(ScrollArea):
         self.position_combo.setCurrentText("自动检测")
         self.positionCard.viewLayout.addWidget(self.position_combo)
         self.settingsGroup.addSettingCard(self.positionCard)
-
-        # 高级设置卡片
-        self.advancedCard = ExpandSettingCard(
-            FluentIcon.SETTING, "高级设置", "配置OCR处理参数", self.settingsGroup
-        )
-
-        self.use_gpu_check = CheckBox("使用GPU加速")
-        self.use_gpu_check.setChecked(True)
-        self.advanced_check = CheckBox("启用高级识别模式")
-
-        self.advancedCard.viewLayout.addWidget(self.use_gpu_check)
-        self.advancedCard.viewLayout.addWidget(self.advanced_check)
-        self.settingsGroup.addSettingCard(self.advancedCard)
 
     def _create_preview_card(self):
         """创建视频预览卡片"""
@@ -498,7 +207,7 @@ class VideocrInterface(ScrollArea):
         layout.addLayout(title_layout)
 
         # 视频预览组件
-        self.video_preview = VideoPreviewWidget()
+        self.video_preview = VideoPreview()
         layout.addWidget(self.video_preview)
 
         # 进度条和控制
@@ -541,13 +250,13 @@ class VideocrInterface(ScrollArea):
         """创建操作按钮区域"""
         button_layout = QHBoxLayout()
 
-        self.start_btn = PrimaryPushButton(FluentIcon.PLAY, "开始提取")
+        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始提取")
         self.start_btn.setEnabled(False)
 
-        self.cancel_btn = PushButton(FluentIcon.CANCEL, "取消")
+        self.cancel_btn = PushButton(FIF.CANCEL, "取消")
         self.cancel_btn.setEnabled(False)
 
-        self.clear_btn = PushButton(FluentIcon.DELETE, "清空日志")
+        self.clear_btn = PushButton(FIF.DELETE, "清空日志")
 
         button_layout.addWidget(self.start_btn)
         button_layout.addWidget(self.cancel_btn)
@@ -564,8 +273,13 @@ class VideocrInterface(ScrollArea):
         self.cancel_btn.clicked.connect(self._cancel_ocr)
         self.clear_btn.clicked.connect(self._clear_log)
         self.progress_slider.valueChanged.connect(self._seek_video)
-        self.advanced_check.stateChanged.connect(self._toggle_advanced_settings)
         self.position_combo.currentTextChanged.connect(self._on_position_changed)
+
+        self.video_preview.isCropChoose.connect(self._start_btn_enabled)
+
+    def _start_btn_enabled(self, enabled):
+        """设置开始按钮可用性"""
+        self.start_btn.setEnabled(enabled)
 
     def _browse_video_file(self):
         """浏览视频文件"""
@@ -588,7 +302,6 @@ class VideocrInterface(ScrollArea):
             self._load_video(file_path)
 
             self.video_preview.select_btn.setEnabled(True)
-            self.start_btn.setEnabled(True)
 
     def _browse_output_file(self):
         """浏览输出文件"""
@@ -733,15 +446,7 @@ class VideocrInterface(ScrollArea):
 
     def _get_language_code(self):
         """获取语言代码"""
-        lang_map = {
-            "中文": "ch",
-            "英文": "en",
-            "日文": "ja",
-            "韩文": "ko",
-            "法文": "fr",
-            "德文": "de",
-        }
-        return lang_map.get(self.language_combo.currentText(), "ch")
+        return videocr_languages_dict.get(self.language_combo.currentText(), "ch")
 
     def _log_message(self, message, is_error=False):
         """添加日志消息"""

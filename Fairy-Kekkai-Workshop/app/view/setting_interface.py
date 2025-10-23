@@ -1,11 +1,21 @@
 # coding:utf-8
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QFileDialog, QWidget
+# from ..common.signal_bus import signalBus
+# from ..common.icon import Logo
+import shutil
+
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices, QFont
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    BodyLabel,
+    CaptionLabel,
+    CardWidget,
     ComboBoxSettingCard,
+    Dialog,
     ExpandLayout,
+    IconWidget,
     PrimaryPushSettingCard,
+    PushButton,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
@@ -23,8 +33,39 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.setting import AUTHOR, VERSION, YEAR
 
-# from ..common.signal_bus import signalBus
-# from ..common.icon import Logo
+
+class DetectionCard(CardWidget):
+    def __init__(self, icon, title, content, parent=None):
+        super().__init__(parent)
+        self.iconWidget = IconWidget(icon)
+        self.titleLabel = BodyLabel(title, self)
+        self.contentLabel = CaptionLabel(content, self)
+        self.openButton = PushButton("检测", self)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.vBoxLayout = QVBoxLayout()
+
+        self.setFixedHeight(73)
+        self.iconWidget.setFixedSize(16, 16)
+        self.contentLabel.setTextColor("#606060", "#d2d2d2")
+        self.openButton.setFixedWidth(130)
+
+        self.hBoxLayout.setContentsMargins(20, 11, 11, 11)
+        self.hBoxLayout.setSpacing(15)
+        self.hBoxLayout.addWidget(self.iconWidget)
+
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignVCenter)
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignVCenter)
+        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.hBoxLayout.addLayout(self.vBoxLayout)
+
+        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
+        self.hBoxLayout.addSpacing(5)
+
+        self.setClickEnabled(False)
 
 
 class SettingCardGroup(CardGroup):
@@ -117,6 +158,9 @@ class SettingInterface(ScrollArea):
             cfg.get(cfg.ffmpegPath),
             self.downloadGroup,
         )
+        self.detectionCard = DetectionCard(
+            FIF.SEARCH, "检测程序", "自动检测并更新程序路径"
+        )
 
         # 关于
         self.aboutGroup = SettingCardGroup(self.tr("关于"), self.scrollWidget)
@@ -165,6 +209,7 @@ class SettingInterface(ScrollArea):
 
         self.downloadGroup.addSettingCard(self.ytdlpPathCard)
         self.downloadGroup.addSettingCard(self.ffmpegPathCard)
+        self.downloadGroup.addSettingCard(self.detectionCard)
 
         self.aboutGroup.addSettingCard(self.aboutCard)
 
@@ -211,6 +256,37 @@ class SettingInterface(ScrollArea):
         cfg.set(cfg.ffmpegPath, path)
         self.ffmpegPathCard.setContent(path)
 
+    def _onDectectionCardClicked(self):
+        ffmpeg_path = shutil.which("ffmpeg")
+        if ffmpeg_path:
+            cfg.set(cfg.ffmpegPath, ffmpeg_path)
+            event_bus.notification_service.show_success(
+                "检测成功", "FFmpeg路径已设置为" + ffmpeg_path
+            )
+            self.ffmpegPathCard.setContent(ffmpeg_path)
+        else:
+            dialog = Dialog("检测失败", "未检测到ffmpeg程序，是否要下载", self)
+            dialog.yesButton.setText("前往下载")
+            dialog.cancelButton.setText("取消")
+            if dialog.exec():
+                QDesktopServices.openUrl(QUrl("https://ffmpeg.org/download.html"))
+
+        ytdlp_path = shutil.which("yt-dlp")
+        if ytdlp_path:
+            cfg.set(cfg.ytdlpPath, ytdlp_path)
+            event_bus.notification_service.show_success(
+                "检测成功", "yt-dlp路径已设置为" + ytdlp_path
+            )
+            self.ytdlpPathCard.setContent(ytdlp_path)
+        else:
+            dialog = Dialog("检测失败", "未检测到yt-dlp程序，是否要下载", self)
+            dialog.yesButton.setText("前往下载")
+            dialog.cancelButton.setText("取消")
+            if dialog.exec():
+                QDesktopServices.openUrl(
+                    QUrl("https://github.com/yt-dlp/yt-dlp/releases")
+                )
+
     def _onAccentColorChanged(self):
         color = cfg.get(cfg.accentColor)
         if color != "Auto":
@@ -234,6 +310,7 @@ class SettingInterface(ScrollArea):
         # 下载
         self.ytdlpPathCard.clicked.connect(self._onYTDLPPathCardClicked)
         self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)
+        self.detectionCard.openButton.clicked.connect(self._onDectectionCardClicked)
 
         # 检查更新
         self.aboutCard.clicked.connect(event_bus.checkUpdateSig)
