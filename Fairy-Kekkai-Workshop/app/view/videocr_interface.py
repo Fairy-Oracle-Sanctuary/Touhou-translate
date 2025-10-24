@@ -31,7 +31,9 @@ from qfluentwidgets import (
 )
 from qfluentwidgets import FluentIcon as FIF
 
-from ..common.setting import videocr_languages_dict
+from ..common.config import cfg
+from ..common.setting import subtitle_positions_list, videocr_languages_dict
+from ..service.CLI.videocr.api import save_subtitles_to_file
 from ..service.video_service import VideoPreview
 
 
@@ -188,18 +190,18 @@ class VideocrInterface(ScrollArea):
 
         self.language_combo = ComboBox()
         self.language_combo.addItems(videocr_languages_dict.keys())
-        self.language_combo.setCurrentText("中文与英文")
+        self.language_combo.setCurrentText(cfg.get(cfg.lang))
         self.languageCard.viewLayout.addWidget(self.language_combo)
         self.settingsGroup.addSettingCard(self.languageCard)
 
         # 位置设置卡片
         self.positionCard = ExpandSettingCard(
-            FIF.LAYOUT, "字幕位置", "指定字幕在视频中的位置", self.settingsGroup
+            FIF.LAYOUT, "文本对齐", "指定字幕的对齐方式", self.settingsGroup
         )
 
         self.position_combo = ComboBox()
-        self.position_combo.addItems(["自动检测", "底部", "顶部", "全屏", "自定义区域"])
-        self.position_combo.setCurrentText("自动检测")
+        self.position_combo.addItems(subtitle_positions_list.keys())
+        self.position_combo.setCurrentText("居中")
         self.positionCard.viewLayout.addWidget(self.position_combo)
         self.settingsGroup.addSettingCard(self.positionCard)
 
@@ -281,6 +283,9 @@ class VideocrInterface(ScrollArea):
         self.cancel_btn.clicked.connect(self._cancel_ocr)
         self.clear_btn.clicked.connect(self._clear_log)
         self.progress_slider.valueChanged.connect(self._seek_video)
+        self.language_combo.currentTextChanged.connect(
+            lambda: cfg.set(cfg.lang, self.language_combo.currentText())
+        )
         self.position_combo.currentTextChanged.connect(self._on_position_changed)
 
         self.video_preview.isCropChoose.connect(self._start_btn_enabled)
@@ -426,8 +431,37 @@ class VideocrInterface(ScrollArea):
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
 
-        # 开始OCR线程
-        # 这里开始提取
+        # 组合参数
+        args = self._get_args()
+        print(args)
+        save_subtitles_to_file(**args)
+
+    def _get_args(self):
+        """获取参数"""
+        args = {}
+
+        args["video_path"] = self.video_path
+        args["file_path"] = self.output_path_edit.text()
+        args["lang"] = self._get_language_code()
+        args["time_start"] = "0:00"
+        args["time_end"] = ""
+        args["conf_threshold"] = cfg.get(cfg.confThreshold)
+        args["sim_threshold"] = cfg.get(cfg.simThreshold)
+        args["max_merge_gap_sec"] = cfg.get(cfg.maxMergeGap)
+        args["use_fullframe"] = False
+        args["use_gpu"] = cfg.get(cfg.useGpu)
+        args["use_angle_cls"] = cfg.get(cfg.useAngleCls)
+        args["use_server_model"] = cfg.get(cfg.useServerModel)
+        args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
+        args["ssim_threshold"] = cfg.get(cfg.ssimThreshold)
+        args["subtitle_position"] = self._get_subtitle_position()
+        args["frames_to_skip"] = cfg.get(cfg.framesToSkip)
+        args["crop_zones"] = self._get_crop_zones()
+        args["ocr_image_max_width"] = cfg.get(cfg.ocrImageMaxWidth)
+        args["post_processing"] = cfg.get(cfg.postProcessing)
+        args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
+
+        return args
 
     def _cancel_ocr(self):
         """取消OCR处理"""
@@ -455,6 +489,26 @@ class VideocrInterface(ScrollArea):
     def _get_language_code(self):
         """获取语言代码"""
         return videocr_languages_dict.get(self.language_combo.currentText(), "ch")
+
+    def _get_subtitle_position(self):
+        """获取字幕对齐方式"""
+        return subtitle_positions_list.get(self.position_combo.currentText(), "center")
+
+    def _get_crop_zones(self):
+        """获取框选区域"""
+        crop_zones = []
+        crop_boxes = self.video_preview.crop_boxes
+        for zones in crop_boxes:
+            zones = zones["coords"]
+            crop_zones.append(
+                {
+                    "x": zones["crop_x"],
+                    "y": zones["crop_y"],
+                    "width": zones["crop_width"],
+                    "height": zones["crop_height"],
+                }
+            )
+        return crop_zones
 
     def _log_message(self, message, is_error=False):
         """添加日志消息"""
