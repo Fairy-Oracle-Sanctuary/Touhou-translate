@@ -46,9 +46,9 @@ class VideocrStackedInterfaces(QWidget):
 
         self.videocrInterface = VideocrInterface()
         # 这里假设YTDLPSettingInterface已经定义
-        from ..components.config_card import YTDLPSettingInterface
+        from ..components.config_card import OCRSettingInterface
 
-        self.settingInterface = YTDLPSettingInterface()
+        self.settingInterface = OCRSettingInterface()
 
         # 添加标签页
         self.addSubInterface(self.videocrInterface, "downloadInterface", "字幕提取")
@@ -58,6 +58,8 @@ class VideocrStackedInterfaces(QWidget):
         self.stackedWidget.currentChanged.connect(self.onCurrentIndexChanged)
         self.stackedWidget.setCurrentWidget(self.videocrInterface)
         self.pivot.setCurrentItem(self.videocrInterface.objectName())
+
+        self.settingInterface.changeSelectionSignal.connect(self.changeSelection)
 
         self.vBoxLayout.setContentsMargins(30, 0, 30, 30)
         self.vBoxLayout.addWidget(self.pivot, 0, Qt.AlignHCenter)
@@ -80,6 +82,12 @@ class VideocrStackedInterfaces(QWidget):
     def onCurrentIndexChanged(self, index):
         widget = self.stackedWidget.widget(index)
         self.pivot.setCurrentItem(widget.objectName())
+
+    def changeSelection(self, isUseDualZone):
+        if isUseDualZone:
+            self.videocrInterface.video_preview.set_max_crop_boxes(2)
+        else:
+            self.videocrInterface.video_preview.set_max_crop_boxes(1)
 
 
 class VideocrInterface(ScrollArea):

@@ -16,7 +16,8 @@ from qfluentwidgets import (
 from ..common.event_bus import event_bus
 from ..components.config_card import YTDLPSettingInterface
 from ..components.dialog import CustomMessageBox
-from ..service.download_service import DownloadItemWidget, DownloadTask, DownloadThread
+from ..components.download_card import DownloadItemWidget
+from ..service.download_service import DownloadTask, DownloadThread
 
 
 class DownloadStackedInterface(QWidget):

@@ -275,6 +275,97 @@ class Config(QConfig):
     keepVideo = ConfigItem("YTDLP", "KeepVideo", False, BoolValidator(), restart=False)
     """
 
+    # OCR Settings
+    # 开始时间（例如：0:00 或 1:23:45）
+    # 命令行使用：--time_start
+    timeStart = ConfigItem("OCR", "TimeStart", "0:00", restart=False)
+
+    # 结束时间（例如：0:10 或 2:34:56）
+    # 命令行使用：--time_end
+    timeEnd = ConfigItem("OCR", "TimeEnd", "", restart=False)
+
+    # 置信度阈值 (0-100)
+    # 命令行使用：--conf_threshold
+    confThreshold = RangeConfigItem(
+        "OCR", "ConfThreshold", 80, RangeValidator(0, 100), restart=False
+    )
+
+    # 相似度阈值 (0-100)
+    # 命令行使用：--sim_threshold
+    simThreshold = RangeConfigItem(
+        "OCR", "SimThreshold", 90, RangeValidator(0, 100), restart=False
+    )
+
+    # 最大合并间隔（秒）
+    # 命令行使用：--max_merge_gap
+    maxMergeGap = RangeConfigItem(
+        "OCR", "MaxMergeGap", 1.0, RangeValidator(0.1, 10.0), restart=False
+    )
+
+    # 亮度阈值 (0-255)
+    # 命令行使用：--brightness_threshold
+    brightnessThreshold = RangeConfigItem(
+        "OCR", "BrightnessThreshold", 100, RangeValidator(0, 255), restart=False
+    )
+
+    # SSIM阈值 (0-100)
+    # 命令行使用：--ssim_threshold
+    ssimThreshold = RangeConfigItem(
+        "OCR", "SsimThreshold", 90, RangeValidator(0, 100), restart=False
+    )
+
+    # 最大OCR图像宽度（像素）
+    # 命令行使用：--ocr_image_max_width
+    ocrImageMaxWidth = RangeConfigItem(
+        "OCR", "OcrImageMaxWidth", 1920, RangeValidator(100, 4096), restart=False
+    )
+
+    # 跳过的帧数
+    # 命令行使用：--frames_to_skip
+    framesToSkip = RangeConfigItem(
+        "OCR", "FramesToSkip", 1, RangeValidator(0, 100), restart=False
+    )
+
+    # 最小字幕持续时间（秒）
+    # 命令行使用：--min_subtitle_duration
+    minSubtitleDuration = RangeConfigItem(
+        "OCR", "MinSubtitleDuration", 1.0, RangeValidator(0.1, 10.0), restart=False
+    )
+
+    # 是否启用GPU使用
+    # 命令行使用：--use_gpu
+    useGpu = ConfigItem("OCR", "UseGpu", True, BoolValidator(), restart=False)
+
+    # 是否使用全帧OCR
+    # 命令行使用：--use_fullframe
+    # useFullframe = ConfigItem(
+    #     "OCR", "UseFullframe", False, BoolValidator(), restart=False
+    # )
+
+    # 是否启用双区域OCR
+    # 命令行使用：--use_dual_zone
+    useDualZone = ConfigItem(
+        "OCR", "UseDualZone", False, BoolValidator(), restart=False
+    )
+
+    # 是否启用角度分类
+    # 命令行使用：--use_angle_cls
+    useAngleCls = ConfigItem(
+        "OCR", "UseAngleCls", False, BoolValidator(), restart=False
+    )
+
+    # 是否启用后处理
+    # 命令行使用：--post_processing
+    postProcessing = ConfigItem(
+        "OCR", "PostProcessing", True, BoolValidator(), restart=False
+    )
+
+    # 是否使用服务器模型
+    # 命令行使用：--use_server_model
+    useServerModel = ConfigItem(
+        "OCR", "UseServerModel", False, BoolValidator(), restart=False
+    )
+
 
 cfg = Config()
 cfg.themeMode.value = Theme.LIGHT
