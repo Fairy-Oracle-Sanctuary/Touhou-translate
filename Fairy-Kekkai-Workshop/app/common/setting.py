@@ -18,7 +18,7 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 
 PIC_SUFFIX = ".jpg"
 
-# videocr语言
+# videocr
 videocr_languages_dict = {
     "阿巴扎语": "abq",
     "阿迪格语": "ady",
@@ -102,6 +102,12 @@ videocr_languages_dict = {
     "乌兹别克语": "uz",
     "越南语": "vi",
     "威尔士语": "cy",
+}
+subtitle_positions_list = {
+    "居中": "center",
+    "左对齐": "left",
+    "右对齐": "right",
+    "任意": "any",
 }
 
 if sys.platform == "win32":

@@ -1,19 +1,82 @@
+# ===================
+# 通用文件类型
+# ===================
+
+# 常见媒体文件
 *.mp4
 *.jpg
-*.part
 *.aac
-__pycache__
+
+# 下载未完成的临时文件
+*.part
+
+# ===================
+# Python 相关
+# ===================
+
+# Python 字节码缓存目录
+__pycache__/
+
+# ===================
+# IDE 与编辑器
+# ===================
+
+# VS Code 配置目录
 .vscode/
+
+# ===================
+# 构建与输出目录
+# ===================
+
+# 通用输出目录
 Output/
-AppData/
+build/
+dist/
+
+# Fairy-Kekkai-Workshop 项目的构建产物
 Fairy-Kekkai-Workshop/build/
 Fairy-Kekkai-Workshop/dist/
-Fairy-Kekkai-Workshop/tools/
-build/
+
+# CLI 相关目录
 CLI/
+
+# ===================
+# 项目依赖与内部文件
+# ===================
+
+# 内部模块或打包后的文件
 _internal/
+
+# 第三方库或预编译模型
+Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-12.9/
+Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files/
+
+# ===================
+# 测试与临时文件
+# ===================
+
+# 测试代码或数据
 test/
+
+# 剪映导出时的临时文件夹
 .__jianying_export_temp_folder__
+
+# ===================
+# 其他文件
+# ===================
+
+# 打包后的可执行文件
 Fairy-Kekkai-Workshop.exe
+
+# 项目许可证文件（通常应提交，但根据项目需求可忽略）
 LICENSE.txt
+
+# Nuitka 编译器崩溃报告
 nuitka-crash-report.xml
+
+# ===================
+# 系统或用户特定目录
+# ===================
+
+# Windows 用户应用数据目录
+AppData/

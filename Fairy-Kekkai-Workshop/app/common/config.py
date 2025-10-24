@@ -284,6 +284,10 @@ class Config(QConfig):
     # 命令行使用：--time_end
     timeEnd = ConfigItem("OCR", "TimeEnd", "", restart=False)
 
+    # 字幕语言
+    # 命令行使用：--lang
+    lang = ConfigItem("OCR", "Lang", "ch", restart=False)
+
     # 置信度阈值 (0-100)
     # 命令行使用：--conf_threshold
     confThreshold = RangeConfigItem(
