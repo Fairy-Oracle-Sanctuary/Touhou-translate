@@ -1,6 +1,6 @@
 # coding:utf-8
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QDoubleValidator, QFont, QIntValidator
 from PySide6.QtWidgets import QFileDialog, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard,
@@ -36,12 +36,297 @@ class LineEditSettingCard(SettingCard):
         self.configItem = configItem
 
         self.lineEdit = LineEdit(self)
+        self.lineEdit.setFixedWidth(250)
         self.lineEdit.setPlaceholderText(placeholderText)
-        self.lineEdit.setText(self.configItem.value)
-        self.lineEdit.textChanged.connect(lambda v: cfg.set(configItem, v))
+        self.lineEdit.setText(str(self.configItem.value))
+        self.lineEdit.textChanged.connect(self._onTextChanged)
 
         self.hBoxLayout.addWidget(self.lineEdit, 1)
         self.hBoxLayout.addSpacing(16)
+
+    def _onTextChanged(self, text):
+        """文本改变时的处理"""
+        cfg.set(self.configItem, text)
+
+
+class NumberLineEditSettingCard(SettingCard):
+    """数字输入设置卡片，带验证"""
+
+    def __init__(
+        self,
+        configItem,
+        icon,
+        title,
+        content=None,
+        placeholderText="",
+        validator=None,
+        parent=None,
+    ):
+        super().__init__(icon, title, content, parent)
+        self.configItem = configItem
+        self.validator = validator
+
+        self.lineEdit = LineEdit(self)
+        self.lineEdit.setFixedWidth(250)
+        self.lineEdit.setPlaceholderText(placeholderText)
+        self.lineEdit.setText(str(self.configItem.value))
+
+        # 设置验证器
+        if self.validator:
+            self.lineEdit.setValidator(self.validator)
+
+        self.lineEdit.textChanged.connect(self._onTextChanged)
+
+        self.hBoxLayout.addWidget(self.lineEdit, 1)
+        self.hBoxLayout.addSpacing(16)
+
+    def _onTextChanged(self, text):
+        """文本改变时的处理，带验证"""
+        if text and self.validator:
+            # 检查输入是否有效
+            state, _, _ = self.validator.validate(text, 0)
+            if state == self.validator.Acceptable:
+                # 根据配置项类型转换值
+                if isinstance(self.validator, QIntValidator):
+                    value = int(text)
+                else:  # QDoubleValidator
+                    value = float(text)
+                cfg.set(self.configItem, value)
+            # 如果输入无效，不更新配置
+
+
+class OCRSettingInterface(ScrollArea):
+    """OCR 设置界面"""
+
+    changeSelectionSignal = Signal(bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.scrollWidget = QWidget()
+        self.expandLayout = ExpandLayout(self.scrollWidget)
+
+        # setting label
+        self.settingLabel = TitleLabel(self.tr("OCR 设置"), self)
+
+        # 时间设置
+        self.timeGroup = SettingCardGroup(self.tr("时间设置"), self.scrollWidget)
+        self.timeStartCard = LineEditSettingCard(
+            cfg.timeStart,
+            FIF.STOP_WATCH,
+            self.tr("开始时间"),
+            self.tr("设置视频处理的起始时间点 (例如: 0:00 或 1:23:45)"),
+            placeholderText="0:00",
+            parent=self.timeGroup,
+        )
+        self.timeEndCard = LineEditSettingCard(
+            cfg.timeEnd,
+            FIF.STOP_WATCH,
+            self.tr("结束时间"),
+            self.tr("设置视频处理的结束时间点 (例如: 0:10 或 2:34:56)"),
+            placeholderText="",
+            parent=self.timeGroup,
+        )
+
+        # 阈值设置
+        self.thresholdGroup = SettingCardGroup(self.tr("阈值设置"), self.scrollWidget)
+
+        # 置信度阈值 (0-100)
+        self.confThresholdCard = NumberLineEditSettingCard(
+            cfg.confThreshold,
+            FIF.CERTIFICATE,
+            self.tr("置信度阈值"),
+            self.tr("OCR识别结果的置信度阈值 (0-100)"),
+            placeholderText=str(cfg.confThreshold.value),
+            validator=QIntValidator(0, 100),
+            parent=self.thresholdGroup,
+        )
+
+        # 相似度阈值 (0-100)
+        self.simThresholdCard = NumberLineEditSettingCard(
+            cfg.simThreshold,
+            FIF.ROTATE,
+            self.tr("相似度阈值"),
+            self.tr("字幕帧之间的相似度阈值 (0-100)"),
+            placeholderText=str(cfg.simThreshold.value),
+            validator=QIntValidator(0, 100),
+            parent=self.thresholdGroup,
+        )
+
+        # 亮度阈值 (0-255)
+        self.brightnessThresholdCard = NumberLineEditSettingCard(
+            cfg.brightnessThreshold,
+            FIF.BRIGHTNESS,
+            self.tr("亮度阈值"),
+            self.tr("图像亮度阈值，用于判断有效字幕区域 (0-255)"),
+            placeholderText=str(cfg.brightnessThreshold.value),
+            validator=QIntValidator(0, 255),
+            parent=self.thresholdGroup,
+        )
+
+        # SSIM阈值 (0-100)
+        self.ssimThresholdCard = NumberLineEditSettingCard(
+            cfg.ssimThreshold,
+            FIF.PALETTE,
+            self.tr("SSIM阈值"),
+            self.tr("结构相似性指数阈值，用于判断帧间变化 (0-100)"),
+            placeholderText=str(cfg.ssimThreshold.value),
+            validator=QIntValidator(0, 100),
+            parent=self.thresholdGroup,
+        )
+
+        # 处理参数
+        self.processingGroup = SettingCardGroup(self.tr("处理参数"), self.scrollWidget)
+
+        # 最大合并间隔 (0.1-10.0)
+        self.maxMergeGapCard = NumberLineEditSettingCard(
+            cfg.maxMergeGap,
+            FIF.BACK_TO_WINDOW,
+            self.tr("最大合并间隔"),
+            self.tr("相邻字幕片段的最大合并间隔 (0.1-10.0 秒)"),
+            placeholderText=str(cfg.maxMergeGap.value),
+            validator=QDoubleValidator(0.1, 10.0, 2),
+            parent=self.processingGroup,
+        )
+
+        # 最大OCR图像宽度 (100-4096)
+        self.ocrImageMaxWidthCard = NumberLineEditSettingCard(
+            cfg.ocrImageMaxWidth,
+            FIF.ZOOM,
+            self.tr("最大OCR图像宽度"),
+            self.tr("OCR处理时图像的最大宽度 (100-4096 像素)"),
+            placeholderText=str(cfg.ocrImageMaxWidth.value),
+            validator=QIntValidator(100, 4096),
+            parent=self.processingGroup,
+        )
+
+        # 跳过的帧数 (0-100)
+        self.framesToSkipCard = NumberLineEditSettingCard(
+            cfg.framesToSkip,
+            FIF.MARKET,
+            self.tr("跳过的帧数"),
+            self.tr("处理时跳过的帧数，用于提高处理速度 (0-100)"),
+            placeholderText=str(cfg.framesToSkip.value),
+            validator=QIntValidator(0, 100),
+            parent=self.processingGroup,
+        )
+
+        # 最小字幕持续时间 (0.1-10.0)
+        self.minSubtitleDurationCard = NumberLineEditSettingCard(
+            cfg.minSubtitleDuration,
+            FIF.STOP_WATCH,
+            self.tr("最小字幕持续时间"),
+            self.tr("字幕的最小持续时间，短于此时间的字幕将被过滤 (0.1-10.0 秒)"),
+            placeholderText=str(cfg.minSubtitleDuration.value),
+            validator=QDoubleValidator(0.1, 10.0, 2),
+            parent=self.processingGroup,
+        )
+
+        # 功能开关
+        self.featureGroup = SettingCardGroup(self.tr("功能开关"), self.scrollWidget)
+        self.useGpuCard = SwitchSettingCard(
+            FIF.DEVELOPER_TOOLS,
+            self.tr("启用GPU加速"),
+            self.tr("使用GPU进行OCR处理以提高速度"),
+            configItem=cfg.useGpu,
+            parent=self.featureGroup,
+        )
+        # self.useFullframeCard = SwitchSettingCard(
+        #     FIF.FULL_SCREEN,
+        #     self.tr("使用全帧OCR"),
+        #     self.tr("对整个视频帧进行OCR处理"),
+        #     configItem=cfg.useFullframe,
+        #     parent=self.featureGroup,
+        # )
+        self.useDualZoneCard = SwitchSettingCard(
+            FIF.VIEW,
+            self.tr("启用双区域OCR"),
+            self.tr("支持同时处理两个区域的字幕"),
+            configItem=cfg.useDualZone,
+            parent=self.featureGroup,
+        )
+        self.useAngleClsCard = SwitchSettingCard(
+            FIF.ROTATE,
+            self.tr("启用角度分类"),
+            self.tr("对倾斜文本进行角度校正"),
+            configItem=cfg.useAngleCls,
+            parent=self.featureGroup,
+        )
+        self.postProcessingCard = SwitchSettingCard(
+            FIF.EDIT,
+            self.tr("使用后期处理"),
+            self.tr("对OCR结果进行后期处理优化"),
+            configItem=cfg.postProcessing,
+            parent=self.featureGroup,
+        )
+        self.useServerModelCard = SwitchSettingCard(
+            FIF.CLOUD,
+            self.tr("使用高精度模型"),
+            self.tr("使用更好的模型进行OCR处理"),
+            configItem=cfg.useServerModel,
+            parent=self.featureGroup,
+        )
+
+        self.__initWidget()
+
+    def __initWidget(self):
+        self.resize(1000, 800)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setViewportMargins(0, 90, 0, 20)
+        self.setWidget(self.scrollWidget)
+        self.setWidgetResizable(True)
+        self.setObjectName("ocrSettingInterface")
+
+        # initialize style sheet
+        setFont(self.settingLabel, 23, QFont.Weight.DemiBold)
+        self.enableTransparentBackground()
+
+        # initialize layout
+        self.__initLayout()
+        self._connectSignalToSlot()
+
+    def __initLayout(self):
+        self.settingLabel.move(36, 40)
+
+        # 时间设置
+        self.timeGroup.addSettingCard(self.timeStartCard)
+        self.timeGroup.addSettingCard(self.timeEndCard)
+
+        # 阈值设置
+        self.thresholdGroup.addSettingCard(self.confThresholdCard)
+        self.thresholdGroup.addSettingCard(self.simThresholdCard)
+        self.thresholdGroup.addSettingCard(self.brightnessThresholdCard)
+        self.thresholdGroup.addSettingCard(self.ssimThresholdCard)
+
+        # 处理参数
+        self.processingGroup.addSettingCard(self.maxMergeGapCard)
+        self.processingGroup.addSettingCard(self.ocrImageMaxWidthCard)
+        self.processingGroup.addSettingCard(self.framesToSkipCard)
+        self.processingGroup.addSettingCard(self.minSubtitleDurationCard)
+
+        # 功能开关
+        self.featureGroup.addSettingCard(self.useGpuCard)
+        # self.featureGroup.addSettingCard(self.useFullframeCard)
+        self.featureGroup.addSettingCard(self.useDualZoneCard)
+        self.featureGroup.addSettingCard(self.useAngleClsCard)
+        self.featureGroup.addSettingCard(self.postProcessingCard)
+        self.featureGroup.addSettingCard(self.useServerModelCard)
+
+        # add setting card group to layout
+        self.expandLayout.setSpacing(26)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.timeGroup)
+        self.expandLayout.addWidget(self.thresholdGroup)
+        self.expandLayout.addWidget(self.processingGroup)
+        self.expandLayout.addWidget(self.featureGroup)
+
+    def _changeSelection(self, isUseDualZone):
+        """更改框选设置"""
+        self.changeSelectionSignal.emit(isUseDualZone)
+
+    def _connectSignalToSlot(self):
+        """绑定信号"""
+        # self.useFullframeCard.checkedChanged.connect(lambda: self._changeSelection(0))
+        self.useDualZoneCard.checkedChanged.connect(lambda v: self._changeSelection(v))
 
 
 class YTDLPSettingInterface(ScrollArea):

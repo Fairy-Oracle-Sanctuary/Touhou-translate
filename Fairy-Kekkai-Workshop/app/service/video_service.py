@@ -17,6 +17,8 @@ from qfluentwidgets import (
     PushButton,
 )
 
+from ..common.config import cfg
+
 
 class VideoPreview(CardWidget):
     """视频预览组件，支持框选功能"""
@@ -41,7 +43,9 @@ class VideoPreview(CardWidget):
         self.current_frame = None  # 当前视频帧
         self.current_pixmap = None  # 当前显示的Pixmap
         self.original_frame_size = None  # 原始视频帧尺寸
-        self.max_crop_boxes = 1  # 可以修改这个值来控制最大框选数量
+        self.max_crop_boxes = (
+            2 if cfg.get(cfg.useDualZone) else 1
+        )  # 可以修改这个值来控制最大框选数量
 
         # 框选控制按钮
         self.control_layout = QHBoxLayout()
@@ -245,7 +249,8 @@ class VideoPreview(CardWidget):
                 self._redraw_canvas_and_boxes()
 
                 # 发送信号
-                self.isCropChoose.emit(True)
+                if len(self.crop_boxes) == self.max_crop_boxes:
+                    self.isCropChoose.emit(True)
 
             event.accept()
         else:
@@ -502,6 +507,8 @@ class VideoPreview(CardWidget):
 
         if not self.crop_boxes:
             self.clear_selection_btn.setEnabled(False)
+
+        self.isCropChoose.emit(False)
 
         self._redraw_canvas_and_boxes()
         self._update_coords_display()
