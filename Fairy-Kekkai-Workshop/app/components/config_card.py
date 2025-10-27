@@ -274,7 +274,7 @@ class OCRSettingInterface(ScrollArea):
         self.setViewportMargins(0, 90, 0, 20)
         self.setWidget(self.scrollWidget)
         self.setWidgetResizable(True)
-        self.setObjectName("ocrSettingInterface")
+        self.setObjectName("OcrSettingInterface")
 
         # initialize style sheet
         setFont(self.settingLabel, 23, QFont.Weight.DemiBold)

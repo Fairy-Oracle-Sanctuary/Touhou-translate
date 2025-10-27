@@ -1,4 +1,5 @@
 # coding: utf-8
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QRect, QSettings, QSize, Qt, QUrl
@@ -29,6 +30,8 @@ from .videocr_interface import VideocrStackedInterfaces
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        self.initWindow()
+
         # 初始化版本服务
         self.versionManager = VersionService()
 
@@ -53,8 +56,6 @@ class MainWindow(MSFluentWindow):
                 event_bus.notification_service.show_error(
                     "背景图片错误", "请检查图片是否存在"
                 )
-
-        self.initWindow()
 
         # 创建页面
         self.homeInterface = HomeInterface(self)
@@ -194,7 +195,8 @@ class MainWindow(MSFluentWindow):
         # self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
 
     def initWindow(self):
-        self.resize(1000, 700)
+        self.resize(960, 754 if sys.platform == "win32" else 773)
+        self.setMinimumWidth(760)
         self.setWindowIcon(QIcon(":/app/images/logo.png"))
         self.setWindowTitle("Fairy-Kekkai-Workshop")
 
