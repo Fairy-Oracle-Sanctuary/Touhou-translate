@@ -1,6 +1,6 @@
 # coding:utf-8
 from PySide6.QtCore import QSize, Qt, QUrl
-from PySide6.QtGui import QColor, QIcon
+from PySide6.QtGui import QColor, QDesktopServices, QIcon
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     BodyLabel,
@@ -14,7 +14,7 @@ from qfluentwidgets import (
     VerticalSeparator,
 )
 
-from ..common.setting import VERSION
+from ..common.setting import GITHUB_URL, UPDATE_TIME, VERSION
 from ..resource import resource_rc  # noqa: F401
 from .statistic_widget import StatisticsWidget
 
@@ -38,10 +38,8 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         )
 
         self.versionWidget = StatisticsWidget(self.tr("版本"), f"v{VERSION}", self)
-        self.fileSizeWidget = StatisticsWidget(self.tr("文件大小"), "100MB", self)
-        self.updateTimeWidget = StatisticsWidget(
-            self.tr("更新时间"), "2025-10-19", self
-        )
+        self.fileSizeWidget = StatisticsWidget(self.tr("文件大小"), "364MB", self)
+        self.updateTimeWidget = StatisticsWidget(self.tr("更新时间"), UPDATE_TIME, self)
 
         self.descriptionLabel = BodyLabel(
             self.tr("仙-结界工坊"),
@@ -49,7 +47,10 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         )
 
         # self.tagButton = PillPushButton(self.tr("M3U8"), self)
-        self.shareButton = TransparentToolButton(FluentIcon.SHARE, self)
+        self.githubButton = TransparentToolButton(FluentIcon.GITHUB, self)
+        self.githubButton.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl(GITHUB_URL))
+        )
 
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
@@ -66,14 +67,14 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.updateButton.setFixedWidth(160)
 
         self.descriptionLabel.setWordWrap(True)
-        # self.shareButton.clicked.connect(lambda: openUrl(DEPLOY_URL))
+        # self.githubButton.clicked.connect(lambda: openUrl(DEPLOY_URL))
 
         # self.tagButton.setCheckable(False)
         # setFont(self.tagButton, 12)
         # self.tagButton.setFixedSize(80, 32)
 
-        self.shareButton.setFixedSize(32, 32)
-        self.shareButton.setIconSize(QSize(14, 14))
+        self.githubButton.setFixedSize(32, 32)
+        self.githubButton.setIconSize(QSize(14, 14))
 
         self.nameLabel.setObjectName("nameLabel")
         self.descriptionLabel.setObjectName("descriptionLabel")
@@ -119,7 +120,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.addLayout(self.buttonLayout)
         # self.buttonLayout.addWidget(self.tagButton, 0, Qt.AlignLeft)
-        self.buttonLayout.addWidget(self.shareButton, 0, Qt.AlignRight)
+        self.buttonLayout.addWidget(self.githubButton, 0, Qt.AlignRight)
 
     def setVersion(self, version: str):
         text = version or "1.0.0"

@@ -12,19 +12,22 @@ if sys.platform == "win32":
         "--plugin-enable=pyside6",
         "--include-qt-plugins=sensible,sqldrivers",
         "--assume-yes-for-downloads",
-        # '--msvc=latest',              # Use MSVC
-        "--mingw64",  # Use MinGW
+        "--mingw64",
         "--show-memory",
         "--show-progress",
         "--windows-icon-from-ico=Fairy-Kekkai-Workshop/app/resource/images/logo.ico",
-        # '--windows-company-name="Shokokawaii Inc."',
-        # '--windows-product-name=Fluent-M3U8',
         f"--windows-file-version={VERSION}",
         f"--windows-product-version={VERSION}",
         '--windows-file-description="Fairy Kekkai Workshop"',
         "--output-dir=Fairy-Kekkai-Workshop/dist",
+        # --- 新增的参数 ---
+        "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
+        "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-12.9=PaddleOCR-GPU-v1.3.2-CUDA-12.9",
+        "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files=PaddleOCR.PP-OCRv5.support.files",
+        # --- 新增参数结束 ---
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]
+
 elif sys.platform == "darwin":
     args = [
         "python3 -m nuitka",

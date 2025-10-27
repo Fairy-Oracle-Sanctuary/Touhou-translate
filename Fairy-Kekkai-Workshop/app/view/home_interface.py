@@ -1,10 +1,12 @@
 # coding:utf-8
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import ScrollArea
 
 from ..common.event_bus import event_bus
 from ..components.info_card import FairyKekkaiWorkshopInfoCard
+from ..components.sample_card import SampleCardView
 
 
 class HomeInterface(ScrollArea):
@@ -21,6 +23,7 @@ class HomeInterface(ScrollArea):
         self.vBoxLayout = QVBoxLayout(self.view)
 
         self._initWidget()
+        self.loadSamples()
         self._connectSignalToSlot()
 
     def _initWidget(self):
@@ -41,6 +44,33 @@ class HomeInterface(ScrollArea):
         self.enableTransparentBackground()
 
         self._connectSignalToSlot()
+
+    def loadSamples(self):
+        """load samples"""
+        # basic input samples
+        basicInputView = SampleCardView(self.tr("功能一览"), self.view)
+        basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/project.svg"),
+            title="项目管理",
+            content=self.tr("查看您的烤肉项目"),
+            routeKey="basicInputInterface",
+            index=0,
+        )
+        basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/download.svg"),
+            title="视频下载",
+            content=self.tr("从Youtube下载您相中的系列"),
+            routeKey="basicInputInterface",
+            index=0,
+        )
+        basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/subtitle.svg"),
+            title="字幕提取",
+            content=self.tr("使用最新的PaddleOCR引擎提取字幕"),
+            routeKey="basicInputInterface",
+            index=0,
+        )
+        self.vBoxLayout.addWidget(basicInputView)
 
     def _connectSignalToSlot(self):
         # 检查更新

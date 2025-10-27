@@ -5,8 +5,10 @@ from pathlib import Path
 AUTHOR = "baby2016"
 VERSION = "1.9.0"
 YEAR = "2025"
+UPDATE_TIME = "2025-10-27"
 
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
+GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 
 CONFIG_FOLDER = Path("AppData").absolute()
 
