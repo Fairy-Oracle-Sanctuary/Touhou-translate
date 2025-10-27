@@ -125,11 +125,6 @@ class OcrItemWidget(CardWidget):
         # 设置按钮可用性
         self.removeBtn.setEnabled(status == "已完成" or status == "失败")
 
-        if status == "已完成":
-            self.removeBtn.setDisabled(False)
-        if status == "失败":
-            self.removeBtn.setDisabled(False)
-
     def openFolder(self):
         """打开文件夹"""
         # 获取视频文件所在的目录

@@ -67,6 +67,7 @@ test/
 
 # 打包后的可执行文件
 Fairy-Kekkai-Workshop.exe
+tools/yt-dlp.exe
 
 # 项目许可证文件（通常应提交，但根据项目需求可忽略）
 LICENSE.txt
