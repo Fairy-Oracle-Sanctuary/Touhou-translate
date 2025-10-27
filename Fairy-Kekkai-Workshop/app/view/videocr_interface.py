@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import cv2
-from PySide6.QtCore import Qt, QTime
+from PySide6.QtCore import Qt, QTime, Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -21,7 +21,6 @@ from qfluentwidgets import (
     LineEdit,
     Pivot,
     PrimaryPushButton,
-    ProgressBar,
     PushButton,
     ScrollArea,
     SettingCardGroup,
@@ -32,9 +31,11 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
+from ..common.event_bus import event_bus
 from ..common.setting import subtitle_positions_list, videocr_languages_dict
-from ..service.CLI.videocr.api import save_subtitles_to_file
+from ..components.config_card import OCRSettingInterface
 from ..service.video_service import VideoPreview
+from .videocr_task_interface import OcrTaskInterface
 
 
 class VideocrStackedInterfaces(QWidget):
@@ -47,13 +48,12 @@ class VideocrStackedInterfaces(QWidget):
         self.vBoxLayout = QVBoxLayout(self)
 
         self.videocrInterface = VideocrInterface()
-        # 这里假设YTDLPSettingInterface已经定义
-        from ..components.config_card import OCRSettingInterface
-
+        self.taskInterface = OcrTaskInterface()
         self.settingInterface = OCRSettingInterface()
 
         # 添加标签页
-        self.addSubInterface(self.videocrInterface, "downloadInterface", "字幕提取")
+        self.addSubInterface(self.videocrInterface, "videocrInterface", "字幕提取")
+        self.addSubInterface(self.taskInterface, "taskInterface", "提取任务")
         self.addSubInterface(self.settingInterface, "settingInterface", "高级设置")
 
         # 连接信号并初始化当前标签页
@@ -62,6 +62,9 @@ class VideocrStackedInterfaces(QWidget):
         self.pivot.setCurrentItem(self.videocrInterface.objectName())
 
         self.settingInterface.changeSelectionSignal.connect(self.changeSelection)
+        self.videocrInterface.addOcrTask.connect(self.taskInterface.addOcrTask)
+        self.taskInterface.log_signal.connect(self.videocrInterface._log_message)
+        self.taskInterface.returnOcrTask.connect(self.videocrInterface.updateOcrTask)
 
         self.vBoxLayout.setContentsMargins(30, 0, 30, 30)
         self.vBoxLayout.addWidget(self.pivot, 0, Qt.AlignHCenter)
@@ -95,6 +98,8 @@ class VideocrStackedInterfaces(QWidget):
 class VideocrInterface(ScrollArea):
     """视频OCR字幕提取界面"""
 
+    addOcrTask = Signal(dict)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
@@ -104,6 +109,7 @@ class VideocrInterface(ScrollArea):
         self.current_frame = 0
         self.total_frames = 0
         self.fps = 0
+        self.ocr_tasks = []
 
         self._initWidget()
         self._connect_signals()
@@ -240,36 +246,28 @@ class VideocrInterface(ScrollArea):
 
         # 标题
         title_layout = QHBoxLayout()
-        title_label = StrongBodyLabel("处理进度")
+        title_label = StrongBodyLabel("处理日志")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         layout.addLayout(title_layout)
-
-        self.progress_bar = ProgressBar()
-        self.progress_bar.setVisible(False)
 
         self.log_text = TextEdit()
         self.log_text.setMaximumHeight(150)
         self.log_text.setReadOnly(True)
         self.log_text.setPlaceholderText("处理日志将显示在这里...")
 
-        layout.addWidget(self.progress_bar)
         layout.addWidget(self.log_text)
 
     def _create_button_layout(self, main_layout):
         """创建操作按钮区域"""
         button_layout = QHBoxLayout()
 
-        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始提取")
+        self.start_btn = PrimaryPushButton(FIF.PLAY, "添加任务")
         self.start_btn.setEnabled(False)
-
-        self.cancel_btn = PushButton(FIF.CANCEL, "取消")
-        self.cancel_btn.setEnabled(False)
 
         self.clear_btn = PushButton(FIF.DELETE, "清空日志")
 
         button_layout.addWidget(self.start_btn)
-        button_layout.addWidget(self.cancel_btn)
         button_layout.addStretch()
         button_layout.addWidget(self.clear_btn)
 
@@ -280,7 +278,6 @@ class VideocrInterface(ScrollArea):
         self.browse_video_btn.clicked.connect(self._browse_video_file)
         self.browse_output_btn.clicked.connect(self._browse_output_file)
         self.start_btn.clicked.connect(self._start_ocr)
-        self.cancel_btn.clicked.connect(self._cancel_ocr)
         self.clear_btn.clicked.connect(self._clear_log)
         self.progress_slider.valueChanged.connect(self._seek_video)
         self.language_combo.currentTextChanged.connect(
@@ -296,23 +293,23 @@ class VideocrInterface(ScrollArea):
 
     def _browse_video_file(self):
         """浏览视频文件"""
-        file_path, _ = QFileDialog.getOpenFileName(
+        video_path, _ = QFileDialog.getOpenFileName(
             self,
             "选择视频文件",
             str(Path.home()),
             "视频文件 (*.mp4 *.avi *.mkv *.mov *.webm *.flv *.wmv);;所有文件 (*.*)",
         )
 
-        if file_path:
-            self.video_path = file_path
-            self.video_path_edit.setText(file_path)
+        if video_path:
+            self.video_path = video_path
+            self.video_path_edit.setText(video_path)
 
             # 自动生成输出文件路径
-            output_path = Path(file_path).with_suffix(".srt")
+            output_path = Path(video_path).with_suffix(".srt")
             self.output_path_edit.setText(str(output_path))
 
             # 加载视频
-            self._load_video(file_path)
+            self._load_video(video_path)
 
             self.video_preview.select_btn.setEnabled(True)
 
@@ -425,16 +422,9 @@ class VideocrInterface(ScrollArea):
                 f"使用自定义区域: {selection_rect.x()}, {selection_rect.y()}, {selection_rect.width()}x{selection_rect.height()}"
             )
 
-        # 更新UI状态
-        self.start_btn.setEnabled(False)
-        self.cancel_btn.setEnabled(True)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)
-
-        # 组合参数
+        # 组合参数发送信号
         args = self._get_args()
-        print(args)
-        save_subtitles_to_file(**args)
+        self.addOcrTask.emit(args)
 
     def _get_args(self):
         """获取参数"""
@@ -462,13 +452,6 @@ class VideocrInterface(ScrollArea):
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
 
         return args
-
-    def _cancel_ocr(self):
-        """取消OCR处理"""
-        if self.ocr_thread and self.ocr_thread.isRunning():
-            self.ocr_thread.stop()
-            self.ocr_thread.wait()
-            self._log_message("处理已取消")
 
     def _clear_log(self):
         """清空日志"""
@@ -551,8 +534,6 @@ class VideocrInterface(ScrollArea):
     def _on_ocr_finished(self, success):
         """OCR处理完成"""
         self.start_btn.setEnabled(True)
-        self.cancel_btn.setEnabled(False)
-        self.progress_bar.setVisible(False)
 
         if success:
             self._show_success("字幕提取完成！")
@@ -574,3 +555,12 @@ class VideocrInterface(ScrollArea):
             self.video_capture.release()
 
         super().closeEvent(event)
+
+    def updateOcrTask(self, isRepeat, ocr_tasks, isMessage):
+        if isRepeat and isMessage:
+            event_bus.notification_service.show_error("错误", "重复的任务")
+        elif not isRepeat and isMessage:
+            event_bus.notification_service.show_success(
+                "成功", f"任务-{ocr_tasks[-1]}-添加成功！"
+            )
+        self.ocr_tasks = ocr_tasks

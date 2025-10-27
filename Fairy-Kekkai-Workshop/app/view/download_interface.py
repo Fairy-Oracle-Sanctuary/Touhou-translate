@@ -68,8 +68,6 @@ class DownloadStackedInterface(QWidget):
 class DownloadInterface(ScrollArea):
     """下载界面"""
 
-    # 定义返回信号
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)

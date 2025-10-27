@@ -7,12 +7,12 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     CaptionLabel,
+    CardWidget,
     FluentIcon,
     IconWidget,
     MessageBox,
     PillPushButton,
     ProgressBar,
-    SimpleCardWidget,
     StrongBodyLabel,
     TransparentToolButton,
 )
@@ -20,7 +20,7 @@ from qfluentwidgets import (
 from ..common.event_bus import event_bus
 
 
-class DownloadItemWidget(SimpleCardWidget):
+class DownloadItemWidget(CardWidget):
     """下载任务项组件"""
 
     # 定义信号

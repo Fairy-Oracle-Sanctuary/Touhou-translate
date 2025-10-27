@@ -11,6 +11,7 @@ import sys
 
 from app.common.config import cfg
 from app.common.setting import VERSION
+from app.view.main_window import MainWindow
 from PySide6.QtCore import QSharedMemory
 from PySide6.QtWidgets import QApplication
 
@@ -49,8 +50,6 @@ def main():
     app.setOrganizationName("Fairy-Kekkai")
 
     # 创建并显示主窗口
-    from app.view.main_window import MainWindow
-
     window = MainWindow()
     window.show()
 
