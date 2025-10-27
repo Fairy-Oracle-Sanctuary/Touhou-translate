@@ -5,7 +5,7 @@ from datetime import datetime
 
 import requests
 from app.common.config import cfg
-from PySide6.QtCore import QProcess, QThread, Signal
+from PySide6.QtCore import QProcess, QThread, QTimer, Signal
 
 
 class DownloadTask:
@@ -45,6 +45,7 @@ class DownloadThread(QThread):
 
     progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 文件名
     finished_signal = Signal(bool, str)  # 成功/失败, 消息
+    cancelled_signal = Signal()  # 新增：取消完成信号
 
     def __init__(self, task):
         super().__init__()
@@ -52,6 +53,7 @@ class DownloadThread(QThread):
         self.is_cancelled = False
         self.process = None
         self.output_lines = []  # 存储输出用于错误诊断
+        self._cancellation_timer = None
 
     def build_ytdlp_command(self):
         """根据配置构建 yt-dlp 命令"""
@@ -280,6 +282,7 @@ class DownloadThread(QThread):
         if self.is_cancelled:
             self.task.status = "已取消"
             self.finished_signal.emit(False, "下载已取消")
+            self.cancelled_signal.emit()  # 发送取消完成信号
         elif exit_code == 0:
             self.task.status = "已完成"
             self.task.progress = 100
@@ -383,10 +386,47 @@ class DownloadThread(QThread):
         return error_codes.get(return_code, f"未知错误代码: {return_code}")
 
     def cancel(self):
-        """取消下载"""
+        """取消下载 - 异步非阻塞版本"""
+        if not self.isRunning() or self.is_cancelled:
+            return
+
         self.is_cancelled = True
+
+        # 立即发送取消日志，不等待进程结束
+        print("正在取消下载...")
+
         if self.process and self.process.state() == QProcess.Running:
+            # 先尝试优雅地终止
             self.process.terminate()
-            # 等待进程结束，最多等待5秒
-            if not self.process.waitForFinished(5000):
-                self.process.kill()
+
+            # 使用定时器异步检查进程状态，避免阻塞
+            self._cancellation_timer = QTimer()
+            self._cancellation_timer.timeout.connect(self._checkCancellationStatus)
+            self._cancellation_timer.start(100)  # 每100ms检查一次
+
+            # 设置超时保护，5秒后强制终止
+            QTimer.singleShot(5000, self._forceTerminateIfNeeded)
+        else:
+            # 如果没有进程在运行，直接发送取消完成信号
+            self.cancelled_signal.emit()
+
+    def _checkCancellationStatus(self):
+        """检查取消状态"""
+        if not self.process or self.process.state() != QProcess.Running:
+            # 进程已结束
+            if self._cancellation_timer:
+                self._cancellation_timer.stop()
+            self.cancelled_signal.emit()
+
+    def _forceTerminateIfNeeded(self):
+        """如果需要，强制终止进程"""
+        if self.process and self.process.state() == QProcess.Running:
+            print("强制终止下载进程...")
+            self.process.kill()
+            # 等待一小段时间让进程终止
+            if self.process.waitForFinished(1000):
+                print("下载进程已强制终止")
+                self.cancelled_signal.emit()
+            else:
+                print("警告: 进程终止可能未完成")
+                self.cancelled_signal.emit()
