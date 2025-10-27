@@ -16,7 +16,7 @@ from qfluentwidgets import (
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import RELEASE_URL
+from ..common.setting import GITHUB_URL, RELEASE_URL
 from ..components.infobar import NotificationService
 from ..components.system_tray import SystemTray
 from ..service.version_service import VersionService
@@ -220,9 +220,7 @@ class MainWindow(MSFluentWindow):
         w.cancelButton.setText(self.tr("下次一定"))
 
         if w.exec():
-            QDesktopServices.openUrl(
-                QUrl("https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate")
-            )
+            QDesktopServices.openUrl(QUrl(GITHUB_URL))
 
     def restore_window_state(self):
         """恢复窗口状态"""

@@ -692,13 +692,22 @@ class FileItemWidget(SimpleCardWidget):
         if os.path.exists(self.file_path):
             # 打开文件所在文件夹并选中文件
             if platform.system() == "Windows":
-                subprocess.Popen(f'explorer /select,"{self.file_path}"')
+                subprocess.Popen(
+                    f'explorer /select,"{self.file_path}"',
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
             elif platform.system() == "Darwin":
-                subprocess.Popen(["open", "-R", self.file_path])
+                subprocess.Popen(
+                    ["open", "-R", self.file_path],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
             else:
                 # Linux系统
                 folder_path = os.path.dirname(self.file_path)
-                subprocess.Popen(["xdg-open", folder_path])
+                subprocess.Popen(
+                    ["xdg-open", folder_path],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
         else:
             # 如果文件不存在，只打开文件夹
             folder_path = os.path.dirname(self.file_path)
