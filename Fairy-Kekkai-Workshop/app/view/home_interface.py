@@ -53,22 +53,29 @@ class HomeInterface(ScrollArea):
             icon=QIcon(":/app/images/controls/project.svg"),
             title="项目管理",
             content=self.tr("查看您的烤肉项目"),
-            routeKey="basicInputInterface",
-            index=0,
+            routeKey="ProjectStackedInterface",
+            index=1,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/download.svg"),
             title="视频下载",
             content=self.tr("从Youtube下载您相中的系列"),
-            routeKey="basicInputInterface",
-            index=0,
+            routeKey="VideocrStackedInterfaces",
+            index=2,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/subtitle.svg"),
             title="字幕提取",
             content=self.tr("使用最新的PaddleOCR引擎提取字幕"),
-            routeKey="basicInputInterface",
-            index=0,
+            routeKey="DownloadStackedInterfaces",
+            index=3,
+        )
+        basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/setting.svg"),
+            title="软件设置",
+            content=self.tr("设置软件的各项参数"),
+            routeKey="settingInterface",
+            index=4,
         )
         self.vBoxLayout.addWidget(basicInputView)
 

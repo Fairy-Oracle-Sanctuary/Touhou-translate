@@ -4,7 +4,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import (
-    BodyLabel,
     ScrollArea,
     SegmentedWidget,
 )
@@ -67,12 +66,6 @@ class OcrTaskInterface(ScrollArea):
         self.taskListLayout = QVBoxLayout(self.taskListContainer)
         self.taskListLayout.setAlignment(Qt.AlignTop)
 
-        # 空状态提示
-        self.emptyStateLabel = BodyLabel("暂无提取任务", self.taskListContainer)
-        self.emptyStateLabel.setAlignment(Qt.AlignCenter)
-        self.emptyStateLabel.setStyleSheet("color: gray; padding: 50px;")
-        self.taskListLayout.addWidget(self.emptyStateLabel)
-
         # 设置布局
         self.vBoxLayout.addWidget(self.segmentedWidget)
         self.vBoxLayout.addWidget(self.taskListContainer)
@@ -127,9 +120,6 @@ class OcrTaskInterface(ScrollArea):
         # 连接信号 - 添加这四行代码
         self.task_item.removeTaskSignal.connect(self.removeTask)
         self.task_item.retryOcrSignal.connect(self.retryOcr)
-
-        # 隐藏空状态提示
-        self.emptyStateLabel.setVisible(False)
 
         # 开始提取（如果没有超过最大并发数）
         self.startNextOcr()
@@ -299,18 +289,6 @@ class OcrTaskInterface(ScrollArea):
                 else:
                     widget.setVisible(False)
 
-        # 检查是否有可见的任务
-        has_visible = False
-        for i in range(self.taskListLayout.count()):
-            widget = self.taskListLayout.itemAt(i).widget()
-            if isinstance(widget, OcrItemWidget) and widget.isVisible():
-                has_visible = True
-                break
-
-        self.emptyStateLabel.setVisible(not has_visible)
-        if not has_visible:
-            self.emptyStateLabel.setText(f"暂无{filter_type}的任务")
-
     def retryOcr(self, task_id):
         """重新提取任务"""
         for task in self.ocr_tasks:
@@ -338,11 +316,6 @@ class OcrTaskInterface(ScrollArea):
                 self.taskListLayout.removeWidget(widget)
                 widget.deleteLater()
                 break
-
-        # 检查是否还有任务
-        if not self.ocr_tasks:
-            self.emptyStateLabel.setVisible(True)
-            self.emptyStateLabel.setText("暂无提取任务")
 
     def addOcrFromProject(self, request_data):
         """从项目界面添加提取任务"""

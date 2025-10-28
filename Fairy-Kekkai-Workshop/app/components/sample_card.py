@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import CardWidget, FlowLayout, IconWidget, TextWrap
 
+from ..common.event_bus import event_bus
 from ..common.style_sheet import StyleSheet
 
 
@@ -43,7 +44,7 @@ class SampleCard(CardWidget):
 
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
-        # signalBus.switchToSampleCard.emit(self.routekey, self.index)
+        event_bus.switchToSampleCard.emit(self.routekey, self.index)
 
 
 class SampleCardView(QWidget):
