@@ -77,7 +77,30 @@ class HomeInterface(ScrollArea):
             routeKey="settingInterface",
             index=4,
         )
+
+        # url sameples
+        urlSamepleView = SampleCardView(self.tr("必要资源"), self.view)
+        urlSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/FFmpeg.svg"),
+            title="FFmpeg (未内置)",
+            content="FFmpeg下载地址，下载后添加到环境变量中",
+            url="https://ffmpeg.org/download.html",
+        )
+        urlSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/ytdlp.svg"),
+            title="yt-dlp (已内置)",
+            content="yt-dlp下载地址，下载后可在设置里设定路径",
+            url="https://github.com/yt-dlp/yt-dlp/releases/latest",
+        )
+        urlSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/Paddle.svg"),
+            title="PaddleOCR (未内置)",
+            content="PaddleOCR下载地址，根据您的GPU下载\n对应版本后添加到应用所在路径",
+            url="https://github.com/timminator/PaddleOCR-Standalone/releases/latest",
+        )
+
         self.vBoxLayout.addWidget(basicInputView)
+        self.vBoxLayout.addWidget(urlSamepleView)
 
     def _connectSignalToSlot(self):
         # 检查更新

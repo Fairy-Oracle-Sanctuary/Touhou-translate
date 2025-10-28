@@ -7,13 +7,9 @@ from ..common.event_bus import event_bus
 from ..common.style_sheet import StyleSheet
 
 
-class SampleCard(CardWidget):
-    """Sample card"""
-
-    def __init__(self, icon, title, content, routeKey, index, parent=None):
+class BaseSampleCard(CardWidget):
+    def __init__(self, icon, title, content, parent=None):
         super().__init__(parent=parent)
-        self.index = index
-        self.routekey = routeKey
 
         self.iconWidget = IconWidget(icon, self)
         self.titleLabel = QLabel(title, self)
@@ -42,9 +38,30 @@ class SampleCard(CardWidget):
         self.titleLabel.setObjectName("titleLabel")
         self.contentLabel.setObjectName("contentLabel")
 
+
+class SwitchSampleCard(BaseSampleCard):
+    """Sample card"""
+
+    def __init__(self, icon, title, content, routeKey, index, parent=None):
+        super().__init__(icon, title, content, parent)
+        self.index = index
+        self.routekey = routeKey
+
     def mouseReleaseEvent(self, e):
         super().mouseReleaseEvent(e)
         event_bus.switchToSampleCard.emit(self.routekey, self.index)
+
+
+class OpenUrlSampleCard(BaseSampleCard):
+    """Sample card"""
+
+    def __init__(self, icon, title, content, url, parent=None):
+        super().__init__(icon, title, content, parent)
+        self.url = url
+
+    def mouseReleaseEvent(self, e):
+        super().mouseReleaseEvent(e)
+        event_bus.openUrl.emit(self.url)
 
 
 class SampleCardView(QWidget):
@@ -70,5 +87,10 @@ class SampleCardView(QWidget):
 
     def addSampleCard(self, icon, title, content, routeKey, index):
         """add sample card"""
-        card = SampleCard(icon, title, content, routeKey, index, self)
+        card = SwitchSampleCard(icon, title, content, routeKey, index, parent=self)
+        self.flowLayout.addWidget(card)
+
+    def addOpenUrlCard(self, icon, title, content, url):
+        """add url sample"""
+        card = OpenUrlSampleCard(icon, title, content, url, parent=self)
         self.flowLayout.addWidget(card)
