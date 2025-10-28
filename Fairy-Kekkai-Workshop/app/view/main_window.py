@@ -86,6 +86,7 @@ class MainWindow(MSFluentWindow):
         self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
         event_bus.checkUpdateSig.connect(self.checkUpdate)
         event_bus.switchToSampleCard.connect(self.switchToSample)
+        event_bus.openUrl.connect(self.openUrl)
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -327,3 +328,7 @@ class MainWindow(MSFluentWindow):
     def switchToSample(self, routeKey, index):
         """切换界面"""
         self.switchTo(self.interface[index])
+
+    def openUrl(self, url):
+        """打开指定 URL"""
+        QDesktopServices.openUrl(QUrl(url))

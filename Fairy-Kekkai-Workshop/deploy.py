@@ -23,7 +23,7 @@ if sys.platform == "win32":
         # --- 新增的参数 ---
         "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
         # "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-12.9=PaddleOCR-GPU-v1.3.2-CUDA-12.9",
-        "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files=PaddleOCR.PP-OCRv5.support.files",
+        # "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files=PaddleOCR.PP-OCRv5.support.files",
         # --- 新增参数结束 ---
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]

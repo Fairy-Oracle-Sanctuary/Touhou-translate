@@ -8,6 +8,9 @@ class GlobalEventBus(QObject):
     # 从主页切换页面
     switchToSampleCard = Signal(str, int)
 
+    # 打开URL
+    openUrl = Signal(str)
+
     # 检查更新
     checkUpdateSig = Signal()
 
