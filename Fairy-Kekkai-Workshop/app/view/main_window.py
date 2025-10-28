@@ -64,6 +64,13 @@ class MainWindow(MSFluentWindow):
         self.videoCRInterface = VideocrStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
+        self.interface = [
+            self.homeInterface,
+            self.projectInterface,
+            self.downloadInterface,
+            self.videoCRInterface,
+            self.settingInterface,
+        ]
         # 连接信号
         # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
@@ -78,6 +85,7 @@ class MainWindow(MSFluentWindow):
         # 连接信号
         self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
         event_bus.checkUpdateSig.connect(self.checkUpdate)
+        event_bus.switchToSampleCard.connect(self.switchToSample)
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -198,7 +206,7 @@ class MainWindow(MSFluentWindow):
         self.resize(960, 754 if sys.platform == "win32" else 773)
         self.setMinimumWidth(760)
         self.setWindowIcon(QIcon(":/app/images/logo.png"))
-        self.setWindowTitle("Fairy-Kekkai-Workshop")
+        self.setWindowTitle("Fairy Kekkai Workshop")
 
         # 创建启动页面
         self.splashScreen = SplashScreen(self.windowIcon(), self)
@@ -315,3 +323,7 @@ class MainWindow(MSFluentWindow):
         self._really_quit = True
         self.system_tray.hide()
         # self.close()
+
+    def switchToSample(self, routeKey, index):
+        """切换界面"""
+        self.switchTo(self.interface[index])

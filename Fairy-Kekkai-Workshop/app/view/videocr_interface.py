@@ -450,6 +450,7 @@ class VideocrInterface(ScrollArea):
         args["ocr_image_max_width"] = cfg.get(cfg.ocrImageMaxWidth)
         args["post_processing"] = cfg.get(cfg.postProcessing)
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
+        args["gpu_env"] = cfg.get(cfg.gpuEnv)
 
         return args
 

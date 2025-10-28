@@ -230,6 +230,18 @@ class OCRSettingInterface(ScrollArea):
             configItem=cfg.useGpu,
             parent=self.featureGroup,
         )
+        self.gpuEnvCard = ComboBoxSettingCard(
+            configItem=cfg.gpuEnv,
+            icon=FIF.TILES,
+            title=self.tr("选择GPU环境"),
+            content=self.tr("请检查你的GPU环境并选择相应的配置"),
+            texts=[
+                self.tr("CPU-v1.3.2"),
+                self.tr("GPU-v1.3.2-CUDA-11.8"),
+                self.tr("GPU-v1.3.2-CUDA-12.9"),
+            ],
+            parent=self.featureGroup,
+        )
         # self.useFullframeCard = SwitchSettingCard(
         #     FIF.FULL_SCREEN,
         #     self.tr("使用全帧OCR"),
@@ -305,6 +317,7 @@ class OCRSettingInterface(ScrollArea):
 
         # 功能开关
         self.featureGroup.addSettingCard(self.useGpuCard)
+        self.featureGroup.addSettingCard(self.gpuEnvCard)
         # self.featureGroup.addSettingCard(self.useFullframeCard)
         self.featureGroup.addSettingCard(self.useDualZoneCard)
         self.featureGroup.addSettingCard(self.useAngleClsCard)

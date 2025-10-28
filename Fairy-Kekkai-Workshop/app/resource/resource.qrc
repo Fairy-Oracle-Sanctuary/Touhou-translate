@@ -3,10 +3,12 @@
         <file>images/logo.png</file>
         <file>images/logo/FFmpeg.svg</file>
         <file>images/logo/ytdlp.svg</file>
+        <file>images/logo/Paddle.svg</file>
 
         <file>images/controls/download.svg</file>
         <file>images/controls/project.svg</file>
         <file>images/controls/subtitle.svg</file>   
+        <file>images/controls/setting.svg</file>   
 
         <file>qss/dark/sample_card.qss</file>
         <file>qss/light/sample_card.qss</file>
