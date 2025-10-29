@@ -196,7 +196,7 @@ class VideocrInterface(ScrollArea):
 
         self.language_combo = ComboBox()
         self.language_combo.addItems(videocr_languages_dict.keys())
-        self.language_combo.setCurrentText(cfg.get(cfg.lang))
+        self.language_combo.setCurrentText(cfg.get(cfg.ocr_lang))
         self.languageCard.viewLayout.addWidget(self.language_combo)
         self.settingsGroup.addSettingCard(self.languageCard)
 
@@ -281,7 +281,7 @@ class VideocrInterface(ScrollArea):
         self.clear_btn.clicked.connect(self._clear_log)
         self.progress_slider.valueChanged.connect(self._seek_video)
         self.language_combo.currentTextChanged.connect(
-            lambda: cfg.set(cfg.lang, self.language_combo.currentText())
+            lambda: cfg.set(cfg.ocr_lang, self.language_combo.currentText())
         )
         self.position_combo.currentTextChanged.connect(self._on_position_changed)
 
@@ -331,7 +331,7 @@ class VideocrInterface(ScrollArea):
             self,
             "保存字幕文件",
             self.output_path_edit.text(),
-            "字幕文件 (*.srt *.ass *.vtt);;所有文件 (*.*)",
+            "字幕文件 (*.srt);;所有文件 (*.*)",
         )
 
         if file_path:
@@ -510,27 +510,11 @@ class VideocrInterface(ScrollArea):
 
     def _show_error(self, message):
         """显示错误信息"""
-        InfoBar.error(
-            title="错误",
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=3000,
-            parent=self,
-        )
+        event_bus.notification_service.show_error("错误", message)
 
     def _show_success(self, message):
         """显示成功信息"""
-        InfoBar.success(
-            title="成功",
-            content=message,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=3000,
-            parent=self,
-        )
+        event_bus.notification_service.show_success("成功", message)
 
     def _on_ocr_finished(self, success):
         """OCR处理完成"""
@@ -559,9 +543,7 @@ class VideocrInterface(ScrollArea):
 
     def updateOcrTask(self, isRepeat, ocr_tasks, isMessage):
         if isRepeat and isMessage:
-            event_bus.notification_service.show_error("错误", "重复的任务")
+            self._show_error("重复的任务")
         elif not isRepeat and isMessage:
-            event_bus.notification_service.show_success(
-                "成功", f"任务-{ocr_tasks[-1]}-添加成功！"
-            )
+            self._show_success(f"任务-{ocr_tasks[-1]}-添加成功！")
         self.ocr_tasks = ocr_tasks

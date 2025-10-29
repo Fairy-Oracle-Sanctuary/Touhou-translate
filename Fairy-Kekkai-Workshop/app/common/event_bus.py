@@ -32,6 +32,9 @@ class GlobalEventBus(QObject):
         dict
     )  # {"task_id": 1, "success": True, "file_path": "..."}
 
+    # 翻译相关事件
+    translate_finished_signal = Signal(bool, list)
+
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
     project_deleted = Signal(dict)  # {"path": "..."}
