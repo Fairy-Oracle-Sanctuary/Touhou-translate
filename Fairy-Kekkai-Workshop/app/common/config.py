@@ -286,7 +286,7 @@ class Config(QConfig):
 
     # 字幕语言
     # 命令行使用：--lang
-    lang = ConfigItem("OCR", "Lang", "ch", restart=False)
+    ocr_lang = ConfigItem("OCR", "Lang", "ch", restart=False)
 
     # 置信度阈值 (0-100)
     # 命令行使用：--conf_threshold
@@ -382,6 +382,16 @@ class Config(QConfig):
     useServerModel = ConfigItem(
         "OCR", "UseServerModel", False, BoolValidator(), restart=False
     )
+
+    # translate settings
+    # 原语言
+    origin_lang = ConfigItem("Translate", "OriginLang", "日语", restart=False)
+
+    # 目标语言
+    target_lang = ConfigItem("Translate", "TargetLang", "中文", restart=False)
+
+    # Deepseek API Key
+    deepseekApiKey = ConfigItem("Translate", "ApiKey", "", restart=False)
 
 
 cfg = Config()

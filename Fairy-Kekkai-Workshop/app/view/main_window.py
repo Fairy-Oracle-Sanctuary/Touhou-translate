@@ -24,6 +24,7 @@ from .download_interface import DownloadStackedInterface
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
 from .setting_interface import SettingInterface
+from .translate_interface import TranslateStackedInterfaces
 from .videocr_interface import VideocrStackedInterfaces
 
 
@@ -62,6 +63,7 @@ class MainWindow(MSFluentWindow):
         self.projectInterface = ProjectStackedInterface(self)
         self.downloadInterface = DownloadStackedInterface(self)
         self.videoCRInterface = VideocrStackedInterfaces(self)
+        self.translateInterface = TranslateStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
         self.interface = [
@@ -69,6 +71,7 @@ class MainWindow(MSFluentWindow):
             self.projectInterface,
             self.downloadInterface,
             self.videoCRInterface,
+            self.translateInterface,
             self.settingInterface,
         ]
         # 连接信号
@@ -87,6 +90,9 @@ class MainWindow(MSFluentWindow):
         event_bus.checkUpdateSig.connect(self.checkUpdate)
         event_bus.switchToSampleCard.connect(self.switchToSample)
         event_bus.openUrl.connect(self.openUrl)
+        event_bus.translate_finished_signal.connect(
+            self.show_system_tray_message_translate_finished
+        )
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -183,6 +189,9 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.projectInterface, FIF.FOLDER, "项目")
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
         self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
+        self.addSubInterface(
+            self.translateInterface, QIcon(":/app/images/icons/deepseek.svg"), "翻译"
+        )
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(
@@ -332,3 +341,20 @@ class MainWindow(MSFluentWindow):
     def openUrl(self, url):
         """打开指定 URL"""
         QDesktopServices.openUrl(QUrl(url))
+
+    def show_system_tray_message_translate_finished(self, success, message):
+        """通过系统托盘显示翻译完成消息"""
+        if success:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"翻译完成 -{message[-1]}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )
+        else:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"翻译失败 -{message}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )

@@ -71,11 +71,18 @@ class HomeInterface(ScrollArea):
             index=3,
         )
         basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/translate.svg"),
+            title="翻译字幕",
+            content=self.tr("翻译提取出的字幕文件"),
+            routeKey="TranslationInterface",
+            index=4,
+        )
+        basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),
             title="软件设置",
             content=self.tr("设置软件的各项参数"),
             routeKey="settingInterface",
-            index=4,
+            index=-1,
         )
 
         # url sameples
