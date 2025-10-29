@@ -100,4 +100,5 @@ class Srt:
 if __name__ == "__main__":
     srt_file = r"D:\Touhou-project\projects\名为喜欢的这份心情终将抵达之所\13\原文.srt"
     srt_obj = Srt(srt_file)
-    print(srt_obj.raw_content)
+    for i in srt_obj.raw_content.split("\n\n"):
+        print(i + "\n\n")
