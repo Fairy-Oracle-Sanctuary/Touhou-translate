@@ -1,5 +1,3 @@
-# sk-d197ab76b90d4e86916e2bbfd2a975c9
-
 from openai import OpenAI
 from PySide6.QtCore import QThread
 
@@ -23,22 +21,36 @@ class TranslateThread(QThread):
                 api_key=cfg.get(cfg.deepseekApiKey), base_url="https://api.deepseek.com"
             )
 
-            response = client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"请将以下{self.origin_lang}srt文件翻译成{self.target_lang},人名优先匹配《东方Project》,保留原本srt格式,你只需要输出结果\n{self.task.raw_content}",
-                    },
-                ],
-                stream=False,
-                temperature=1.3,
-            )
+            num = 0
+            resp_content = ""
+            final_content = ""
+            content_all = self.task.raw_content.split("\n\n")
+            for content in content_all:
+                resp_content += f"{content}\n\n"
+                num += 1
+                if num % 100 == 0 or num == len(content_all):
+                    response = client.chat.completions.create(
+                        model="deepseek-chat",
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": f"请将以下{self.origin_lang}srt文件翻译成{self.target_lang},人名优先匹配《东方Project》,保留原本srt格式,你只需要输出结果\n{resp_content}",
+                            },
+                        ],
+                        stream=False,
+                        temperature=1.3,
+                    )
+                    resp_content = ""
 
-            # 处理成功的情况
-            resp = response.choices[0].message.content
-            print(resp)
-            event_bus.translate_finished_signal.emit(True, [resp, self.output_file])
+                    # 处理成功的情况
+                    resp = response.choices[0].message.content.replace("```srt\n", "")
+                    final_content += resp.replace("```", "\n")
+                    print(resp)
+
+            # 最终输出
+            event_bus.translate_finished_signal.emit(
+                True, [final_content, self.output_file]
+            )
 
         except Exception as e:
             error_message = self._handle_error(e)

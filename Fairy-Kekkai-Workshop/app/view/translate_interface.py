@@ -312,7 +312,6 @@ class TranslationInterface(ScrollArea):
             self.origin_language_combo.currentText(),
             self.target_language_combo.currentText(),
         )
-        event_bus.translate_finished_signal.connect(self.on_translation_finished)
         self.translate_thread.start()
 
     def on_translation_finished(self, success, message):
