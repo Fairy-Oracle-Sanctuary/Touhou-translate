@@ -15,7 +15,6 @@ from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
     CardWidget,
-    FluentIcon,
     Flyout,
     FlyoutAnimationType,
     FlyoutViewBase,
@@ -26,6 +25,7 @@ from qfluentwidgets import (
     ScrollArea,
     TransparentToolButton,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -302,8 +302,8 @@ class ProjectCard(CardWidget):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
         self.openButton = PrimaryPushButton("打开项目", self)
-        self.editButton = TransparentToolButton(FluentIcon.EDIT, self)
-        self.moreButton = TransparentToolButton(FluentIcon.MORE, self)
+        self.editButton = TransparentToolButton(FIF.EDIT, self)
+        self.moreButton = TransparentToolButton(FIF.MORE, self)
 
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
@@ -330,7 +330,7 @@ class ProjectCard(CardWidget):
 
         self.hBoxLayout.addStretch(1)
         if isLink:
-            self.linkButton = TransparentToolButton(FluentIcon.LINK, self)
+            self.linkButton = TransparentToolButton(FIF.LINK, self)
             self.linkButton.setToolTip(f"{self.path}")
             self.hBoxLayout.addWidget(self.linkButton, 0, Qt.AlignRight)
 

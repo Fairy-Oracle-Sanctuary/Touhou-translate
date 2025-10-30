@@ -28,8 +28,8 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.setting import translate_deepseek_language_dict
 from ..components.config_card import TranslateSettingInterface
-from ..service.deepseek_service import TranslateThread
 from ..service.srt_service import Srt
+from .translate_task_interface import TranslateTaskInterface
 
 
 class TranslateStackedInterfaces(QWidget):
@@ -42,14 +42,23 @@ class TranslateStackedInterfaces(QWidget):
         self.vBoxLayout = QVBoxLayout(self)
 
         self.translateInterface = TranslationInterface()
+        self.taskInterface = TranslateTaskInterface()
         self.settingInterface = TranslateSettingInterface()
 
         # 添加标签页
         self.addSubInterface(self.translateInterface, "translateInterface", "翻译字幕")
+        self.addSubInterface(self.taskInterface, "taskInterface", "翻译任务")
         self.addSubInterface(self.settingInterface, "settingInterface", "高级设置")
 
         # 连接信号并初始化当前标签页
         self.stackedWidget.currentChanged.connect(self.onCurrentIndexChanged)
+        self.translateInterface.addTranslateTask.connect(
+            self.taskInterface.addTranslateTask
+        )
+        self.taskInterface.returnTranslateTask.connect(
+            self.translateInterface.updateTranslateTask
+        )
+
         self.stackedWidget.setCurrentWidget(self.translateInterface)
         self.pivot.setCurrentItem(self.translateInterface.objectName())
 
@@ -80,13 +89,14 @@ class TranslationInterface(ScrollArea):
     """SRT文件翻译界面"""
 
     # 定义信号
-    fileSelected = Signal(str)  # 文件选择信号
+    addTranslateTask = Signal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.view = QWidget(self)
         self.srt_path = ""
         self.translate_thread = None
+        self.translate_tasks = []
 
         self._initWidget()
         self._connect_signals()
@@ -120,6 +130,9 @@ class TranslationInterface(ScrollArea):
         self._create_button_layout(main_layout)
 
         main_layout.addStretch(1)
+
+        # 添加信号
+        event_bus.translate_requested.connect(self.addTranslateFromProject)
 
     def _create_file_selection_cards(self):
         """创建文件选择卡片"""
@@ -223,7 +236,7 @@ class TranslationInterface(ScrollArea):
         """创建操作按钮区域"""
         button_layout = QHBoxLayout()
 
-        self.start_btn = PrimaryPushButton(FIF.PLAY, "开始翻译")
+        self.start_btn = PrimaryPushButton(FIF.PLAY, "添加任务")
         self.start_btn.setEnabled(False)
 
         button_layout.addWidget(self.start_btn)
@@ -241,7 +254,7 @@ class TranslationInterface(ScrollArea):
         self.target_language_combo.currentTextChanged.connect(
             lambda: cfg.set(cfg.target_lang, self.target_language_combo.currentText())
         )
-        self.start_btn.clicked.connect(self.on_start_translation)
+        self.start_btn.clicked.connect(self._start_translation)
 
     def _browse_video_file(self):
         """浏览字幕文件"""
@@ -285,7 +298,7 @@ class TranslationInterface(ScrollArea):
         if file_path:
             self.output_path_edit.setText(file_path)
 
-    def on_start_translation(self):
+    def _start_translation(self):
         """开始翻译槽函数"""
         if not cfg.get(cfg.deepseekApiKey):
             self.show_error_message("请先填写您的DeepSeek API Key")
@@ -298,39 +311,21 @@ class TranslationInterface(ScrollArea):
             self.show_error_message("原语言和目标语言相同")
             return
 
-        # 如果已有线程在运行，先停止它
-        if self.translate_thread and self.translate_thread.isRunning():
-            self.translate_thread.quit()
-            self.translate_thread.wait()
+        args = self._get_args()
+        self.addTranslateTask.emit(args)
 
-        self.start_btn.setEnabled(False)
-        self.start_btn.setText("处理中...")
+    def _get_args(self):
+        """获取参数"""
+        args = {}
 
-        self.translate_thread = TranslateThread(  # 保存为实例变量
-            self.file_srt,
-            self.output_path_edit.text(),
-            self.origin_language_combo.currentText(),
-            self.target_language_combo.currentText(),
-        )
-        self.translate_thread.start()
+        args["srt_path"] = str(self.file_srt.file_path)
+        args["output_path"] = self.output_path_edit.text()
+        args["origin_lang"] = self.origin_language_combo.currentText()
+        args["target_lang"] = self.target_language_combo.currentText()
+        args["raw_content"] = self.file_srt.raw_content
 
-    def on_translation_finished(self, success, message):
-        """翻译完成槽函数"""
-        self.start_btn.setEnabled(True)
-        self.start_btn.setText("开始翻译")
-
-        # 清理线程引用
-        if self.translate_thread:
-            self.translate_thread = None
-
-        if success:
-            self.file_srt.write_raw_content(
-                message[0],
-                self.output_path_edit.text(),
-            )
-            self.show_success_message(f"翻译完成 -{self.output_path_edit.text()}-")
-        else:
-            self.show_error_message(f"翻译失败 -{message}-")
+        print(args)
+        return args
 
     def update_preview_table(self, subtitles_data):
         """更新预览表格内容
@@ -352,39 +347,12 @@ class TranslationInterface(ScrollArea):
         self.preview_table.resizeColumnsToContents()
         self.stats_label.setText(f"共 {len(subtitles_data)} 条字幕")
 
-    def update_progress(self, current, total, status=""):
-        """更新进度
-
-        Args:
-            current: 当前进度
-            total: 总数量
-            status: 状态文本
-        """
-        if total > 0:
-            progress = int((current / total) * 100)
-            self.progress_bar.setValue(progress)
-            self.progress_label.setText(f"{status} ({current}/{total})")
-        else:
-            self.progress_bar.setValue(0)
-            self.progress_label.setText(status)
-
-    def set_processing_state(self, processing):
-        """设置处理状态
-
-        Args:
-            processing: 是否正在处理中
-        """
-        self.start_btn.setEnabled(not processing)
-        self.select_file_btn.setEnabled(not processing)
-
-        if processing:
-            self.indeterminate_progress.setVisible(True)
-            self.progress_bar.setVisible(False)
-            self.start_btn.setText("处理中...")
-        else:
-            self.indeterminate_progress.setVisible(False)
-            self.progress_bar.setVisible(True)
-            self.start_btn.setText("开始翻译")
+    def updateTranslateTask(self, isRepeat, translate_tasks, isMessage):
+        if isRepeat and isMessage:
+            self.show_error_message("重复的任务")
+        elif not isRepeat and isMessage:
+            self.show_success_message(f"任务-{translate_tasks[-1]}-添加成功！")
+        self.translate_tasks = translate_tasks
 
     def show_success_message(self, message):
         """显示成功消息"""
@@ -397,3 +365,16 @@ class TranslationInterface(ScrollArea):
     def show_warning_message(self, message):
         """显示警告消息"""
         event_bus.notification_service.show_warning("警告", message)
+
+    def addTranslateFromProject(self, file_path, output_path):
+        """从项目界面添加翻译任务"""
+        srt_file = Srt(file_path)
+
+        args = {}
+        args["srt_path"] = file_path
+        args["output_path"] = output_path
+        args["origin_lang"] = cfg.get(cfg.origin_lang)
+        args["target_lang"] = cfg.get(cfg.target_lang)
+        args["raw_content"] = srt_file.raw_content
+
+        self.addTranslateTask.emit(args)
