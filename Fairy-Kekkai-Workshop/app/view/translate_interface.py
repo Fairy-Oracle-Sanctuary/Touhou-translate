@@ -376,5 +376,6 @@ class TranslationInterface(ScrollArea):
         args["origin_lang"] = cfg.get(cfg.origin_lang)
         args["target_lang"] = cfg.get(cfg.target_lang)
         args["raw_content"] = srt_file.raw_content
+        print(args)
 
         self.addTranslateTask.emit(args)

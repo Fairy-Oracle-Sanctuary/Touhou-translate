@@ -5,6 +5,7 @@ import sys
 
 from PySide6.QtCore import QThread, QTimer, Signal
 
+from ..common.event_bus import event_bus
 from .CLI.videocr.api import save_subtitles_to_file
 
 
@@ -73,6 +74,7 @@ class OCRThread(QThread):
 
             self.log_signal.emit("OCR处理完成")
             self.finished_signal.emit(True, "OCR处理完成")
+            event_bus.ocr_finished_signal.emit(True, self.task.video_path)
 
         except Exception as e:
             # 如果是取消操作导致的异常，不记录为错误
@@ -83,7 +85,8 @@ class OCRThread(QThread):
             error_msg = f"OCR处理失败: {str(e)}"
             self.task.status = "失败"
             self.task.error_message = error_msg
-
+            self.finished_signal.emit(False, error_msg)
+            event_bus.ocr_finished_signal.emit(False, error_msg)
             self.log_signal.emit(f"错误: {error_msg}")
             self.finished_signal.emit(False, error_msg)
         finally:

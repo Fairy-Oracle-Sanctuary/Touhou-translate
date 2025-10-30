@@ -120,9 +120,9 @@ class TranslateItemWidget(CardWidget):
 
     def openFolder(self):
         """打开文件夹"""
-        # 获取视频文件所在的目录
-        if self.task.video_path and os.path.exists(self.task.video_path):
-            folder_path = os.path.dirname(self.task.video_path)
+        # 获取目录
+        if self.task.output_path and os.path.exists(self.task.output_path):
+            folder_path = os.path.dirname(self.task.output_path)
             QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
         else:
             event_bus.notification_service.show_warning(

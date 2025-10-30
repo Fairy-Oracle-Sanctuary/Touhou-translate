@@ -4,8 +4,10 @@ import re
 from datetime import datetime
 
 import requests
-from app.common.config import cfg
 from PySide6.QtCore import QProcess, QThread, QTimer, Signal
+
+from ..common.config import cfg
+from ..common.event_bus import event_bus
 
 
 class DownloadTask:
@@ -201,6 +203,9 @@ class DownloadThread(QThread):
             # 等待进程完成（在事件循环中）
             self.exec()
 
+            # 发送信号
+            event_bus.download_finished_signal.emit(True, self.task.download_path)
+
         except Exception as e:
             if not self.is_cancelled:
                 error_msg = f"下载失败: {str(e)}"
@@ -211,6 +216,7 @@ class DownloadThread(QThread):
                 self.task.error_message = error_msg
                 self.task.end_time = datetime.now()
                 self.finished_signal.emit(False, error_msg)
+                event_bus.download_finished_signal.emit(False, error_msg)
 
     def handle_stdout(self):
         """处理标准输出"""

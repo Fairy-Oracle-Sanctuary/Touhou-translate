@@ -28,11 +28,10 @@ class GlobalEventBus(QObject):
     download_progress = Signal(
         dict
     )  # {"task_id": 1, "progress": 50, "status": "downloading"}
-    download_finished = Signal(
-        dict
-    )  # {"task_id": 1, "success": True, "file_path": "..."}
+    download_finished_signal = Signal(bool, str)
 
     # OCR相关事件
+    ocr_finished_signal = Signal(bool, str)
     add_video_signal = Signal(str)
 
     # 翻译相关事件
