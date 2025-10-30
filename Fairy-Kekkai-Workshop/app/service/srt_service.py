@@ -83,7 +83,8 @@ class Srt:
 
         return srt_text
 
-    def write_raw_content(self, content, output_file):
+    @staticmethod
+    def write_raw_content(content, output_file):
         """
         将传入的内容原封不动写入文件
 

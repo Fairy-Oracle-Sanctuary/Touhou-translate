@@ -3,6 +3,7 @@ from PySide6.QtCore import QThread, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from .srt_service import Srt
 
 
 class TranslateTask:
@@ -66,7 +67,10 @@ class TranslateThread(QThread):
                     # 处理成功的情况
                     resp = response.choices[0].message.content.replace("```srt\n", "")
                     final_content += resp.replace("```", "\n")
-                    print(resp)
+                    print(final_content)
+
+                    # 写入文件
+                    Srt.write_raw_content(final_content, self.task.output_path)
 
             # 最终输出
             if content_all and not self.is_cancelled:
