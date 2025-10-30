@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     BodyLabel,
-    FluentIcon,
     IconWidget,
     MessageBox,
     PipsPager,
@@ -33,6 +32,7 @@ from qfluentwidgets import (
     TransparentToolButton,
     isDarkTheme,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -243,7 +243,7 @@ class ProjectDetailInterface(ScrollArea):
         # 底部增加集数按钮
         hBoxLayout = QHBoxLayout()
         if self.current_page == total_pages:
-            addButtonBottom = PrimaryToolButton(FluentIcon.ADD)
+            addButtonBottom = PrimaryToolButton(FIF.ADD)
             addButtonBottom.setToolTip("插入新的一集")
             addButtonBottom.clicked.connect(
                 lambda checked,
@@ -299,14 +299,14 @@ class ProjectDetailInterface(ScrollArea):
         )
 
         # 插入按钮
-        addEpisodeButton = TransparentToolButton(FluentIcon.ADD, folderTitleWidget)
+        addEpisodeButton = TransparentToolButton(FIF.ADD, folderTitleWidget)
         addEpisodeButton.setToolTip("在这之前插入新的一集")
         addEpisodeButton.clicked.connect(
             lambda checked, fn=folder_num: self.addEpisode(fn)
         )
 
         # 删除按钮
-        deleteButton = TransparentToolButton(FluentIcon.DELETE, folderTitleWidget)
+        deleteButton = TransparentToolButton(FIF.DELETE, folderTitleWidget)
         deleteButton.setToolTip("删除这一集(不可撤销)")
         if len(self.subfolders) <= 1:
             deleteButton.setDisabled(True)
@@ -315,14 +315,14 @@ class ProjectDetailInterface(ScrollArea):
         )
 
         # 编辑标题按钮
-        editTitleButton = TransparentToolButton(FluentIcon.EDIT, folderTitleWidget)
+        editTitleButton = TransparentToolButton(FIF.EDIT, folderTitleWidget)
         editTitleButton.setToolTip("编辑本集标题和视频url")
         editTitleButton.clicked.connect(
             lambda checked, fn=folder_num: self.editEpisodeTitle(fn)
         )
 
         # 打开链接标签
-        openurlButton = TransparentToolButton(FluentIcon.LINK, folderTitleWidget)
+        openurlButton = TransparentToolButton(FIF.LINK, folderTitleWidget)
         openurlButton.setToolTip(
             f"打开本集链接: {project.project_video_url[self.card_id][folder_num - 1]}"
         )
@@ -347,19 +347,31 @@ class ProjectDetailInterface(ScrollArea):
 
         # 定义期望的文件
         expected_files = [
-            ("封面.jpg", FluentIcon.PHOTO, True),
-            ("生肉.mp4", FluentIcon.VIDEO, True),
-            ("熟肉.mp4", FluentIcon.VIDEO, False),
-            ("原文.srt", FluentIcon.DOCUMENT, False),
-            ("译文.srt", FluentIcon.DOCUMENT, False),
+            ("封面.jpg", FIF.PHOTO, True, False, False),
+            ("生肉.mp4", FIF.VIDEO, True, False, False),
+            ("熟肉.mp4", FIF.VIDEO, False, False, False),
+            ("原文.srt", FIF.DOCUMENT, False, True, False),
+            ("译文.srt", FIF.DOCUMENT, False, False, True),
         ]
 
         # 检查文件是否存在并添加到列表
-        for file_name, icon, donwload_need in expected_files:
+        for (
+            file_name,
+            icon,
+            donwload_need,
+            extract_need,
+            translate_need,
+        ) in expected_files:
             file_path = os.path.join(folder_path, file_name)
             file_exists = os.path.exists(file_path)
             fileListWidget.addFileItem(
-                file_name, file_path, icon, file_exists, donwload_need
+                file_name,
+                file_path,
+                icon,
+                file_exists,
+                donwload_need,
+                extract_need,
+                translate_need,
             )
 
         parent_layout.addWidget(fileListWidget)
@@ -581,7 +593,10 @@ class FileItemWidget(SimpleCardWidget):
         file_path,
         icon,
         file_exists,
-        donwload_need,
+        other_exists,
+        donwload_need=False,
+        extract_need=False,
+        translate_need=False,
         parent=None,
     ):
         super().__init__(parent)
@@ -591,7 +606,10 @@ class FileItemWidget(SimpleCardWidget):
         self.file_name = file_name
         self.file_path = file_path
         self.file_exists = file_exists
+        self.other_exists = other_exists
         self.download_need = donwload_need
+        self.extract_need = extract_need
+        self.translate_need = translate_need
 
         self.setFixedHeight(50)
         self.setObjectName("fileItemCard")
@@ -657,22 +675,38 @@ class FileItemWidget(SimpleCardWidget):
         buttonLayout = QHBoxLayout()
         buttonLayout.setSpacing(5)
 
-        # 下载按钮（仅在需要且文件不存在时显示）
+        # 下载按钮（仅在需要时显示）
         if self.download_need and not self.file_exists:
-            self.downloadBtn = TransparentToolButton(FluentIcon.DOWNLOAD, self)
+            self.downloadBtn = TransparentToolButton(FIF.DOWNLOAD, self)
             self.downloadBtn.setToolTip("下载缺失的文件")
             self.downloadBtn.setFixedSize(32, 32)
             self.downloadBtn.clicked.connect(self.donwloadFile)
             buttonLayout.addWidget(self.downloadBtn)
 
+        # 提取字幕按钮 (当有生肉视频但是无原文.srt时显示)
+        if self.extract_need and not self.file_exists and self.other_exists[1]:
+            self.extractBtn = TransparentToolButton(FIF.ALIGNMENT, self)
+            self.extractBtn.setToolTip("提取字幕")
+            self.extractBtn.setFixedSize(32, 32)
+            self.extractBtn.clicked.connect(self.extractSubtitle)
+            buttonLayout.addWidget(self.extractBtn)
+
+        # 翻译字幕按钮 (当有原文.srt但是无译文.srt时显示)
+        if self.translate_need and not self.file_exists and self.other_exists[3]:
+            self.translateBtn = TransparentToolButton(FIF.GLOBE, self)
+            self.translateBtn.setToolTip("翻译字幕")
+            self.translateBtn.setFixedSize(32, 32)
+            self.translateBtn.clicked.connect(self.translateSubtitle)
+            buttonLayout.addWidget(self.translateBtn)
+
         # 打开文件路径按钮
-        self.openPathBtn = TransparentToolButton(FluentIcon.FOLDER, self)
+        self.openPathBtn = TransparentToolButton(FIF.FOLDER, self)
         self.openPathBtn.setToolTip("打开文件所在路径")
         self.openPathBtn.setFixedSize(32, 32)
         self.openPathBtn.clicked.connect(self.openFileLocation)
 
         # 删除文件按钮
-        self.deleteBtn = TransparentToolButton(FluentIcon.DELETE, self)
+        self.deleteBtn = TransparentToolButton(FIF.DELETE, self)
         self.deleteBtn.setToolTip("删除文件")
         self.deleteBtn.setFixedSize(32, 32)
         self.deleteBtn.clicked.connect(self.deleteFile)
@@ -811,9 +845,29 @@ class FileItemWidget(SimpleCardWidget):
                     )
                 )
                 # 显示下载中的提示
-                event_bus.notification_service.show_info(
-                    "开始下载", f"正在下载视频: {video_url}"
-                )
+                # event_bus.notification_service.show_info(
+                #     "成功", f"已添加视频下载任务: {video_url}"
+                # )
+
+    def extractSubtitle(self):
+        """切换到提取界面"""
+        video_file = Path(self.file_path)
+        if video_file.name == "原文.srt":
+            file_path = video_file.parent / "生肉.mp4"
+        event_bus.add_video_signal.emit(str(file_path))
+
+        event_bus.switchToSampleCard.emit("VideocrStackedInterfaces", 3)
+
+    def translateSubtitle(self):
+        """添加翻译任务"""
+        # 自动生成输出文件路径
+        output_file = Path(self.file_path)
+        if output_file.name == "译文.srt":
+            file_path = output_file.parent / "原文.srt"
+        else:
+            file_path = output_file.parent / f"{output_file.stem}_translated.srt"
+
+        event_bus.translate_requested.emit(str(file_path), str(output_file))
 
 
 class FileListWidget(QWidget):
@@ -826,9 +880,20 @@ class FileListWidget(QWidget):
         self.card_id = card_id
         self.folder_num = folder_num
         self.fileWidgets = []
+        self.file_exists = []  # 封面 生肉 熟肉 原文 译文
 
-    def addFileItem(self, file_name, file_path, icon, file_exists, download_need):
+    def addFileItem(
+        self,
+        file_name,
+        file_path,
+        icon,
+        file_exists,
+        download_need=False,
+        extract_need=False,
+        translate_need=False,
+    ):
         """添加文件项"""
+        self.file_exists.append(file_exists)
         fileWidget = FileItemWidget(
             self.main_window,
             self.card_id,
@@ -837,7 +902,10 @@ class FileListWidget(QWidget):
             file_path,
             icon,
             file_exists,
+            self.file_exists,
             download_need,
+            extract_need,
+            translate_need,
             self,
         )
         fileWidget.setCursor(Qt.PointingHandCursor)

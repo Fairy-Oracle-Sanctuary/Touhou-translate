@@ -32,8 +32,12 @@ class GlobalEventBus(QObject):
         dict
     )  # {"task_id": 1, "success": True, "file_path": "..."}
 
+    # OCR相关事件
+    add_video_signal = Signal(str)
+
     # 翻译相关事件
     translate_finished_signal = Signal(bool, list)
+    translate_requested = Signal(str, str)
 
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}

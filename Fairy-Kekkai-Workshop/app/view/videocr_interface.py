@@ -284,8 +284,8 @@ class VideocrInterface(ScrollArea):
             lambda: cfg.set(cfg.ocr_lang, self.language_combo.currentText())
         )
         self.position_combo.currentTextChanged.connect(self._on_position_changed)
-
         self.video_preview.isCropChoose.connect(self._start_btn_enabled)
+        event_bus.add_video_signal.connect(self.loadVideoFromProject)
 
     def _start_btn_enabled(self, enabled):
         """设置开始按钮可用性"""
@@ -547,3 +547,17 @@ class VideocrInterface(ScrollArea):
         elif not isRepeat and isMessage:
             self._show_success(f"任务-{ocr_tasks[-1]}-添加成功！")
         self.ocr_tasks = ocr_tasks
+
+    def loadVideoFromProject(self, video_path):
+        if video_path:
+            self.video_path = video_path
+            self.video_path_edit.setText(video_path)
+
+            # 自动生成输出文件路径
+            output_path = Path(video_path).with_suffix(".srt")
+            self.output_path_edit.setText(str(output_path))
+
+            # 加载视频
+            self._load_video(video_path)
+
+            self.video_preview.select_btn.setEnabled(True)
