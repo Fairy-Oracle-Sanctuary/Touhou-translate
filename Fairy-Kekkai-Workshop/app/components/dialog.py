@@ -108,6 +108,62 @@ class AddProject(BaseInputDialog):
         return errors
 
 
+class AddProjectFromPlaylist(BaseInputDialog):
+    """添加新项目"""
+
+    def __init__(self, parent=None):
+        super().__init__("根据播放列表添加新项目", min_width=450, parent=parent)
+        self.setup_ui()
+
+    def setup_ui(self):
+        grid_layout = QGridLayout()
+        self.viewLayout.addLayout(grid_layout)
+
+        self.urlInput = LineEdit(self)
+        self.urlInput.setPlaceholderText("输入播放列表url")
+
+        self.nameInput = LineEdit(self)
+        self.nameInput.setPlaceholderText("输入项目的名字")
+
+        self.titleInput = LineEdit(self)
+        self.titleInput.setPlaceholderText("输入这个系列的原标题")
+
+        fields = [
+            ("视频列表url:", self.urlInput),
+            ("项目名称:", self.nameInput),
+            ("原标题:", self.titleInput),
+        ]
+
+        for row, (label_text, widget) in enumerate(fields):
+            label = StrongBodyLabel(label_text, self)
+            grid_layout.addWidget(label, row, 0)
+            grid_layout.addWidget(widget, row, 1)
+
+        # 设置列拉伸，使输入框能够扩展
+        grid_layout.setColumnStretch(1, 1)
+
+    def validateInput(self):
+        errors = []
+        base_path = ""
+        list_url = self.urlInput.text()
+        project_name = self.nameInput.text()
+        title = self.titleInput.text()
+
+        # 验证非空字段
+        non_empty_checks = [
+            ("视频列表url", list_url, "请输入播放列表url"),
+            ("项目名称", project_name, "请输入项目名称"),
+            ("原标题", title, "请输入原标题"),
+        ]
+        errors.extend(self.validate_non_empty(non_empty_checks))
+
+        # 检查项目是否已存在
+        if project_name.strip() and os.path.exists(base_path + project_name):
+            errors.append(f"错误：'{project_name}' 文件夹已存在！")
+
+        return errors
+
+
 class CustomMessageBox(BaseInputDialog):
     """单输入对话框"""
 

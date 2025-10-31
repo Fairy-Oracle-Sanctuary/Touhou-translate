@@ -29,8 +29,13 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..components.dialog import AddProject, CustomDoubleMessageBox
+from ..components.dialog import (
+    AddProject,
+    AddProjectFromPlaylist,
+    CustomDoubleMessageBox,
+)
 from ..resource import resource_rc  # noqa: F401
+from ..service.donwload_list_service import DownloadListThread
 from ..service.project_service import project
 
 
@@ -82,7 +87,9 @@ class ProjectInterface(ScrollArea):
         # 连接信号
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
         self.topButtonCard.importProjectButton.clicked.connect(self.importProjectCard)
-        # self.topButtonCard.newFromPlaylistButton.clicked.connect()
+        self.topButtonCard.newFromPlaylistButton.clicked.connect(
+            self.addProjectFromPlaylist
+        )
         self.topButtonCard.refreshButton.clicked.connect(
             lambda: self.refreshProjectList(isMessage=True)
         )
@@ -175,9 +182,45 @@ class ProjectInterface(ScrollArea):
                     )
 
     def addProjectFromPlaylist(self):
-        """根据播放列表新建项目 - 触发页面跳转"""
-        # 发出信号，通知主窗口切换到播放列表界面
-        self.switchToPlaylistInterface.emit()
+        """根据播放列表新建项目"""
+        # 获取应用程序的顶级窗口
+        main_window = None
+        for widget in QApplication.topLevelWidgets():
+            if widget.isWindow() and widget.isVisible():
+                main_window = widget
+                break
+
+        dialog = AddProjectFromPlaylist(
+            parent=main_window if main_window else self.window()
+        )
+        if dialog.exec():
+            self.topButtonCard.newFromPlaylistButton.setEnabled(False)
+            self.download_list_thread = DownloadListThread(
+                dialog.urlInput.text(),
+                dialog.nameInput.text(),
+                dialog.titleInput.text(),
+            )
+            self.download_list_thread.finished_signal.connect(
+                self.onDownloadListFinished
+            )
+            self.download_list_thread.start()
+
+    def onDownloadListFinished(self, isSuccess, message, isAllFinished):
+        """处理下载信息"""
+        if isAllFinished:
+            if isSuccess:
+                event_bus.notification_service.show_success("成功", "项目创建完毕")
+                event_bus.download_list_finished_signal.emit(True, message)
+            else:
+                event_bus.notification_service.show_success("失败", message)
+            self.topButtonCard.newFromPlaylistButton.setEnabled(True)
+        else:
+            if isSuccess:
+                if message == "已创建项目文件夹,正在下载封面":
+                    self.refreshProjectList(isMessage=False)
+                event_bus.notification_service.show_success("成功", message)
+            else:
+                event_bus.notification_service.show_error("错误", message)
 
     def refreshProjectList(self, isMessage):
         """刷新项目列表"""
