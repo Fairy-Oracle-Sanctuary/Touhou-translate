@@ -945,7 +945,9 @@ class FileListWidget(QWidget):
         """使用文本编辑器打开文件"""
         try:
             if platform.system() == "Windows":
-                os.system(f'notepad "{file_path}"')
+                subprocess.Popen(
+                    ["notepad", file_path], creationflags=subprocess.CREATE_NO_WINDOW
+                )
             elif platform.system() == "Darwin":
                 subprocess.call(("open", "-a", "TextEdit", file_path))
             else:
