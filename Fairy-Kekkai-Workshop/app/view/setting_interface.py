@@ -271,21 +271,21 @@ class SettingInterface(ScrollArea):
             if dialog.exec():
                 QDesktopServices.openUrl(QUrl("https://ffmpeg.org/download.html"))
 
-        ytdlp_path = shutil.which("yt-dlp")
-        if ytdlp_path:
-            cfg.set(cfg.ytdlpPath, ytdlp_path)
-            event_bus.notification_service.show_success(
-                "检测成功", "yt-dlp路径已设置为" + ytdlp_path
-            )
-            self.ytdlpPathCard.setContent(ytdlp_path)
-        else:
-            dialog = Dialog("检测失败", "未检测到yt-dlp程序，是否要下载", self)
-            dialog.yesButton.setText("前往下载")
-            dialog.cancelButton.setText("取消")
-            if dialog.exec():
-                QDesktopServices.openUrl(
-                    QUrl("https://github.com/yt-dlp/yt-dlp/releases")
-                )
+        # ytdlp_path = shutil.which("yt-dlp")
+        # if ytdlp_path:
+        #     cfg.set(cfg.ytdlpPath, ytdlp_path)
+        #     event_bus.notification_service.show_success(
+        #         "检测成功", "yt-dlp路径已设置为" + ytdlp_path
+        #     )
+        #     self.ytdlpPathCard.setContent(ytdlp_path)
+        # else:
+        #     dialog = Dialog("检测失败", "未检测到yt-dlp程序，是否要下载", self)
+        #     dialog.yesButton.setText("前往下载")
+        #     dialog.cancelButton.setText("取消")
+        #     if dialog.exec():
+        #         QDesktopServices.openUrl(
+        #             QUrl("https://github.com/yt-dlp/yt-dlp/releases")
+        #         )
 
     def _onAccentColorChanged(self):
         color = cfg.get(cfg.accentColor)
