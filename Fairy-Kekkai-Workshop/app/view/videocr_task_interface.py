@@ -210,7 +210,6 @@ class OcrTaskInterface(ScrollArea):
                             self.log_signal.emit(
                                 f"步骤1: 正在处理图像 {current}/{total}"
                             )
-
                         return min(progress, 50)  # 确保不超过50%
 
             # Step 2: Performing OCR on image {current} of {total}

@@ -79,9 +79,10 @@ class ProjectInterface(ScrollArea):
         self.enableTransparentBackground()
 
     def _connectSignalToSlot(self):
-        # 删除与 projectDetailInterface 相关的连接
+        # 连接信号
         self.topButtonCard.newProjectButton.clicked.connect(self.addNewProjectCard)
         self.topButtonCard.importProjectButton.clicked.connect(self.importProjectCard)
+        # self.topButtonCard.newFromPlaylistButton.clicked.connect()
         self.topButtonCard.refreshButton.clicked.connect(
             lambda: self.refreshProjectList(isMessage=True)
         )
@@ -253,12 +254,13 @@ class TopButtonCard(CardWidget):
         # 创建三个按钮
         self.newProjectButton = PushButton("新建项目", self)
         self.importProjectButton = PushButton("导入项目", self)
-        # self.newFromPlaylistButton = PushButton('根据播放列表新建项目', self)
+        self.newFromPlaylistButton = PushButton("根据视频列表创建项目", self)
         self.refreshButton = PrimaryPushButton("刷新项目列表", self)
 
         # 设置按钮样式
         self.newProjectButton.setFixedWidth(120)
         self.importProjectButton.setFixedWidth(120)
+        self.newFromPlaylistButton.setFixedWidth(200)
         self.refreshButton.setFixedWidth(120)
 
         # 创建水平布局
@@ -269,8 +271,8 @@ class TopButtonCard(CardWidget):
         # 添加按钮到布局
         self.hBoxLayout.addWidget(self.newProjectButton)
         self.hBoxLayout.addWidget(self.importProjectButton)
-        # self.hBoxLayout.addWidget(self.newFromPlaylistButton)
-        self.hBoxLayout.addStretch(1)  # 添加弹性空间
+        self.hBoxLayout.addWidget(self.newFromPlaylistButton)
+        self.hBoxLayout.addStretch()
         self.hBoxLayout.addWidget(self.refreshButton)
 
         # 设置卡片高度

@@ -6,6 +6,7 @@ from qfluentwidgets import (
     ComboBoxSettingCard,
     ExpandLayout,
     LineEdit,
+    PasswordLineEdit,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
@@ -36,6 +37,29 @@ class LineEditSettingCard(SettingCard):
         self.configItem = configItem
 
         self.lineEdit = LineEdit(self)
+        self.lineEdit.setFixedWidth(250)
+        self.lineEdit.setPlaceholderText(placeholderText)
+        self.lineEdit.setText(str(self.configItem.value))
+        self.lineEdit.textChanged.connect(self._onTextChanged)
+
+        self.hBoxLayout.addWidget(self.lineEdit, 1)
+        self.hBoxLayout.addSpacing(16)
+
+    def _onTextChanged(self, text):
+        """文本改变时的处理"""
+        cfg.set(self.configItem, text)
+
+
+class PasswordLineEditSettingCard(SettingCard):
+    """自定义密码输入设置卡片"""
+
+    def __init__(
+        self, configItem, icon, title, content=None, placeholderText="", parent=None
+    ):
+        super().__init__(icon, title, content, parent)
+        self.configItem = configItem
+
+        self.lineEdit = PasswordLineEdit(self)
         self.lineEdit.setFixedWidth(250)
         self.lineEdit.setPlaceholderText(placeholderText)
         self.lineEdit.setText(str(self.configItem.value))
@@ -724,7 +748,7 @@ class OCRSettingInterface(ScrollArea):
 
 
 class TranslateSettingInterface(ScrollArea):
-    """OCR 设置界面"""
+    """翻译 设置界面"""
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -736,7 +760,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # Deepseek Api Key
         self.keyGroup = SettingCardGroup(self.tr("Api Key"), self.scrollWidget)
-        self.ApiKeyCard = LineEditSettingCard(
+        self.ApiKeyCard = PasswordLineEditSettingCard(
             cfg.deepseekApiKey,
             FIF.CAFE,
             self.tr("Api Key"),
@@ -744,7 +768,7 @@ class TranslateSettingInterface(ScrollArea):
             placeholderText="",
             parent=self.keyGroup,
         )
-        self.ApiKeyCard.lineEdit.setFixedWidth(300)
+        self.ApiKeyCard.lineEdit.setFixedWidth(350)
 
         self.__initWidget()
 
