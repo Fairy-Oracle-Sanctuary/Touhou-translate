@@ -1,5 +1,6 @@
-s = "aaa \n bbb"
+from pathlib import Path
 
-s_sp = s.split("\n")
-print(s_sp)
-print(len(s_sp))
+test = Path(r"D:\Touhou-project\projects\世界因你而多彩第一季\3\原文.srt")
+
+print(test.parent.name)
+print(test.parent.parent / "3" / test.name)

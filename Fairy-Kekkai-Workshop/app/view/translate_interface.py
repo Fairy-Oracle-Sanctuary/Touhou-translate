@@ -28,6 +28,7 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.setting import translate_deepseek_language_dict
 from ..components.config_card import TranslateSettingInterface
+from ..service.project_service import Project
 from ..service.srt_service import Srt
 from .translate_task_interface import TranslateTaskInterface
 
@@ -239,7 +240,15 @@ class TranslationInterface(ScrollArea):
         self.start_btn = PrimaryPushButton(FIF.PLAY, "添加任务")
         self.start_btn.setEnabled(False)
 
+        self.previous_btn = PushButton(FIF.UP, "上一个")
+        self.previous_btn.setEnabled(False)
+
+        self.next_btn = PushButton(FIF.DOWN, "下一个")
+        self.next_btn.setEnabled(False)
+
         button_layout.addWidget(self.start_btn)
+        button_layout.addWidget(self.previous_btn)
+        button_layout.addWidget(self.next_btn)
         button_layout.addStretch()
 
         main_layout.addLayout(button_layout)
@@ -255,6 +264,8 @@ class TranslationInterface(ScrollArea):
             lambda: cfg.set(cfg.target_lang, self.target_language_combo.currentText())
         )
         self.start_btn.clicked.connect(self._start_translation)
+        self.previous_btn.clicked.connect(self.switch_previous_file)
+        self.next_btn.clicked.connect(self.switch_next_file)
 
     def _browse_video_file(self):
         """浏览字幕文件"""
@@ -277,7 +288,11 @@ class TranslationInterface(ScrollArea):
                 output_path = srt_path.parent / f"{srt_path.stem}_translated.srt"
             self.output_path_edit.setText(str(output_path))
 
+            # 启用按钮
             self.start_btn.setEnabled(True)
+
+            # 更新上下按钮状态
+            self.update_adjacent_button()
 
             self.file_srt = Srt(srt_path)
             self.update_preview_table(self.file_srt.subtitle_data)
@@ -346,6 +361,60 @@ class TranslationInterface(ScrollArea):
         # 调整列宽
         self.preview_table.resizeColumnsToContents()
         self.stats_label.setText(f"共 {len(subtitles_data)} 条字幕")
+
+    def switch_previous_file(self):
+        """切换上一个文件"""
+        previous_path = Project.get_previous_path(self.srt_path)
+        if previous_path:
+            self.srt_path = previous_path
+            self.file_srt = Srt(previous_path)
+
+            # 自动生成输出文件路径
+            srt_path = Path(previous_path)
+            if srt_path.name == "原文.srt":
+                output_path = srt_path.parent / "译文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}_translated.srt"
+            self.output_path_edit.setText(str(output_path))
+
+            # 更新界面
+            self.srt_path_edit.setText(str(self.srt_path))
+            self.output_path_edit.setText(str(output_path))
+            self.update_preview_table(self.file_srt.subtitle_data)
+            self.update_adjacent_button()
+
+    def switch_next_file(self):
+        """切换上一个文件"""
+        next_path = Project.get_next_path(self.srt_path)
+        if next_path:
+            self.srt_path = next_path
+            self.file_srt = Srt(next_path)
+
+            # 自动生成输出文件路径
+            srt_path = Path(next_path)
+            if srt_path.name == "原文.srt":
+                output_path = srt_path.parent / "译文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}_translated.srt"
+            self.output_path_edit.setText(str(output_path))
+
+            # 更新界面
+            self.srt_path_edit.setText(str(self.srt_path))
+            self.output_path_edit.setText(str(output_path))
+            self.update_preview_table(self.file_srt.subtitle_data)
+            self.update_adjacent_button()
+
+    def update_adjacent_button(self):
+        """更新上一个/下一个按钮状态"""
+        adjacent_file_exists = Project.isAdjacentFileExists(self.srt_path)
+        if adjacent_file_exists[0]:
+            self.previous_btn.setEnabled(True)
+        else:
+            self.previous_btn.setEnabled(False)
+        if adjacent_file_exists[1]:
+            self.next_btn.setEnabled(True)
+        else:
+            self.next_btn.setEnabled(False)
 
     def updateTranslateTask(self, isRepeat, translate_tasks, isMessage):
         if isRepeat and isMessage:

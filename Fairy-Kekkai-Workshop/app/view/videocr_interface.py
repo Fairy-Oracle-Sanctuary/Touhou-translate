@@ -34,6 +34,7 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.setting import subtitle_positions_list, videocr_languages_dict
 from ..components.config_card import OCRSettingInterface
+from ..service.project_service import Project
 from ..service.video_service import VideoPreview
 from .videocr_task_interface import OcrTaskInterface
 
@@ -265,9 +266,17 @@ class VideocrInterface(ScrollArea):
         self.start_btn = PrimaryPushButton(FIF.PLAY, "添加任务")
         self.start_btn.setEnabled(False)
 
+        self.previous_btn = PushButton(FIF.UP, "上一个")
+        self.previous_btn.setEnabled(False)
+
+        self.next_btn = PushButton(FIF.DOWN, "下一个")
+        self.next_btn.setEnabled(False)
+
         self.clear_btn = PushButton(FIF.DELETE, "清空日志")
 
         button_layout.addWidget(self.start_btn)
+        button_layout.addWidget(self.previous_btn)
+        button_layout.addWidget(self.next_btn)
         button_layout.addStretch()
         button_layout.addWidget(self.clear_btn)
 
@@ -285,6 +294,8 @@ class VideocrInterface(ScrollArea):
         )
         self.position_combo.currentTextChanged.connect(self._on_position_changed)
         self.video_preview.isCropChoose.connect(self._start_btn_enabled)
+        self.previous_btn.clicked.connect(self.switch_previous_file)
+        self.next_btn.clicked.connect(self.switch_next_file)
         event_bus.add_video_signal.connect(self.loadVideoFromProject)
 
     def _start_btn_enabled(self, enabled):
@@ -310,6 +321,9 @@ class VideocrInterface(ScrollArea):
 
             # 加载视频
             self._load_video(video_path)
+
+            # 更新上下按钮状态
+            self.update_adjacent_button()
 
             self.video_preview.select_btn.setEnabled(True)
 
@@ -507,6 +521,48 @@ class VideocrInterface(ScrollArea):
         # 自动滚动到底部
         scrollbar = self.log_text.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def switch_previous_file(self):
+        """切换上一个文件"""
+        previous_path = Project.get_previous_path(self.video_path)
+        if previous_path:
+            self.video_path = previous_path
+
+            # 自动生成输出文件路径
+            output_path = Path(self.video_path).with_suffix(".srt")
+
+            # 更新界面
+            self.video_path_edit.setText(str(self.video_path))
+            self.output_path_edit.setText(str(output_path))
+            self._load_video(self.video_path)
+            self.update_adjacent_button()
+
+    def switch_next_file(self):
+        """切换上一个文件"""
+        next_path = Project.get_next_path(self.video_path)
+        if next_path:
+            self.video_path = next_path
+
+            # 自动生成输出文件路径
+            output_path = Path(self.video_path).with_suffix(".srt")
+
+            # 更新界面
+            self.video_path_edit.setText(str(self.video_path))
+            self.output_path_edit.setText(str(output_path))
+            self._load_video(self.video_path)
+            self.update_adjacent_button()
+
+    def update_adjacent_button(self):
+        """更新上一个/下一个按钮状态"""
+        adjacent_file_exists = Project.isAdjacentFileExists(self.video_path)
+        if adjacent_file_exists[0]:
+            self.previous_btn.setEnabled(True)
+        else:
+            self.previous_btn.setEnabled(False)
+        if adjacent_file_exists[1]:
+            self.next_btn.setEnabled(True)
+        else:
+            self.next_btn.setEnabled(False)
 
     def _show_error(self, message):
         """显示错误信息"""

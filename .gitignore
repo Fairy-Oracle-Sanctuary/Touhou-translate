@@ -59,6 +59,7 @@ Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files/
 
 # 测试代码或数据
 test/
+tess2/
 
 # 剪映导出时的临时文件夹
 .__jianying_export_temp_folder__

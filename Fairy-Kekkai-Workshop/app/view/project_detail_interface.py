@@ -108,7 +108,9 @@ class ProjectDetailInterface(ScrollArea):
                 "成功", f"图片已下载到: {save_path}"
             )
             # 刷新项目详情页面
-            self.loadProject(self.current_project_path, self.card_id, project)
+            self.loadProject(
+                self.current_project_path, self.card_id, project, isMessage=False
+            )
         else:
             event_bus.notification_service.show_error("错误", message)
 
@@ -798,12 +800,12 @@ class FileItemWidget(SimpleCardWidget):
 
         dialog = CustomMessageBox(
             title=f"下载第 {self.folder_num} 集封面",
-            text="请输入视频url: https://www.youtube.com/watch?v=",
+            text="请输入视频ID: https://www.youtube.com/watch?v=",
             parent=self.window(),
             min_width=450,
         )
-        v = project.project_video_url[self.card_id][self.folder_num - 1]
-        dialog.LineEdit.setText(v)
+        # v = project.project_video_url[self.card_id][self.folder_num - 1]
+        # dialog.LineEdit.setText(v)
 
         if dialog.exec():
             video_url = dialog.LineEdit.text().strip()
