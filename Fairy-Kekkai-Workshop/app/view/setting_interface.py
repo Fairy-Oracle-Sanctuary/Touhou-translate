@@ -31,7 +31,7 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import AUTHOR, VERSION, YEAR
+from ..common.setting import TEAM, VERSION, YEAR
 
 
 class DetectionCard(CardWidget):
@@ -170,7 +170,7 @@ class SettingInterface(ScrollArea):
             self.tr("关于"),
             "© "
             + self.tr("Copyright")
-            + f" {YEAR}, {AUTHOR}. "
+            + f" {YEAR}, {TEAM}. "
             + self.tr("当前版本")
             + " v"
             + VERSION,

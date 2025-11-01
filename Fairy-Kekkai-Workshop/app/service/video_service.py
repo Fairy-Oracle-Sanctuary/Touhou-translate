@@ -251,6 +251,8 @@ class VideoPreview(CardWidget):
                 # 发送信号
                 if len(self.crop_boxes) == self.max_crop_boxes:
                     self.isCropChoose.emit(True)
+                else:
+                    self.isCropChoose.emit(False)
 
             event.accept()
         else:

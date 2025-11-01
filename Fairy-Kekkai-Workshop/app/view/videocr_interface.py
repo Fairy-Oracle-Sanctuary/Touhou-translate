@@ -88,6 +88,7 @@ class VideocrStackedInterfaces(QWidget):
     def onCurrentIndexChanged(self, index):
         widget = self.stackedWidget.widget(index)
         self.pivot.setCurrentItem(widget.objectName())
+        self.videocrInterface._auto_start_btn_set()
 
     def changeSelection(self, isUseDualZone):
         if isUseDualZone:
@@ -114,6 +115,8 @@ class VideocrInterface(ScrollArea):
 
         self._initWidget()
         self._connect_signals()
+
+        self.installEventFilter(self)
 
     def _initWidget(self):
         """初始化界面"""
@@ -298,9 +301,37 @@ class VideocrInterface(ScrollArea):
         self.next_btn.clicked.connect(self.switch_next_file)
         event_bus.add_video_signal.connect(self.loadVideoFromProject)
 
+    def eventFilter(self, obj, event):
+        """事件过滤器，用于监听键盘事件"""
+        if event.type() == event.Type.KeyPress:
+            key = event.key()
+
+            # 检测左方向键
+            if key == Qt.Key_Left:
+                self.switch_previous_file()
+                return True
+
+            # 检测右方向键
+            elif key == Qt.Key_Right:
+                self.switch_next_file()
+                return True
+
+        return super().eventFilter(obj, event)
+
     def _start_btn_enabled(self, enabled):
         """设置开始按钮可用性"""
         self.start_btn.setEnabled(enabled)
+
+    def _auto_start_btn_set(self):
+        """自动设置开始按钮可用性"""
+        if (
+            self.video_preview.crop_boxes.__len__() == 2
+            if cfg.get(cfg.useDualZone)
+            else 1
+        ):
+            self.start_btn.setEnabled(True)
+        else:
+            self.start_btn.setEnabled(False)
 
     def _browse_video_file(self):
         """浏览视频文件"""
@@ -373,7 +404,7 @@ class VideocrInterface(ScrollArea):
             # 显示第一帧
             self._update_video_frame(0)
 
-            self._log_message(f"成功加载视频: {Path(video_path).name}")
+            self._log_message(f"成功加载视频: {video_path}")
             self._log_message(f"总帧数: {self.total_frames}, FPS: {self.fps:.2f}")
 
         except Exception as e:
