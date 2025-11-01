@@ -102,6 +102,8 @@ class TranslationInterface(ScrollArea):
         self._initWidget()
         self._connect_signals()
 
+        self.installEventFilter(self)
+
     def _initWidget(self):
         """初始化界面"""
         self.setWidget(self.view)
@@ -266,6 +268,23 @@ class TranslationInterface(ScrollArea):
         self.start_btn.clicked.connect(self._start_translation)
         self.previous_btn.clicked.connect(self.switch_previous_file)
         self.next_btn.clicked.connect(self.switch_next_file)
+
+    def eventFilter(self, obj, event):
+        """事件过滤器，用于监听键盘事件"""
+        if event.type() == event.Type.KeyPress:
+            key = event.key()
+
+            # 检测左方向键
+            if key == Qt.Key_Left:
+                self.switch_previous_file()
+                return True
+
+            # 检测右方向键
+            elif key == Qt.Key_Right:
+                self.switch_next_file()
+                return True
+
+        return super().eventFilter(obj, event)
 
     def _browse_video_file(self):
         """浏览字幕文件"""

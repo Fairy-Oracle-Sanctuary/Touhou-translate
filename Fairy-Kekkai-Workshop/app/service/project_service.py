@@ -384,7 +384,7 @@ class Project:
         episode_num = int(file_path.parent.name)
         file_name = file_path.name
         previous_path = root_path / str(episode_num - 1) / file_name
-        if previous_path.exists:
+        if previous_path.exists():
             return previous_path
         else:
             return False
@@ -397,7 +397,7 @@ class Project:
         episode_num = int(file_path.parent.name)
         file_name = file_path.name
         next_path = root_path / str(episode_num + 1) / file_name
-        if next_path.exists:
+        if next_path.exists():
             return next_path
         else:
             return False
