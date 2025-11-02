@@ -539,13 +539,26 @@ class VideocrInterface(ScrollArea):
             )
         return crop_zones
 
-    def _log_message(self, message, is_error=False):
+    def _log_message(self, message, is_error=False, is_flush=False):
         """添加日志消息"""
         timestamp = QTime.currentTime().toString("hh:mm:ss")
         if is_error:
             formatted_message = f'<font color="red">[{timestamp}] {message}</font>'
         else:
             formatted_message = f"[{timestamp}] {message}"
+
+        if is_flush:
+            current_text = self.log_text.toPlainText()
+
+            # 按行分割文本
+            lines = current_text.split("\n")
+
+            # 移除最后一行（如果是空行则移除）
+            if lines:
+                lines.pop()
+
+            # 重新设置文本
+            self.log_text.setPlainText("\n".join(lines))
 
         self.log_text.append(formatted_message)
 
