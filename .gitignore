@@ -37,9 +37,6 @@ dist/
 Fairy-Kekkai-Workshop/build/
 Fairy-Kekkai-Workshop/dist/
 
-# CLI 相关目录
-CLI/
-
 # ===================
 # 项目依赖与内部文件
 # ===================

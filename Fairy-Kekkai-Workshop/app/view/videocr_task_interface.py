@@ -16,7 +16,7 @@ from ..service.ocr_service import OCRTask, OCRThread
 class OcrTaskInterface(ScrollArea):
     """提取字幕界面"""
 
-    log_signal = Signal(str)
+    log_signal = Signal(str, bool, bool)
     returnOcrTask = Signal(bool, list, bool)  # 是否重复的任务 任务路径列表 是否发送消息
 
     def __init__(self, parent=None):
@@ -141,7 +141,7 @@ class OcrTaskInterface(ScrollArea):
         if waiting_tasks:
             task = waiting_tasks[0]
             self.startOcr(task)
-            self.log_signal.emit("正在开始字幕提取...")
+            self.log_signal.emit("正在开始字幕提取...", False, False)
 
     def startOcr(self, task):
         """开始提取任务"""
@@ -206,10 +206,9 @@ class OcrTaskInterface(ScrollArea):
                     if total > 0:
                         # Step 1 占总进度的50%
                         progress = (current / total) * 50
-                        if progress % 5 == 0:
-                            self.log_signal.emit(
-                                f"步骤1: 正在处理图像 {current}/{total}"
-                            )
+                        self.log_signal.emit(
+                            f"步骤1: 正在处理图像 {current}/{total}", False, True
+                        )
                         return min(progress, 50)  # 确保不超过50%
 
             # Step 2: Performing OCR on image {current} of {total}
@@ -226,10 +225,11 @@ class OcrTaskInterface(ScrollArea):
                     if total > 0:
                         # Step 2 占总进度的50%，从50%开始
                         progress = 50 + (current / total) * 50
-                        if progress % 5 == 0:
-                            self.log_signal.emit(
-                                f"步骤2: 正在对图像进行OCR {current}/{total}"
-                            )
+                        self.log_signal.emit(
+                            f"步骤2: 正在对图像进行OCR {current}/{total}",
+                            False,
+                            True,
+                        )
 
                         return min(progress, 100)  # 确保不超过100%
 
@@ -255,13 +255,17 @@ class OcrTaskInterface(ScrollArea):
                     event_bus.notification_service.show_success(
                         "提取完成", f"-{task.video_path}- 提取完成"
                     )
-                    self.log_signal.emit(f"字幕提取成功: {task.video_path}")
+                    self.log_signal.emit(
+                        f"字幕提取成功: {task.video_path}", False, False
+                    )
                 else:
                     task.status = "失败"
                     event_bus.notification_service.show_error(
                         "提取失败", message.strip()
                     )
-                    self.log_signal.emit(f"字幕提取失败: {task.video_path} - {message}")
+                    self.log_signal.emit(
+                        f"字幕提取失败: {task.video_path} - {message}", True, False
+                    )
 
                 # 移除活跃提取
                 for thread in self.active_ocr[:]:
