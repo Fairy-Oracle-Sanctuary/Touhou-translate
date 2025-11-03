@@ -188,9 +188,10 @@ def find_paddleocr(base_folder: str) -> str:
                         if os.path.isfile(path):
                             return path
 
-    raise FileNotFoundError(
-        f"Could not find {executable_name} in any folder matching: {base_folders}"
-    )
+    return None
+    # raise FileNotFoundError(
+    #     f"Could not find {executable_name} in any folder matching: {base_folders}"
+    # )
 
 
 # resolves the model directory for the specified language and mode

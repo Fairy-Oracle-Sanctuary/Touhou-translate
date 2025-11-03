@@ -63,25 +63,18 @@ This repository houses a collection of self-developed auxiliary scripts and tool
 
 ### Fairy-Kekkai-Workshop
 
-`Fairy-Kekkai-Workshop` is our self-developed integrated Python tool, featuring the following core functionalities:
+`Fairy-Kekkai-Workshop` is a self-developed Python integrated tool for this project, featuring the following core functions:
 
-- **Project Management**: Easily manage the progress, resources, and metadata of various translation projects.
-- **Resource Downloading**: Built-in YouTube video downloader supporting batch retrieval from playlists.
-- **Resource Organization**: Automatically categorizes and organizes project-related asset files such as images and audio.
-
-### Tools Directory
-
-The `tools` directory contains several practical utilities, currently offering:
-
-- **One-Click Playlist Resource Download**: Quickly fetches all video resources from a specified playlist.
-- Other auxiliary functions, which will be gradually integrated into the main `Fairy-Kekkai-Workshop` tool in the future.
+*   **Project Management:** Easily manage the progress, resources, and metadata of various translation projects.
+*   **Resource Download:** Built-in YouTube video downloader, supporting batch downloading from playlists.
+*   **Subtitle Extraction:** Utilizes OCR technology to quickly identify and extract hardcoded subtitles from videos and generate SRT subtitle files.
+*   **AI Translation:** Integrates with the Deepseek API to enable automatic translation (requires your own API Key).
 
 ### 🚧 Upcoming Features
 
-- **Enhanced Project Management**: A more intuitive and efficient interface and user experience for managing projects.
-- **Hardcoded Subtitle Extraction**: Utilizes OCR technology to quickly recognize and extract hardcoded subtitle text from videos.
-- **Smart Initial Timing Generation**: Automatically generates preliminary subtitle timings based on speech recognition, significantly reducing the manual effort required for initial timing.
-
+*   **Enhanced Project Management:** A more intuitive and efficient project management interface and user experience.
+*   **Enhanced AI Translation:** More translation models will be provided to improve translation quality.
+  
 ---
 
 **Thanks to all the original authors for their wonderful creations, and to everyone who participates in and follows this project!**

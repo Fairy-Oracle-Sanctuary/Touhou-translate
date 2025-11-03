@@ -183,12 +183,12 @@ class OcrTaskInterface(ScrollArea):
         """处理print输出并计算进度"""
 
         # 解析输出消息计算进度
-        progress = self.parseOCRProgress(message)
+        progress = self.parseOCRProgress(task_id, message)
         if progress is not None:
             # 更新任务进度
             self.onOcrProgress(task_id, progress)
 
-    def parseOCRProgress(self, message):
+    def parseOCRProgress(self, task_id, message):
         """
         解析OCR输出消息并计算进度
         返回: 进度百分比 (0-100) 或 None (如果无法解析)
@@ -206,9 +206,17 @@ class OcrTaskInterface(ScrollArea):
                     if total > 0:
                         # Step 1 占总进度的50%
                         progress = (current / total) * 50
-                        self.log_signal.emit(
-                            f"步骤1: 正在处理图像 {current}/{total}", False, True
-                        )
+                        if current - 1 == 0:
+                            self.log_signal.emit(
+                                "步骤1: 正在处理图像中…",
+                                False,
+                                False,
+                            )
+                        else:
+                            self.log_signal.emit(
+                                f"步骤1: 正在处理图像 {current}/{total}", False, True
+                            )
+
                         return min(progress, 50)  # 确保不超过50%
 
             # Step 2: Performing OCR on image {current} of {total}
@@ -233,7 +241,51 @@ class OcrTaskInterface(ScrollArea):
 
                         return min(progress, 100)  # 确保不超过100%
 
+            elif "Advancing to frame" in message:
+                # 提取数字：格式 "Advancing to frame 5 of 100"
+                import re
+
+                match = re.search(r"Advancing to frame\s+(\d+)\s+of\s+(\d+)", message)
+                if match:
+                    current = int(match.group(1))
+                    total = int(match.group(2))
+                    if total > 0:
+                        progress = (current / total) * 100
+                        self.log_signal.emit(
+                            f"正在提取处理视频帧 {current}/{total}", False, True
+                        )
+
+            elif "Starting PaddleOCR... This can take a while..." in message:
+                self.log_signal.emit(
+                    "正在启动PaddleOCR... 请耐心等待…\n ", False, False
+                )
+
+            elif "Generating subtitles..." in message:
+                self.log_signal.emit("正在生成字幕文件...", False, False)
+
+            elif "找到PaddleOCR路径:" in message:
+                self.log_signal.emit(message, False, False)
+
+            elif "找到模型路径:" in message:
+                self.log_signal.emit(message, False, False)
+
+            elif "找不到PaddleOCR路径:" in message:
+                self.onOcrFinished(task_id, False, message)
+                self.log_signal.emit(message, True, False)
+
+            elif "无法找到PaddleOCR可执行文件:" in message:
+                self.onOcrFinished(task_id, False, message)
+                self.log_signal.emit(message, True, False)
+
+            elif (
+                "Error: PaddleOCR failed. See the log file for technical details:"
+                in message
+            ):
+                self.onOcrFinished(task_id, False, message)
+                self.log_signal.emit(message, True, False)
+
             return None
+
         except Exception as e:
             print(f"解析进度失败: {e}")
             return None

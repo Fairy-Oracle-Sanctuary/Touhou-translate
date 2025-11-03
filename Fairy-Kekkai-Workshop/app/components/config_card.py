@@ -661,13 +661,13 @@ class OCRSettingInterface(ScrollArea):
             configItem=cfg.useDualZone,
             parent=self.featureGroup,
         )
-        self.useAngleClsCard = SwitchSettingCard(
-            FIF.ROTATE,
-            self.tr("启用角度分类"),
-            self.tr("对倾斜文本进行角度校正"),
-            configItem=cfg.useAngleCls,
-            parent=self.featureGroup,
-        )
+        # self.useAngleClsCard = SwitchSettingCard(
+        #     FIF.ROTATE,
+        #     self.tr("启用角度分类"),
+        #     self.tr("对倾斜文本进行角度校正"),
+        #     configItem=cfg.useAngleCls,
+        #     parent=self.featureGroup,
+        # )
         self.postProcessingCard = SwitchSettingCard(
             FIF.EDIT,
             self.tr("使用后期处理"),
@@ -725,7 +725,7 @@ class OCRSettingInterface(ScrollArea):
         self.featureGroup.addSettingCard(self.gpuEnvCard)
         # self.featureGroup.addSettingCard(self.useFullframeCard)
         self.featureGroup.addSettingCard(self.useDualZoneCard)
-        self.featureGroup.addSettingCard(self.useAngleClsCard)
+        # self.featureGroup.addSettingCard(self.useAngleClsCard)
         self.featureGroup.addSettingCard(self.postProcessingCard)
         self.featureGroup.addSettingCard(self.useServerModelCard)
 
