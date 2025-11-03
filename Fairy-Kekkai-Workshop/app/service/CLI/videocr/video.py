@@ -172,7 +172,9 @@ class Video:
                 for i in range(ocr_start):
                     v.grab()
                     print(
-                        f"\rAdvancing to frame {i + 1}/{ocr_start}", end="", flush=True
+                        f"\rAdvancing to frame {i + 1} of {ocr_start}",
+                        end="",
+                        flush=True,
                     )
                 print()
 
@@ -314,6 +316,7 @@ class Video:
         print("Starting PaddleOCR... This can take a while...", flush=True)
 
         if not os.path.isfile(self.paddleocr_path):
+            print(f"无法找到PaddleOCR可执行文件: {self.paddleocr_path}")
             raise OSError(f"PaddleOCR executable not found at: {self.paddleocr_path}")
 
         print(args)

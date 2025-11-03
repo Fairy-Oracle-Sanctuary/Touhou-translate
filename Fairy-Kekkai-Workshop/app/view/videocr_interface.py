@@ -348,6 +348,11 @@ class VideocrInterface(ScrollArea):
 
             # 自动生成输出文件路径
             output_path = Path(video_path).with_suffix(".srt")
+            srt_path = Path(video_path)
+            if srt_path.name == "生肉.mp4":
+                output_path = srt_path.parent / "原文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}.srt"
             self.output_path_edit.setText(str(output_path))
 
             # 加载视频
@@ -574,6 +579,12 @@ class VideocrInterface(ScrollArea):
 
             # 自动生成输出文件路径
             output_path = Path(self.video_path).with_suffix(".srt")
+            srt_path = Path(self.video_path)
+            if srt_path.name == "生肉.mp4":
+                output_path = srt_path.parent / "原文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}.srt"
+            self.output_path_edit.setText(str(output_path))
 
             # 更新界面
             self.video_path_edit.setText(str(self.video_path))
@@ -589,6 +600,12 @@ class VideocrInterface(ScrollArea):
 
             # 自动生成输出文件路径
             output_path = Path(self.video_path).with_suffix(".srt")
+            srt_path = Path(self.video_path)
+            if srt_path.name == "生肉.mp4":
+                output_path = srt_path.parent / "原文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}.srt"
+            self.output_path_edit.setText(str(output_path))
 
             # 更新界面
             self.video_path_edit.setText(str(self.video_path))
@@ -654,7 +671,12 @@ class VideocrInterface(ScrollArea):
             self.video_path_edit.setText(video_path)
 
             # 自动生成输出文件路径
-            output_path = Path(video_path).with_suffix(".srt")
+            output_path = Path(self.video_path).with_suffix(".srt")
+            srt_path = Path(self.video_path)
+            if srt_path.name == "生肉.mp4":
+                output_path = srt_path.parent / "原文.srt"
+            else:
+                output_path = srt_path.parent / f"{srt_path.stem}.srt"
             self.output_path_edit.setText(str(output_path))
 
             # 加载视频

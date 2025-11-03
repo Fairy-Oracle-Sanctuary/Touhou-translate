@@ -13,7 +13,7 @@ def find_paddleocr(base_folders) -> str:
 
     # 2. 添加上层目录（最多上溯3层）
     current_dir = program_dir
-    for _ in range(5):  # 上溯3层
+    for _ in range(4):  # 上溯3层
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:  # 已经到达根目录
             break
@@ -40,9 +40,7 @@ def find_paddleocr(base_folders) -> str:
                         if os.path.isfile(path):
                             return path
 
-    raise FileNotFoundError(
-        f"Could not find {executable_name} in any folder matching: {base_folders}"
-    )
+    return None
 
 
 base_folders = [
