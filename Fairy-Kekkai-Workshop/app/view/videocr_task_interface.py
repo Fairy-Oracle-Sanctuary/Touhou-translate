@@ -103,7 +103,6 @@ class OcrTaskInterface(ScrollArea):
     def addOcrTask(self, args):
         """添加提取任务"""
         task = OCRTask(args)
-        self.ocr_tasks.append(task)
 
         video_path = task.video_path
         if video_path in self.ocr_paths:
@@ -112,6 +111,9 @@ class OcrTaskInterface(ScrollArea):
         else:
             self.ocr_paths.append(video_path)
             self.returnOcrTask.emit(False, self.ocr_paths, True)
+
+        # 添加任务
+        self.ocr_tasks.append(task)
 
         # 创建任务项
         self.task_item = OcrItemWidget(task, self.taskListContainer)

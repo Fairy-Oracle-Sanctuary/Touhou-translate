@@ -94,7 +94,6 @@ class TranslateTaskInterface(ScrollArea):
     def addTranslateTask(self, args):
         """添加提取任务"""
         task = TranslateTask(args)
-        self.translate_tasks.append(task)
 
         srt_path = task.srt_path
         if srt_path in self.translate_paths:
@@ -103,6 +102,9 @@ class TranslateTaskInterface(ScrollArea):
         else:
             self.translate_paths.append(srt_path)
             self.returnTranslateTask.emit(False, self.translate_paths, True)
+
+        # 添加任务
+        self.translate_tasks.append(task)
 
         # 创建任务项
         self.task_item = TranslateItemWidget(task, self.taskListContainer)
