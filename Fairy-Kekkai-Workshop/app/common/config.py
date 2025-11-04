@@ -276,6 +276,17 @@ class Config(QConfig):
     """
 
     # OCR Settings
+    # paddleocr exe路径
+    paddleocrPath = ConfigItem(
+        "OCR", "PaddleocrPath", str(Path(f"tools/paddleocr{EXE_SUFFIX}").absolute())
+    )
+    # support.files路径
+    supportFilesPath = ConfigItem(
+        "OCR",
+        "supportFilesPath",
+        str(Path("tools/PaddleOCR.PP-OCRv5.support.files/").absolute()),
+    )
+
     # 开始时间（例如：0:00 或 1:23:45）
     # 命令行使用：--time_start
     timeStart = ConfigItem("OCR", "TimeStart", "0:00", restart=False)

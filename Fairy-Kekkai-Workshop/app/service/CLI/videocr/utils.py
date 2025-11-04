@@ -156,7 +156,7 @@ def find_paddleocr(base_folder: str) -> str:
 
     # 2. 添加上层目录（最多上溯3层）
     current_dir = program_dir
-    for _ in range(5):  # 上溯3层
+    for _ in range(3):  # 上溯3层
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:  # 已经到达根目录
             break
@@ -195,9 +195,15 @@ def find_paddleocr(base_folder: str) -> str:
 
 
 # resolves the model directory for the specified language and mode
-def resolve_model_dirs(lang: str, use_server_model: bool) -> tuple[str, str, str]:
-    program_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    base_path = os.path.join(program_dir, "PaddleOCR.PP-OCRv5.support.files")
+def resolve_model_dirs(
+    lang: str, use_server_model: bool, custom_base_path: str = None
+) -> tuple[str, str, str]:
+    # 如果用户提供了自定义路径，使用该路径；否则使用默认路径
+    if custom_base_path and os.path.exists(custom_base_path):
+        base_path = custom_base_path
+    else:
+        program_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        base_path = os.path.join(program_dir, "PaddleOCR.PP-OCRv5.support.files")
 
     det_path = os.path.join(base_path, "det")
     rec_path = os.path.join(base_path, "rec")

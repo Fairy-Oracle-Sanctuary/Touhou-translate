@@ -513,6 +513,25 @@ class OCRSettingInterface(ScrollArea):
         # setting label
         self.settingLabel = TitleLabel(self.tr("OCR 设置"), self)
 
+        # paddleocr路径
+        self.paddleocrPathGroup = SettingCardGroup(
+            self.tr("PaddleOCR 路径"), self.scrollWidget
+        )
+        self.paddleocrPathCard = PushSettingCard(
+            self.tr("选择文件"),
+            ":/app/images/logo/Paddle.svg",
+            "请选择可执行文件paddleocr.exe",
+            cfg.get(cfg.paddleocrPath),
+            self.paddleocrPathGroup,
+        )
+        self.supportFilesPathCard = PushSettingCard(
+            self.tr("选择文件夹"),
+            ":/app/images/logo/Paddle.svg",
+            "请选择支持文件夹PaddleOCR.PP-OCRv5.support.files",
+            cfg.get(cfg.supportFilesPath),
+            self.paddleocrPathGroup,
+        )
+
         # 时间设置
         self.timeGroup = SettingCardGroup(self.tr("时间设置"), self.scrollWidget)
         self.timeStartCard = LineEditSettingCard(
@@ -704,6 +723,10 @@ class OCRSettingInterface(ScrollArea):
     def __initLayout(self):
         self.settingLabel.move(36, 40)
 
+        # 文件路径
+        self.paddleocrPathGroup.addSettingCard(self.paddleocrPathCard)
+        self.paddleocrPathGroup.addSettingCard(self.supportFilesPathCard)
+
         # 时间设置
         self.timeGroup.addSettingCard(self.timeStartCard)
         self.timeGroup.addSettingCard(self.timeEndCard)
@@ -732,10 +755,31 @@ class OCRSettingInterface(ScrollArea):
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.paddleocrPathGroup)
         self.expandLayout.addWidget(self.timeGroup)
         self.expandLayout.addWidget(self.thresholdGroup)
         self.expandLayout.addWidget(self.processingGroup)
         self.expandLayout.addWidget(self.featureGroup)
+
+    def _onPaddleocrPathCardClicked(self):
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("请选择paddleocr.exe"))
+
+        if not path or cfg.get(cfg.paddleocrPath) == path:
+            return
+
+        cfg.set(cfg.paddleocrPath, path)
+        self.paddleocrPathCard.setContent(path)
+
+    def _onSupportFilesPathCardClicked(self):
+        path = QFileDialog.getExistingDirectory(
+            self, self.tr("请选择PaddleOCR.PP-OCRv5.support.files")
+        )
+
+        if not path or cfg.get(cfg.supportFilesPath) == path:
+            return
+
+        cfg.set(cfg.supportFilesPath, path)
+        self.supportFilesPathCard.setContent(path)
 
     def _changeSelection(self, isUseDualZone):
         """更改框选设置"""
@@ -744,6 +788,8 @@ class OCRSettingInterface(ScrollArea):
     def _connectSignalToSlot(self):
         """绑定信号"""
         # self.useFullframeCard.checkedChanged.connect(lambda: self._changeSelection(0))
+        self.paddleocrPathCard.clicked.connect(self._onPaddleocrPathCardClicked)
+        self.supportFilesPathCard.clicked.connect(self._onSupportFilesPathCardClicked)
         self.useDualZoneCard.checkedChanged.connect(lambda v: self._changeSelection(v))
 
 

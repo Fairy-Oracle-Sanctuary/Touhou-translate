@@ -1,5 +1,7 @@
 import sys
+from pathlib import Path
 
+from ....common.config import cfg
 from . import utils
 from .video import Video
 
@@ -30,12 +32,13 @@ def save_subtitles_to_file(
     if crop_zones is None:
         crop_zones = []
 
-    paddleocr_path = utils.find_paddleocr("PaddleOCR-" + gpu_env)
-    if paddleocr_path:
+    paddleocr_path = cfg.get(cfg.paddleocrPath)
+    if Path(paddleocr_path).exists():
         print(f"找到PaddleOCR路径: {paddleocr_path}")
     else:
-        print(f"找不到PaddleOCR路径: PaddleOCR-{gpu_env}")
+        print(f"找不到PaddleOCR路径: {paddleocr_path}")
         return
+
     try:
         utils.perform_hardware_check(paddleocr_path, use_gpu)
     except SystemExit as e:
@@ -43,7 +46,7 @@ def save_subtitles_to_file(
         sys.exit(1)
 
     det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
-        lang, use_server_model
+        lang, use_server_model, cfg.get(cfg.supportFilesPath)
     )
     print(f"找到模型路径: {det_model_dir}")
 
