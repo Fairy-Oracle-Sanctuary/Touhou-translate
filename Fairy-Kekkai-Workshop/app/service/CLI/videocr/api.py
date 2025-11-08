@@ -48,7 +48,7 @@ def save_subtitles_to_file(
     det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
         lang, use_server_model, cfg.get(cfg.supportFilesPath)
     )
-    print(f"找到模型路径: {det_model_dir}")
+    print(f"找到模型路径: \n{det_model_dir}\n{rec_model_dir}\n{cls_model_dir}")
 
     v = Video(
         video_path,

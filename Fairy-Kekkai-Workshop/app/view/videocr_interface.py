@@ -502,6 +502,7 @@ class VideocrInterface(ScrollArea):
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
         args["gpu_env"] = cfg.get(cfg.gpuEnv)
 
+        print(args)
         return args
 
     def _clear_log(self):

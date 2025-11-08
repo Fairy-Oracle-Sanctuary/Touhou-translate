@@ -172,9 +172,7 @@ class Video:
                 for i in range(ocr_start):
                     v.grab()
                     print(
-                        f"\rAdvancing to frame {i + 1} of {ocr_start}",
-                        end="",
-                        flush=True,
+                        f"\rAdvancing to frame {i + 1}/{ocr_start}", end="", flush=True
                     )
                 print()
 
@@ -233,9 +231,9 @@ class Video:
                             )
                             img = np.array(resized_pil_img)
 
-                        if brightness_threshold:
-                            mask = np.all(img >= brightness_threshold, axis=2)
-                            img[~mask] = 0
+                        # if brightness_threshold:
+                        #     mask = np.all(img >= brightness_threshold, axis=2)
+                        #     img[~mask] = 0
 
                         if ssim_threshold < 1:
                             w = img.shape[1]

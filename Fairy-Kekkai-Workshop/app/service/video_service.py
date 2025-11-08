@@ -203,17 +203,25 @@ class VideoPreview(CardWidget):
             # 转换为原始图像坐标
             if self.original_frame_size and self.current_pixmap:
                 original_width, original_height = self.original_frame_size
+
+                # 关键修复：使用实际显示的缩放后图像尺寸，而不是预览标签的尺寸
                 preview_width = self.current_pixmap.width()
                 preview_height = self.current_pixmap.height()
 
-                crop_x = math.floor(rect_x1_img * original_width / preview_width)
-                crop_y = math.floor(rect_y1_img * original_height / preview_height)
-                crop_w = math.ceil(
-                    (rect_x2_img - rect_x1_img) * original_width / preview_width
-                )
-                crop_h = math.ceil(
-                    (rect_y2_img - rect_y1_img) * original_height / preview_height
-                )
+                # 计算缩放比例
+                scale_x = original_width / preview_width
+                scale_y = original_height / preview_height
+
+                crop_x = math.floor(rect_x1_img * scale_x)
+                crop_y = math.floor(rect_y1_img * scale_y)
+                crop_w = math.ceil((rect_x2_img - rect_x1_img) * scale_x)
+                crop_h = math.ceil((rect_y2_img - rect_y1_img) * scale_y)
+
+                # 确保坐标不超出原始图像范围
+                crop_x = max(0, min(crop_x, original_width - 1))
+                crop_y = max(0, min(crop_y, original_height - 1))
+                crop_w = max(1, min(crop_w, original_width - crop_x))
+                crop_h = max(1, min(crop_h, original_height - crop_y))
 
                 # 创建新的框选区域
                 new_box = {
