@@ -81,6 +81,13 @@ class VideoPreview(CardWidget):
         self.previewLabel.mouseMoveEvent = self._on_mouse_move
         self.previewLabel.mouseReleaseEvent = self._on_mouse_release
 
+    def refresh_select_btn(self):
+        """刷新框选按钮状态"""
+        if self.crop_boxes.__len__() >= self.max_crop_boxes:
+            self.select_btn.setEnabled(False)
+        else:
+            self.select_btn.setEnabled(True)
+
     def _start_selection(self):
         """开始框选模式"""
         if self.current_frame is None:

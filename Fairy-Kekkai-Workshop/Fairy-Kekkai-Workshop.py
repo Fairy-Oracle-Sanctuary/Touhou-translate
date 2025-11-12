@@ -62,4 +62,3 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # Fairy-Kekkai-Workshop
-# pip install --upgrade yt-dlp
