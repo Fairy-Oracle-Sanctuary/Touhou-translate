@@ -11,7 +11,7 @@ import os
 import sys
 
 from app.common.config import cfg
-from app.common.setting import VERSION
+from app.common.setting import TEAM, VERSION
 from app.view.main_window import MainWindow
 from PySide6.QtCore import QSharedMemory
 from PySide6.QtWidgets import QApplication
@@ -48,7 +48,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Fairy-Kekkai-Workshop")
     app.setApplicationVersion(VERSION)
-    app.setOrganizationName("Fairy-Kekkai")
+    app.setOrganizationName(TEAM)
 
     # 创建并显示主窗口
     window = MainWindow()

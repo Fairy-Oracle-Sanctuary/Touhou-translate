@@ -27,14 +27,13 @@ from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
 from ..components.config_card import OCRSettingInterface
 from ..service.video_service import VideoPreview
+from ..view.videocr_task_interface import OcrTaskInterface
 
 
 class VideocrStackedInterfaces(BaseStackedInterfaces):
     """视频OCR堆叠界面"""
 
     def __init__(self, parent=None):
-        from ..view.videocr_task_interface import OcrTaskInterface
-
         super().__init__(
             parent=parent,
             main_interface_class=VideocrInterface,
@@ -46,7 +45,7 @@ class VideocrStackedInterfaces(BaseStackedInterfaces):
         # 连接专用信号
         self.mainInterface.addTask.connect(self.taskInterface.addOcrTask)
         self.taskInterface.log_signal.connect(self.mainInterface._log_message)
-        self.taskInterface.returnOcrTask.connect(self.mainInterface.updateTask)
+        self.taskInterface.returnTask.connect(self.mainInterface.updateTask)
         self.settingInterface.changeSelectionSignal.connect(self.changeSelection)
 
     def changeSelection(self, isUseDualZone):
