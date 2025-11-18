@@ -302,37 +302,37 @@ class Config(QConfig):
     # 置信度阈值 (0-100)
     # 命令行使用：--conf_threshold
     confThreshold = RangeConfigItem(
-        "OCR", "ConfThreshold", 80, RangeValidator(0, 100), restart=False
+        "OCR", "ConfThreshold", 75, RangeValidator(0, 100), restart=False
     )
 
     # 相似度阈值 (0-100)
     # 命令行使用：--sim_threshold
     simThreshold = RangeConfigItem(
-        "OCR", "SimThreshold", 90, RangeValidator(0, 100), restart=False
+        "OCR", "SimThreshold", 80, RangeValidator(0, 100), restart=False
     )
 
     # 最大合并间隔（秒）
     # 命令行使用：--max_merge_gap
     maxMergeGap = RangeConfigItem(
-        "OCR", "MaxMergeGap", 1.0, RangeValidator(0.1, 10.0), restart=False
+        "OCR", "MaxMergeGap", 0.1, RangeValidator(0.1, 10.0), restart=False
     )
 
     # 亮度阈值 (0-255)
     # 命令行使用：--brightness_threshold
     brightnessThreshold = RangeConfigItem(
-        "OCR", "BrightnessThreshold", 100, RangeValidator(0, 255), restart=False
+        "OCR", "BrightnessThreshold", 0, RangeValidator(0, 255), restart=False
     )
 
     # SSIM阈值 (0-100)
     # 命令行使用：--ssim_threshold
     ssimThreshold = RangeConfigItem(
-        "OCR", "SsimThreshold", 90, RangeValidator(0, 100), restart=False
+        "OCR", "SsimThreshold", 92, RangeValidator(0, 100), restart=False
     )
 
     # 最大OCR图像宽度（像素）
     # 命令行使用：--ocr_image_max_width
     ocrImageMaxWidth = RangeConfigItem(
-        "OCR", "OcrImageMaxWidth", 1920, RangeValidator(100, 4096), restart=False
+        "OCR", "OcrImageMaxWidth", 1280, RangeValidator(100, 4096), restart=False
     )
 
     # 跳过的帧数
@@ -344,7 +344,7 @@ class Config(QConfig):
     # 最小字幕持续时间（秒）
     # 命令行使用：--min_subtitle_duration
     minSubtitleDuration = RangeConfigItem(
-        "OCR", "MinSubtitleDuration", 1.0, RangeValidator(0.1, 10.0), restart=False
+        "OCR", "MinSubtitleDuration", 0.2, RangeValidator(0.1, 10.0), restart=False
     )
 
     # 是否启用GPU使用
