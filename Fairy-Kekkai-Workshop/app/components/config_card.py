@@ -577,15 +577,15 @@ class OCRSettingInterface(ScrollArea):
         )
 
         # 亮度阈值 (0-255)
-        self.brightnessThresholdCard = NumberLineEditSettingCard(
-            cfg.brightnessThreshold,
-            FIF.BRIGHTNESS,
-            self.tr("亮度阈值"),
-            self.tr("图像亮度阈值，用于判断有效字幕区域 (0-255)"),
-            placeholderText=str(cfg.brightnessThreshold.value),
-            validator=QIntValidator(0, 255),
-            parent=self.thresholdGroup,
-        )
+        # self.brightnessThresholdCard = NumberLineEditSettingCard(
+        #     cfg.brightnessThreshold,
+        #     FIF.BRIGHTNESS,
+        #     self.tr("亮度阈值"),
+        #     self.tr("图像亮度阈值，用于判断有效字幕区域 (0-255)"),
+        #     placeholderText=str(cfg.brightnessThreshold.value),
+        #     validator=QIntValidator(0, 255),
+        #     parent=self.thresholdGroup,
+        # )
 
         # SSIM阈值 (0-100)
         self.ssimThresholdCard = NumberLineEditSettingCard(
@@ -734,7 +734,7 @@ class OCRSettingInterface(ScrollArea):
         # 阈值设置
         self.thresholdGroup.addSettingCard(self.confThresholdCard)
         self.thresholdGroup.addSettingCard(self.simThresholdCard)
-        self.thresholdGroup.addSettingCard(self.brightnessThresholdCard)
+        # self.thresholdGroup.addSettingCard(self.brightnessThresholdCard)
         self.thresholdGroup.addSettingCard(self.ssimThresholdCard)
 
         # 处理参数

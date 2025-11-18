@@ -102,8 +102,15 @@ class HomeInterface(ScrollArea):
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/Paddle.svg"),
             title="PaddleOCR (未内置)",
-            content="PaddleOCR下载地址，根据您的GPU下载\n对应版本后添加到应用所在路径",
+            content="PaddleOCR下载地址，根据您的GPU下载\n对应版本后设置其路径",
             url="https://github.com/timminator/PaddleOCR-Standalone/releases/latest",
+        )
+
+        urlSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/Paddle.svg"),
+            title="PaddleOCRv5.support.files (未内置)",
+            content="PaddleOCR支持文件下载地址\n下载后设置其路径",
+            url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.3.2/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
         )
 
         self.vBoxLayout.addWidget(basicInputView)
