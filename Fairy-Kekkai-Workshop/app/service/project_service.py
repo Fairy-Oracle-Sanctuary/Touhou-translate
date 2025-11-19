@@ -1,8 +1,6 @@
 import shutil
 from pathlib import Path
 
-from ..common.config import cfg
-
 
 class Project:
     def __init__(self):
@@ -23,19 +21,20 @@ class Project:
         project_paths = []
 
         for item in self.projects_location.iterdir():
-            if item.is_dir() and Path(item / "标题.txt").exists():
+            if self.is_project(item):
                 project_paths.append(item)
                 self.isLink.append(False)
 
         # 处理外部路径
-        link_paths = cfg.linkProject.get("project_link")
-        true_paths = []
-        for path in link_paths:
-            if self.is_project(path):
-                self.isLink.append(True)
-                true_paths.append(path)
-            project_paths.append(Path(path))
-        cfg.linkProject.set("project_link", true_paths)
+        if __name__ == "__name__":
+            link_paths = cfg.linkProject.get("project_link")
+            true_paths = []
+            for path in link_paths:
+                if self.is_project(path):
+                    self.isLink.append(True)
+                    true_paths.append(path)
+                project_paths.append(Path(path))
+            cfg.linkProject.set("project_link", true_paths)
 
         return project_paths
 
@@ -240,11 +239,14 @@ class Project:
 
     def is_project(self, folder_path):
         """判断文件夹是否为一个合法的项目"""
-        try:
-            with open(folder_path + "/标题.txt"):
-                return True
-        except Exception:
+        if not (folder_path / "标题.txt").exists():
             return False
+        for folder_num in range(
+            sum(1 for item in folder_path.iterdir() if item.is_dir())
+        ):
+            if not (folder_path / str(folder_num + 1)).exists():
+                return False
+        return True
 
     def addEpisode(
         self, id, episode_num, origin_title, trans_title, video_url, isTranslated=False
@@ -403,4 +405,11 @@ class Project:
             return False
 
 
-project = Project()
+if __name__ == "__main__":
+    project = Project()
+    print(project.project_path)
+    pass
+else:
+    from ..common.config import cfg
+
+    project = Project()

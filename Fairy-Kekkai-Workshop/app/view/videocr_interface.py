@@ -295,7 +295,7 @@ class VideocrInterface(BaseFunctionInterface):
         args["use_gpu"] = cfg.get(cfg.useGpu)
         args["use_angle_cls"] = cfg.get(cfg.useAngleCls)
         args["use_server_model"] = cfg.get(cfg.useServerModel)
-        args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
+        # args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
         args["ssim_threshold"] = cfg.get(cfg.ssimThreshold)
         args["subtitle_position"] = subtitle_positions_list.get(
             self.position_combo.currentText(), "center"
