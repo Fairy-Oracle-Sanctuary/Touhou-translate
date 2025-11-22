@@ -130,6 +130,10 @@ class DownloadThread(QThread):
         if cfg.audioCodec.value != "aac":
             cmd.extend(["--audio-codec", cfg.audioCodec.value])
 
+        # ffmpeg 路径
+        if cfg.ffmpegPath.value:
+            cmd.extend(["--ffmpeg-location", cfg.ffmpegPath.value])
+
         # 添加通用参数
         cmd.extend(
             [

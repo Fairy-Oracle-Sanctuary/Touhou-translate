@@ -47,7 +47,7 @@ class TranslationInterface(BaseFunctionInterface):
         self.file_srt = None
         super().__init__(parent, "翻译")
 
-        self.file_extension = "srt"
+        self.file_extension = "*.srt"
         self.default_output_suffix = "_translated.srt"
         self.special_filename_mapping = {"原文.srt": "译文.srt"}
 

@@ -14,6 +14,7 @@ from qfluentwidgets import (
 )
 from qfluentwidgets import FluentIcon as FIF
 
+from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..service.project_service import Project
 
@@ -37,6 +38,7 @@ class BaseFunctionInterface(ScrollArea):
         self._initWidget()
         self._connect_signals()
         self.installEventFilter(self)
+        self.setAcceptDrops(True)
 
     def _initWidget(self):
         """初始化界面"""
@@ -144,6 +146,59 @@ class BaseFunctionInterface(ScrollArea):
         self.previous_btn.clicked.connect(self.switch_previous_file)
         self.next_btn.clicked.connect(self.switch_next_file)
 
+    def dragEnterEvent(self, event):
+        # 检查是否包含 URL 数据（文件或文件夹）
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """处理拖拽释放事件"""
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+
+            # 检查文件数量
+            if len(urls) > 1:
+                self.show_error_message("只支持单个文件")
+                event.ignore()
+                return
+
+            # 获取第一个文件的本地路径
+            file_url = urls[0]
+            if not file_url.isLocalFile():
+                self.show_error_message("不支持网络文件")
+                event.ignore()
+                return
+
+            file_path = Path(file_url.toLocalFile())
+
+            # 检查是否为文件夹
+            if file_path.is_dir():
+                self.show_error_message("不支持文件夹")
+                event.ignore()
+                return
+
+            # 检查文件扩展名
+            allow_extensions = [ext.strip() for ext in self.file_extension.split(";")]
+            # 移除通配符*，只保留扩展名部分
+            allow_extensions = [ext.replace("*", "") for ext in allow_extensions]
+
+            file_extension = file_path.suffix.lower()  # 包括点号，例如 ".mp4"
+
+            # 检查扩展名是否在允许列表中
+            if file_extension not in allow_extensions:
+                self.show_error_message(f"不支持{file_extension}文件")
+                event.ignore()
+                return
+
+            # 设置文件路径到输入框
+            self.input_path_edit.setText(str(file_path))
+            self.load_file_content(file_path)
+            event.accept()
+        else:
+            event.ignore()
+
     def get_input_icon(self):
         """获取输入文件图标 - 子类实现"""
         raise NotImplementedError
@@ -153,13 +208,16 @@ class BaseFunctionInterface(ScrollArea):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             f"选择{self.function_type}文件",
-            str(Path.home()),
-            f"文件 (*.{self.file_extension});;所有文件 (*.*)",
+            cfg.get(cfg.lastOpenPath)
+            if Path(cfg.get(cfg.lastOpenPath)).exists()
+            else str(Path.home()),
+            f"文件 ({self.file_extension});;所有文件 (*.*)",
         )
 
         if file_path:
             self.file_path = file_path
             self.input_path_edit.setText(file_path)
+            cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
 
             # 自动生成输出文件路径
             output_path = self._generate_output_path(file_path)
@@ -196,7 +254,7 @@ class BaseFunctionInterface(ScrollArea):
             self,
             "保存文件",
             self.output_path_edit.text(),
-            f"文件 (*.{self.file_extension});;所有文件 (*.*)",
+            f"文件 ({self.file_extension});;所有文件 (*.*)",
         )
 
         if file_path:

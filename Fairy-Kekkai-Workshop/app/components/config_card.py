@@ -841,3 +841,317 @@ class TranslateSettingInterface(ScrollArea):
         self.keyGroup.addSettingCard(self.ApiKeyCard)
 
         self.expandLayout.addWidget(self.keyGroup)
+
+
+class FFmpegSettingInterface(ScrollArea):
+    """FFmpeg 设置界面"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.scrollWidget = QWidget()
+        self.expandLayout = ExpandLayout(self.scrollWidget)
+
+        # setting label
+        self.settingLabel = TitleLabel(self.tr("FFmpeg 视频压制设置"), self)
+
+        # 基本视频参数
+        self.basicVideoGroup = SettingCardGroup(
+            self.tr("基本视频参数"), self.scrollWidget
+        )
+        self.videoCodecCard = ComboBoxSettingCard(
+            cfg.ffmpegVideoCodec,
+            FIF.VIDEO,
+            self.tr("视频编码器"),
+            self.tr("选择视频编码格式"),
+            texts=["H.264", "H.265", "VP9", "复制原始"],
+            parent=self.basicVideoGroup,
+        )
+        self.crfCard = RangeSettingCard(
+            cfg.ffmpegCrf,
+            FIF.SPEED_HIGH,
+            title=self.tr("CRF质量参数"),
+            content=self.tr("0为无损，18-28为常用范围，值越小质量越好"),
+            parent=self.basicVideoGroup,
+        )
+        self.presetCard = ComboBoxSettingCard(
+            cfg.ffmpegPreset,
+            FIF.SETTING,
+            self.tr("编码速度预设"),
+            self.tr("编码速度与压缩率的平衡"),
+            texts=[
+                self.tr("极快"),
+                self.tr("超快"),
+                self.tr("非常快"),
+                self.tr("较快"),
+                self.tr("快速"),
+                self.tr("中等"),
+                self.tr("慢速"),
+                self.tr("较慢"),
+                self.tr("非常慢"),
+            ],
+            parent=self.basicVideoGroup,
+        )
+
+        # 音频处理
+        self.audioGroup = SettingCardGroup(self.tr("音频处理"), self.scrollWidget)
+        self.audioModeCard = ComboBoxSettingCard(
+            cfg.ffmpegAudioMode,
+            FIF.MUSIC,
+            self.tr("音频处理模式"),
+            self.tr("选择音频处理方式"),
+            texts=[
+                self.tr("自动检测"),
+                self.tr("编码音频"),
+                self.tr("无音频"),
+                self.tr("复制原始"),
+            ],
+            parent=self.audioGroup,
+        )
+        self.audioCodecCard = ComboBoxSettingCard(
+            cfg.ffmpegAudioCodec,
+            FIF.MUSIC,
+            self.tr("音频编码器"),
+            self.tr("选择音频编码格式"),
+            texts=["AAC", "MP3", "Opus", "复制原始"],
+            parent=self.audioGroup,
+        )
+        self.audioBitrateCard = ComboBoxSettingCard(
+            cfg.ffmpegAudioBitrate,
+            FIF.VOLUME,
+            self.tr("音频码率"),
+            self.tr("设置音频编码质量"),
+            texts=["64k", "96k", "128k", "192k", "256k", "320k"],
+            parent=self.audioGroup,
+        )
+
+        # x264高级参数
+        self.advancedGroup = SettingCardGroup(
+            self.tr("x264高级参数"), self.scrollWidget
+        )
+        self.useAdvancedCard = SwitchSettingCard(
+            FIF.DEVELOPER_TOOLS,
+            self.tr("启用高级参数"),
+            self.tr("自定义x264编码参数"),
+            configItem=cfg.ffmpegUseAdvanced,
+            parent=self.advancedGroup,
+        )
+        self.refFramesCard = RangeSettingCard(
+            cfg.ffmpegRefFrames,
+            FIF.LAYOUT,
+            title=self.tr("参考帧数量"),
+            content=self.tr("参考帧数量 (1-16)"),
+            parent=self.advancedGroup,
+        )
+        self.bFramesCard = RangeSettingCard(
+            cfg.ffmpegBFrames,
+            FIF.SCROLL,
+            title=self.tr("B帧数量"),
+            content=self.tr("B帧数量 (0-16)"),
+            parent=self.advancedGroup,
+        )
+        self.keyintCard = RangeSettingCard(
+            cfg.ffmpegKeyint,
+            FIF.CALENDAR,
+            title=self.tr("关键帧间隔"),
+            content=self.tr("最大关键帧间隔 (1-1000)"),
+            parent=self.advancedGroup,
+        )
+        self.minkeyintCard = RangeSettingCard(
+            cfg.ffmpegMinkeyint,
+            FIF.CALENDAR,
+            title=self.tr("最小关键帧间隔"),
+            content=self.tr("最小关键帧间隔 (1-100)"),
+            parent=self.advancedGroup,
+        )
+        self.scenecutCard = RangeSettingCard(
+            cfg.ffmpegScenecut,
+            FIF.CUT,
+            title=self.tr("场景切换阈值"),
+            content=self.tr("场景切换检测阈值 (0-100)"),
+            parent=self.advancedGroup,
+        )
+        self.qcompCard = RangeSettingCard(
+            cfg.ffmpegQcomp,
+            FIF.EDIT,
+            title=self.tr("量化器压缩因子"),
+            content=self.tr("量化器曲线压缩因子 (0.0-1.0)"),
+            parent=self.advancedGroup,
+        )
+        self.aqModeCard = ComboBoxSettingCard(
+            cfg.ffmpegAqMode,
+            FIF.ALIGNMENT,
+            self.tr("自适应量化模式"),
+            self.tr("选择自适应量化模式"),
+            texts=["模式0", "模式1", "模式2", "模式3"],
+            parent=self.advancedGroup,
+        )
+        self.aqStrengthCard = RangeSettingCard(
+            cfg.ffmpegAqStrength,
+            FIF.ZOOM,
+            title=self.tr("自适应量化强度"),
+            content=self.tr("自适应量化强度 (0.0-2.0)"),
+            parent=self.advancedGroup,
+        )
+
+        # 输出设置
+        self.outputGroup = SettingCardGroup(self.tr("输出设置"), self.scrollWidget)
+        self.outputFormatCard = ComboBoxSettingCard(
+            cfg.ffmpegOutputFormat,
+            FIF.SAVE,
+            self.tr("输出文件格式"),
+            self.tr("选择输出视频格式"),
+            texts=["MP4", "MKV", "AVI", "MOV", "WebM"],
+            parent=self.outputGroup,
+        )
+        self.overwriteOutputCard = SwitchSettingCard(
+            FIF.ACCEPT,
+            self.tr("覆盖输出文件"),
+            self.tr("如果输出文件已存在则覆盖"),
+            configItem=cfg.ffmpegOverwriteOutput,
+            parent=self.outputGroup,
+        )
+
+        # 视频处理
+        self.videoProcessingGroup = SettingCardGroup(
+            self.tr("视频处理"), self.scrollWidget
+        )
+        self.scaleCard = ComboBoxSettingCard(
+            cfg.ffmpegScale,
+            FIF.ZOOM,
+            self.tr("视频缩放"),
+            self.tr("调整视频分辨率"),
+            texts=[
+                self.tr("保持原尺寸"),
+                self.tr("720p"),
+                self.tr("1080p"),
+                self.tr("1440p"),
+                self.tr("2160p"),
+                self.tr("自定义"),
+            ],
+            parent=self.videoProcessingGroup,
+        )
+        self.customScaleCard = LineEditSettingCard(
+            cfg.ffmpegCustomScale,
+            FIF.EDIT,
+            self.tr("自定义尺寸"),
+            self.tr("设置自定义分辨率 (例如: 1920:1080)"),
+            placeholderText="1920:1080",
+            parent=self.videoProcessingGroup,
+        )
+        self.fpsCard = ComboBoxSettingCard(
+            cfg.ffmpegFps,
+            FIF.SPEED_HIGH,
+            self.tr("帧率设置"),
+            self.tr("设置输出视频帧率"),
+            texts=[
+                self.tr("保持原帧率"),
+                self.tr("24 fps"),
+                self.tr("25 fps"),
+                self.tr("30 fps"),
+                self.tr("50 fps"),
+                self.tr("60 fps"),
+            ],
+            parent=self.videoProcessingGroup,
+        )
+        self.videoBitrateCard = LineEditSettingCard(
+            cfg.ffmpegVideoBitrate,
+            FIF.SPEED_MEDIUM,
+            self.tr("视频码率限制"),
+            self.tr("设置视频码率限制 (例如: 2M, 空表示不使用限制)"),
+            placeholderText="",
+            parent=self.videoProcessingGroup,
+        )
+
+        # 性能选项
+        self.performanceGroup = SettingCardGroup(self.tr("性能选项"), self.scrollWidget)
+        self.useHardwareAccelerationCard = SwitchSettingCard(
+            FIF.DEVELOPER_TOOLS,
+            self.tr("启用硬件加速"),
+            self.tr("使用GPU硬件加速编码"),
+            configItem=cfg.ffmpegUseHardwareAcceleration,
+            parent=self.performanceGroup,
+        )
+        self.hardwareAcceleratorCard = ComboBoxSettingCard(
+            cfg.ffmpegHardwareAccelerator,
+            FIF.VPN,
+            self.tr("硬件加速类型"),
+            self.tr("选择硬件加速方式"),
+            texts=[
+                self.tr("自动检测"),
+                self.tr("NVIDIA CUDA"),
+                self.tr("Intel QSV"),
+                self.tr("DXVA2"),
+                self.tr("VideoToolbox"),
+            ],
+            parent=self.performanceGroup,
+        )
+
+        self.__initWidget()
+
+    def __initWidget(self):
+        self.resize(1000, 800)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setViewportMargins(0, 90, 0, 20)
+        self.setWidget(self.scrollWidget)
+        self.setWidgetResizable(True)
+        self.setObjectName("ffmpegSettingInterface")
+
+        # initialize style sheet
+        setFont(self.settingLabel, 23, QFont.Weight.DemiBold)
+        self.enableTransparentBackground()
+
+        # initialize layout
+        self.__initLayout()
+        self._connectSignalToSlot()
+
+    def __initLayout(self):
+        self.settingLabel.move(36, 40)
+
+        # 基本视频参数
+        self.basicVideoGroup.addSettingCard(self.videoCodecCard)
+        self.basicVideoGroup.addSettingCard(self.crfCard)
+        self.basicVideoGroup.addSettingCard(self.presetCard)
+
+        # 音频处理
+        self.audioGroup.addSettingCard(self.audioModeCard)
+        self.audioGroup.addSettingCard(self.audioCodecCard)
+        self.audioGroup.addSettingCard(self.audioBitrateCard)
+
+        # x264高级参数
+        self.advancedGroup.addSettingCard(self.useAdvancedCard)
+        self.advancedGroup.addSettingCard(self.refFramesCard)
+        self.advancedGroup.addSettingCard(self.bFramesCard)
+        self.advancedGroup.addSettingCard(self.keyintCard)
+        self.advancedGroup.addSettingCard(self.minkeyintCard)
+        self.advancedGroup.addSettingCard(self.scenecutCard)
+        self.advancedGroup.addSettingCard(self.qcompCard)
+        self.advancedGroup.addSettingCard(self.aqModeCard)
+        self.advancedGroup.addSettingCard(self.aqStrengthCard)
+
+        # 输出设置
+        self.outputGroup.addSettingCard(self.outputFormatCard)
+        self.outputGroup.addSettingCard(self.overwriteOutputCard)
+
+        # 视频处理
+        self.videoProcessingGroup.addSettingCard(self.scaleCard)
+        self.videoProcessingGroup.addSettingCard(self.customScaleCard)
+        self.videoProcessingGroup.addSettingCard(self.fpsCard)
+        self.videoProcessingGroup.addSettingCard(self.videoBitrateCard)
+
+        # 性能选项
+        self.performanceGroup.addSettingCard(self.useHardwareAccelerationCard)
+        self.performanceGroup.addSettingCard(self.hardwareAcceleratorCard)
+
+        # add setting card group to layout
+        self.expandLayout.setSpacing(26)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.basicVideoGroup)
+        self.expandLayout.addWidget(self.audioGroup)
+        self.expandLayout.addWidget(self.advancedGroup)
+        self.expandLayout.addWidget(self.outputGroup)
+        self.expandLayout.addWidget(self.videoProcessingGroup)
+        self.expandLayout.addWidget(self.performanceGroup)
+
+    def _connectSignalToSlot(self):
+        """绑定信号"""
+        pass

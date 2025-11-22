@@ -23,12 +23,12 @@ class TranslateItemWidget(CardWidget):
 
     # 定义信号
     removeTaskSignal = Signal(int)  # 任务ID
-    retryTranslateSignal = Signal(int)  # 任务ID
+    retryTaskSignal = Signal(int)  # 任务ID
 
     def __init__(self, task, parent=None):
         super().__init__(parent)
         self.task = task
-        self.translate_thread = None
+        self.task_thread = None
 
         self._initUI()
 
@@ -137,18 +137,16 @@ class TranslateItemWidget(CardWidget):
         box.cancelButton.setText("取消")
         if box.exec():
             # 如果任务正在提取，找到对应的提取线程并取消
-            if self.translate_thread:
+            if self.task_thread:
                 # 连接取消完成信号
-                self.translate_thread.cancelled_signal.connect(
-                    self._onCancellationComplete
-                )
+                self.task_thread.cancelled_signal.connect(self._onCancellationComplete)
 
                 # 立即更新UI状态，不等待线程结束
                 self.task.status = "正在取消..."
                 self.updateStatus("正在取消...")
 
                 # 异步取消，不阻塞界面
-                self.translate_thread.cancel()
+                self.task_thread.cancel()
 
                 # 禁用取消按钮，避免重复点击
                 self.cancelBtn.setEnabled(False)
@@ -161,9 +159,9 @@ class TranslateItemWidget(CardWidget):
         self._completeCancellation()
 
         # 断开信号连接，避免重复调用
-        if self.translate_thread:
+        if self.task_thread:
             try:
-                self.translate_thread.cancelled_signal.disconnect(
+                self.task_thread.cancelled_signal.disconnect(
                     self._onCancellationComplete
                 )
             except Exception:
@@ -193,7 +191,7 @@ class TranslateItemWidget(CardWidget):
     def retryTranslate(self):
         """重新下载"""
         # 发送重新下载信号
-        self.retryTranslateSignal.emit(self.task.id)
+        self.retryTaskSignal.emit(self.task.id)
 
     def removeTask(self):
         """移除任务"""

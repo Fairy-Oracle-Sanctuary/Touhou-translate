@@ -1,0 +1,38 @@
+# coding:utf-8
+
+from PySide6.QtCore import Signal
+
+from ..components.base_task_interface import BaseTaskInterface
+from ..components.videocr_card import OcrItemWidget
+from ..service.ffmpeg_service import FFmpegTask, FFmpegThread
+
+
+class FFmpegTaskInterface(BaseTaskInterface):
+    """提取字幕界面"""
+
+    log_signal = Signal(str, bool, bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # 配置特定属性
+        self.object_name = "ffmpegTaskInterface"
+        self.processing_text = "压制中"
+        self.task_type = "压制"
+
+    def createTask(self, args):
+        return FFmpegTask(args)
+
+    def createTaskItem(self, task, parent):
+        return OcrItemWidget(task, parent)
+
+    def createTaskThread(self, task):
+        return FFmpegThread(task)
+
+    def getTaskPath(self, task):
+        return task.video_path
+
+    def addFFmpegTask(self, args):
+        self.addTask(args)
+
+    def retryFFmpeg(self, task_id):
+        self.retryTask(task_id)

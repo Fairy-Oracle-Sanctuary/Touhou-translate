@@ -38,6 +38,10 @@ class GlobalEventBus(QObject):
     translate_finished_signal = Signal(bool, list)
     translate_requested = Signal(str, str)
 
+    # 压制相关事件
+    ffmpeg_finished_signal = Signal(bool, str)
+    ffmpeg_requested = Signal(str, str)
+
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
     project_deleted = Signal(dict)  # {"path": "..."}

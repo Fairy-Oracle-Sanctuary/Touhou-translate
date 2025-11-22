@@ -12,6 +12,7 @@
         <file>images/controls/subtitle.svg</file>   
         <file>images/controls/setting.svg</file>   
         <file>images/controls/translate.svg</file>   
+        <file>images/controls/video.svg</file>   
 
         <file>qss/dark/sample_card.qss</file>
         <file>qss/light/sample_card.qss</file>
