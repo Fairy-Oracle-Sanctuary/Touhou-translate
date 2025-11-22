@@ -3,7 +3,7 @@
 from PySide6.QtCore import Signal
 
 from ..components.base_task_interface import BaseTaskInterface
-from ..components.videocr_card import OcrItemWidget
+from ..components.ffmpeg_card import FFmpegItemWidget
 from ..service.ffmpeg_service import FFmpegTask, FFmpegThread
 
 
@@ -23,7 +23,7 @@ class FFmpegTaskInterface(BaseTaskInterface):
         return FFmpegTask(args)
 
     def createTaskItem(self, task, parent):
-        return OcrItemWidget(task, parent)
+        return FFmpegItemWidget(task, parent)
 
     def createTaskThread(self, task):
         return FFmpegThread(task)

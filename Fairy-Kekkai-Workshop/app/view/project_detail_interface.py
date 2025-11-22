@@ -349,11 +349,11 @@ class ProjectDetailInterface(ScrollArea):
 
         # 定义期望的文件
         expected_files = [
-            ("封面.jpg", FIF.PHOTO, True, False, False),
-            ("生肉.mp4", FIF.VIDEO, True, False, False),
-            ("熟肉.mp4", FIF.VIDEO, False, False, False),
-            ("原文.srt", FIF.DOCUMENT, False, True, False),
-            ("译文.srt", FIF.DOCUMENT, False, False, True),
+            ("封面.jpg", FIF.PHOTO, True, False, False, False),
+            ("生肉.mp4", FIF.VIDEO, True, False, False, False),
+            ("熟肉.mp4", FIF.VIDEO, False, False, False, True),
+            ("原文.srt", FIF.DOCUMENT, False, True, False, False),
+            ("译文.srt", FIF.DOCUMENT, False, False, True, False),
         ]
 
         # 检查文件是否存在并添加到列表
@@ -363,6 +363,7 @@ class ProjectDetailInterface(ScrollArea):
             donwload_need,
             extract_need,
             translate_need,
+            ffmpeg_need,
         ) in expected_files:
             file_path = os.path.join(folder_path, file_name)
             file_exists = os.path.exists(file_path)
@@ -374,6 +375,7 @@ class ProjectDetailInterface(ScrollArea):
                 donwload_need,
                 extract_need,
                 translate_need,
+                ffmpeg_need,
             )
 
         parent_layout.addWidget(fileListWidget)
@@ -599,6 +601,7 @@ class FileItemWidget(SimpleCardWidget):
         donwload_need=False,
         extract_need=False,
         translate_need=False,
+        ffmpeg_need=False,
         parent=None,
     ):
         super().__init__(parent)
@@ -612,6 +615,7 @@ class FileItemWidget(SimpleCardWidget):
         self.download_need = donwload_need
         self.extract_need = extract_need
         self.translate_need = translate_need
+        self.ffmpeg_need = ffmpeg_need
 
         self.setFixedHeight(50)
         self.setObjectName("fileItemCard")
@@ -700,6 +704,14 @@ class FileItemWidget(SimpleCardWidget):
             self.translateBtn.setFixedSize(32, 32)
             self.translateBtn.clicked.connect(self.translateSubtitle)
             buttonLayout.addWidget(self.translateBtn)
+
+        # 视频压制按钮 (当有熟肉.mp4时显示)
+        if self.ffmpeg_need and self.other_exists[2]:
+            self.ffmpegBtn = TransparentToolButton(FIF.VIDEO, self)
+            self.ffmpegBtn.setToolTip("视频压制")
+            self.ffmpegBtn.setFixedSize(32, 32)
+            self.ffmpegBtn.clicked.connect(self.ffmpegVideo)
+            buttonLayout.addWidget(self.ffmpegBtn)
 
         # 打开文件路径按钮
         self.openPathBtn = TransparentToolButton(FIF.FOLDER, self)
@@ -871,6 +883,17 @@ class FileItemWidget(SimpleCardWidget):
 
         event_bus.translate_requested.emit(str(file_path), str(output_file))
 
+    def ffmpegVideo(self):
+        """视频压制"""
+        # 自动生成输出文件路径
+        output_file = Path(self.file_path)
+        if output_file.name == "熟肉.mp4":
+            file_path = output_file.parent / "熟肉_压制.mp4"
+        else:
+            file_path = output_file.parent / f"{output_file.stem}_.mp4"
+
+        event_bus.ffmpeg_requested.emit(str(output_file), str(file_path))
+
 
 class FileListWidget(QWidget):
     """自定义文件列表widget"""
@@ -893,6 +916,7 @@ class FileListWidget(QWidget):
         download_need=False,
         extract_need=False,
         translate_need=False,
+        ffmpeg_need=False,
     ):
         """添加文件项"""
         self.file_exists.append(file_exists)
@@ -908,6 +932,7 @@ class FileListWidget(QWidget):
             download_need,
             extract_need,
             translate_need,
+            ffmpeg_need,
             self,
         )
         fileWidget.setCursor(Qt.PointingHandCursor)

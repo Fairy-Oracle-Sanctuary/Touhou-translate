@@ -94,3 +94,4 @@ class SampleCardView(QWidget):
         """add url sample"""
         card = OpenUrlSampleCard(icon, title, content, url, parent=self)
         self.flowLayout.addWidget(card)
+        card.setToolTip(url)

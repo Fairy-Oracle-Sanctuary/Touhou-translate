@@ -105,6 +105,9 @@ class MainWindow(MSFluentWindow):
         event_bus.download_list_finished_signal.connect(
             self.show_system_tray_message_download_list_finished
         )
+        event_bus.ffmpeg_finished_signal.connect(
+            self.show_system_tray_message_ffmpeg_finished
+        )
 
         # 初始化完毕 取消启动界面
         self.splashScreen.finish()
@@ -419,6 +422,23 @@ class MainWindow(MSFluentWindow):
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
                 f"下载失败 -{message}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )
+
+    def show_system_tray_message_ffmpeg_finished(self, success, message):
+        """通过系统托盘显示翻译完成消息"""
+        if success:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"压制完成 -{message[-1]}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )
+        else:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"压制失败 -{message}-",
                 QIcon(":/app/images/logo.png"),
                 3000,
             )
