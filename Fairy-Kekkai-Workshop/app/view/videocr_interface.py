@@ -72,7 +72,7 @@ class VideocrInterface(BaseFunctionInterface):
 
         super().__init__(parent, "提取字幕")
 
-        self.file_extension = "mp4"
+        self.file_extension = "*.mp4"
         self.default_output_suffix = ".srt"
         self.special_filename_mapping = {"生肉.mp4": "原文.srt"}
 

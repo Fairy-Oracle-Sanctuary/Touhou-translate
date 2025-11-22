@@ -2,6 +2,7 @@
 # from ..common.signal_bus import signalBus
 # from ..common.icon import Logo
 import shutil
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QFont
@@ -31,7 +32,7 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import TEAM, VERSION, YEAR
+from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR
 
 
 class DetectionCard(CardWidget):
@@ -256,36 +257,39 @@ class SettingInterface(ScrollArea):
         cfg.set(cfg.ffmpegPath, path)
         self.ffmpegPathCard.setContent(path)
 
-    def _onDectectionCardClicked(self):
-        ffmpeg_path = shutil.which("ffmpeg")
-        if ffmpeg_path:
-            cfg.set(cfg.ffmpegPath, ffmpeg_path)
+    def _detectExe(self, exe_name, url, cfg_item, path_card):
+        exe_path = Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute()
+        if not exe_path.exists():
+            exe_path = shutil.which(exe_name)
+        if exe_path:
+            cfg.set(cfg_item, exe_path)
             event_bus.notification_service.show_success(
-                "检测成功", "FFmpeg路径已设置为" + ffmpeg_path
+                "检测成功", f"{exe_name}路径已设置为" + exe_path
             )
-            self.ffmpegPathCard.setContent(ffmpeg_path)
+            path_card.setContent(exe_path)
         else:
-            dialog = Dialog("检测失败", "未检测到ffmpeg程序，是否要下载", self)
+            dialog = Dialog("检测失败", f"未检测到{exe_name}程序，是否要下载", self)
             dialog.yesButton.setText("前往下载")
             dialog.cancelButton.setText("取消")
             if dialog.exec():
-                QDesktopServices.openUrl(QUrl("https://ffmpeg.org/download.html"))
+                QDesktopServices.openUrl(QUrl(url))
 
-        # ytdlp_path = shutil.which("yt-dlp")
-        # if ytdlp_path:
-        #     cfg.set(cfg.ytdlpPath, ytdlp_path)
-        #     event_bus.notification_service.show_success(
-        #         "检测成功", "yt-dlp路径已设置为" + ytdlp_path
-        #     )
-        #     self.ytdlpPathCard.setContent(ytdlp_path)
-        # else:
-        #     dialog = Dialog("检测失败", "未检测到yt-dlp程序，是否要下载", self)
-        #     dialog.yesButton.setText("前往下载")
-        #     dialog.cancelButton.setText("取消")
-        #     if dialog.exec():
-        #         QDesktopServices.openUrl(
-        #             QUrl("https://github.com/yt-dlp/yt-dlp/releases")
-        #         )
+    def _onDectectionCardClicked(self):
+        # ffmpeg
+        self._detectExe(
+            "ffmpeg",
+            "https://ffmpeg.org/download.html",
+            cfg.ffmpegPath,
+            self.ffmpegPathCard,
+        )
+
+        # ytdlp
+        self._detectExe(
+            "yt-dlp",
+            "https://github.com/yt-dlp/yt-dlp/releases",
+            cfg.ytdlpPath,
+            self.ytdlpPathCard,
+        )
 
     def _onAccentColorChanged(self):
         color = cfg.get(cfg.accentColor)

@@ -74,8 +74,15 @@ class HomeInterface(ScrollArea):
             icon=QIcon(":/app/images/controls/translate.svg"),
             title="翻译字幕",
             content=self.tr("翻译提取出的字幕文件(Deepseek)"),
-            routeKey="TranslationInterface",
+            routeKey="TranslationStackedInterface",
             index=4,
+        )
+        basicInputView.addSampleCard(
+            icon=QIcon(":/app/images/controls/video.svg"),
+            title="视频压制",
+            content=self.tr("压制烤制好的视频"),
+            routeKey="FFmpegStackedInterface",
+            index=5,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),
@@ -89,8 +96,8 @@ class HomeInterface(ScrollArea):
         urlSamepleView = SampleCardView(self.tr("必要资源"), self.view)
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/FFmpeg.svg"),
-            title="FFmpeg (未内置)",
-            content="FFmpeg下载地址，下载后添加到环境变量中",
+            title="FFmpeg (已内置)",
+            content="FFmpeg下载地址，下载后可在设置里设定路径",
             url="https://ffmpeg.org/download.html",
         )
         urlSamepleView.addOpenUrlCard(

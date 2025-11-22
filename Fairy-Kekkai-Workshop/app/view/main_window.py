@@ -21,6 +21,7 @@ from ..components.infobar import NotificationService
 from ..components.system_tray import SystemTray
 from ..service.version_service import VersionService
 from .download_interface import DownloadStackedInterface
+from .ffmpeg_interface import FFmpegStackedInterfaces
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
 from .setting_interface import SettingInterface
@@ -64,6 +65,7 @@ class MainWindow(MSFluentWindow):
         self.downloadInterface = DownloadStackedInterface(self)
         self.videoCRInterface = VideocrStackedInterfaces(self)
         self.translateInterface = TranslateStackedInterfaces(self)
+        self.ffmpegInterface = FFmpegStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
         self.interface = [
@@ -72,6 +74,7 @@ class MainWindow(MSFluentWindow):
             self.downloadInterface,
             self.videoCRInterface,
             self.translateInterface,
+            self.ffmpegInterface,
             self.settingInterface,
         ]
         # 连接信号
@@ -201,6 +204,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(
             self.translateInterface, QIcon(":/app/images/icons/deepseek.svg"), "翻译"
         )
+        self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(

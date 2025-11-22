@@ -96,6 +96,10 @@ class Config(QConfig):
         "Project", "DetailProjectItemNum", 5, RangeValidator(1, 10)
     )
     linkProject = ProjectConfig()
+    # 记录上一个选择的文件夹路径
+    lastOpenPath = ConfigItem(
+        "Project", "LastOpenPath", str(Path.home()), restart=False
+    )
 
     # download
     ytdlpPath = ConfigItem(
@@ -403,6 +407,169 @@ class Config(QConfig):
 
     # Deepseek API Key
     deepseekApiKey = ConfigItem("Translate", "ApiKey", "", restart=False)
+
+    # ffmpeg settings
+    # 视频编码器
+    ffmpegVideoCodec = OptionsConfigItem(
+        "FFmpeg",
+        "VideoCodec",
+        "libx264",
+        OptionsValidator(["libx264", "libx265", "libvpx-vp9", "copy"]),
+        restart=False,
+    )
+
+    # CRF质量参数 (0-51, 0为无损，18-28为常用范围)
+    ffmpegCrf = RangeConfigItem(
+        "FFmpeg", "Crf", 24, RangeValidator(0, 51), restart=False
+    )
+
+    # 编码速度预设
+    ffmpegPreset = OptionsConfigItem(
+        "FFmpeg",
+        "Preset",
+        "medium",
+        OptionsValidator(
+            [
+                "ultrafast",
+                "superfast",
+                "veryfast",
+                "faster",
+                "fast",
+                "medium",
+                "slow",
+                "slower",
+                "veryslow",
+            ]
+        ),
+        restart=False,
+    )
+
+    # 音频处理模式
+    ffmpegAudioMode = OptionsConfigItem(
+        "FFmpeg",
+        "AudioMode",
+        "auto",
+        OptionsValidator(["auto", "encode", "none", "copy"]),
+        restart=False,
+    )
+
+    # 音频编码器
+    ffmpegAudioCodec = OptionsConfigItem(
+        "FFmpeg",
+        "AudioCodec",
+        "aac",
+        OptionsValidator(["aac", "libmp3lame", "opus", "copy"]),
+        restart=False,
+    )
+
+    # 音频码率
+    ffmpegAudioBitrate = OptionsConfigItem(
+        "FFmpeg",
+        "AudioBitrate",
+        "128k",
+        OptionsValidator(["64k", "96k", "128k", "192k", "256k", "320k"]),
+        restart=False,
+    )
+
+    # x264高级参数 - 参考帧数量
+    ffmpegRefFrames = RangeConfigItem(
+        "FFmpeg", "RefFrames", 6, RangeValidator(1, 16), restart=False
+    )
+
+    # x264高级参数 - B帧数量
+    ffmpegBFrames = RangeConfigItem(
+        "FFmpeg", "BFrames", 6, RangeValidator(0, 16), restart=False
+    )
+
+    # x264高级参数 - 关键帧间隔
+    ffmpegKeyint = RangeConfigItem(
+        "FFmpeg", "Keyint", 250, RangeValidator(1, 1000), restart=False
+    )
+
+    # x264高级参数 - 最小关键帧间隔
+    ffmpegMinkeyint = RangeConfigItem(
+        "FFmpeg", "Minkeyint", 1, RangeValidator(1, 100), restart=False
+    )
+
+    # x264高级参数 - 场景切换阈值
+    ffmpegScenecut = RangeConfigItem(
+        "FFmpeg", "Scenecut", 60, RangeValidator(0, 100), restart=False
+    )
+
+    # x264高级参数 - 量化器曲线压缩因子
+    ffmpegQcomp = RangeConfigItem(
+        "FFmpeg", "Qcomp", 0.5, RangeValidator(0.0, 1.0), restart=False
+    )
+
+    # x264高级参数 - 心理视觉率失真
+    ffmpegPsyRd = ConfigItem("FFmpeg", "PsyRd", "0.3,0", restart=False)
+
+    # x264高级参数 - 自适应量化模式
+    ffmpegAqMode = OptionsConfigItem(
+        "FFmpeg", "AqMode", 2, OptionsValidator([0, 1, 2, 3]), restart=False
+    )
+
+    # x264高级参数 - 自适应量化强度
+    ffmpegAqStrength = RangeConfigItem(
+        "FFmpeg", "AqStrength", 0.8, RangeValidator(0.0, 2.0), restart=False
+    )
+
+    # 是否启用x264高级参数
+    ffmpegUseAdvanced = ConfigItem(
+        "FFmpeg", "UseAdvanced", False, BoolValidator(), restart=False
+    )
+
+    # 输出文件格式
+    ffmpegOutputFormat = OptionsConfigItem(
+        "FFmpeg",
+        "OutputFormat",
+        "mp4",
+        OptionsValidator(["mp4", "mkv", "avi", "mov", "webm"]),
+        restart=False,
+    )
+
+    # 是否覆盖输出文件
+    ffmpegOverwriteOutput = ConfigItem(
+        "FFmpeg", "OverwriteOutput", True, BoolValidator(), restart=False
+    )
+
+    # 视频缩放选项
+    ffmpegScale = OptionsConfigItem(
+        "FFmpeg",
+        "Scale",
+        "none",
+        OptionsValidator(["none", "720p", "1080p", "1440p", "2160p", "custom"]),
+        restart=False,
+    )
+
+    # 自定义视频尺寸 (例如: "1920:1080")
+    ffmpegCustomScale = ConfigItem("FFmpeg", "CustomScale", "1920:1080", restart=False)
+
+    # 帧率设置
+    ffmpegFps = OptionsConfigItem(
+        "FFmpeg",
+        "Fps",
+        "source",
+        OptionsValidator(["source", "24", "25", "30", "50", "60"]),
+        restart=False,
+    )
+
+    # 视频码率限制 (可选，为空表示不使用码率限制)
+    ffmpegVideoBitrate = ConfigItem("FFmpeg", "VideoBitrate", "", restart=False)
+
+    # 是否启用硬件加速
+    ffmpegUseHardwareAcceleration = ConfigItem(
+        "FFmpeg", "UseHardwareAcceleration", False, BoolValidator(), restart=False
+    )
+
+    # 硬件加速类型
+    ffmpegHardwareAccelerator = OptionsConfigItem(
+        "FFmpeg",
+        "HardwareAccelerator",
+        "auto",
+        OptionsValidator(["auto", "cuda", "qsv", "dxva2", "videotoolbox"]),
+        restart=False,
+    )
 
 
 cfg = Config()
