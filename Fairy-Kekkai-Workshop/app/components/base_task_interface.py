@@ -226,9 +226,10 @@ class BaseTaskInterface(ScrollArea):
                     )
                 else:
                     task.status = "失败"
-                    event_bus.notification_service.show_error(
-                        f"{self.task_type}失败", message.strip()
-                    )
+                    if "取消" not in message:
+                        event_bus.notification_service.show_error(
+                            f"{self.task_type}失败", message.strip()
+                        )
 
                 # 移除活跃线程
                 for thread in self.active_threads[:]:

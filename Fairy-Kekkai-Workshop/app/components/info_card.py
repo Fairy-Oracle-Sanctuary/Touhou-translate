@@ -42,7 +42,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.updateTimeWidget = StatisticsWidget(self.tr("更新时间"), UPDATE_TIME, self)
 
         self.descriptionLabel = BodyLabel(
-            self.tr("仙-结界工坊"),
+            self.tr("仙·结界工坊"),
             self,
         )
 

@@ -4,7 +4,6 @@ from ..common.event_bus import event_bus
 from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
 from ..components.config_card import FFmpegSettingInterface
-from ..service.srt_service import Srt
 
 
 class FFmpegStackedInterfaces(BaseStackedInterfaces):
@@ -27,7 +26,7 @@ class FFmpegStackedInterfaces(BaseStackedInterfaces):
 
 
 class FFmpegInterface(BaseFunctionInterface):
-    """SRT文件翻译界面"""
+    """视频压制界面"""
 
     def __init__(self, parent=None):
         self.file_video = None
@@ -65,9 +64,6 @@ class FFmpegInterface(BaseFunctionInterface):
 
     def addFFmpegTaskFromProject(self, file_path, output_path):
         """从项目界面添加压制任务"""
-        video_file = Srt(file_path)
-        self.file_video = video_file
-
         args = {}
         args["video_path"] = file_path
         args["output_path"] = output_path
