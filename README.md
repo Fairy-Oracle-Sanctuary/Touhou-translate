@@ -1,8 +1,28 @@
-# 东方Project同人作品翻译转载计划
+<h1 align="center">
+  东方Project同人作品翻译转载计划
+</h1>
 
 > 本项目是一个非营利的爱好者翻译转载项目，旨在将优秀的东方Project同人作品（以油库里茶番剧为主）翻译并转载至Bilibili等平台，让更多中文地区的东方爱好者能够欣赏。本仓库存放python脚本、字幕文件以及一些杂物。
 
-[简体中文](README.md) | [English](README.en.md) | [日本語](README.jpn.md)
+<p align="center">
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/LICENSE-GPT%20|%20CCBYSA%20-green" alt="LICENSE 6.6.2"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Version-1.11.0-blue.svg" alt="Version 1.11.0"/>
+  </a>
+</p>
+
+
+<p align="center">
+<a href="README.md">简体中文 | <a href="README_en.md">English | <a href="README_jpn.md">日本語</a></a> 
+</p>
 
 ## 📜 项目内容列表
 
