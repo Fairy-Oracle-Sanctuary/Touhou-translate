@@ -261,6 +261,7 @@ class SettingInterface(ScrollArea):
         exe_path = Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute()
         if not exe_path.exists():
             exe_path = shutil.which(exe_name)
+        exe_path = str(exe_path)
         if exe_path:
             cfg.set(cfg_item, exe_path)
             event_bus.notification_service.show_success(
