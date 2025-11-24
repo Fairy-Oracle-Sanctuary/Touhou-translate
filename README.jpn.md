@@ -1,8 +1,28 @@
-# 東方Project二次創作翻訳転載プロジェクト
+<h1 align="center">
+  東方Project二次創作翻訳転載プロジェクト
+</h1>
 
 > このプロジェクトは非営利のファンによる翻訳・転載プロジェクトであり、優れた東方Project二次創作作品（主にゆっくり茶番劇）を翻訳し、Bilibiliなどのプラットフォームに転載し、より多くの中文圏の東方愛好家が楽しめるようにすることを目的としています。このリポジトリにはPythonスクリプト、字幕ファイル、およびその他の雑貨が保存されています。
 
-[简体中文](README.md) | [English](README.en.md) | [日本語](README.jpn.md)
+<p align="center">
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/LICENSE-GPT%20|%20CCBYSA%20-green" alt="LICENSE 6.6.2"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Version-1.11.0-blue.svg" alt="Version 1.11.0"/>
+  </a>
+</p>
+
+
+<p align="center">
+<a href="README.md">简体中文 | <a href="README.en.md">English | <a href="README.jpn.md">日本語</a></a> 
+</p>
 
 ## 📜 プロジェクト内容リスト
 
