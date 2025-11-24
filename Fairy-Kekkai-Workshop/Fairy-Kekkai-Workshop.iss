@@ -2,7 +2,7 @@
 ; 有关创建 Inno Setup 脚本文件的详细信息，请参阅帮助文档！
 
 #define MyAppName "Fairy Kekkai Workshop"
-#define MyAppVersion "1.10.3"
+#define MyAppVersion "1.11.0"
 #define MyAppPublisher "Fairy Oracle Sanctuary"
 #define MyAppURL "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 #define MyAppExeName "Fairy-Kekkai-Workshop.exe"
@@ -61,6 +61,6 @@ Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; Value
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+; [Run]
+; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 

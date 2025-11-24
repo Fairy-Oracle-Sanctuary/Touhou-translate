@@ -6,7 +6,7 @@ AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
 VERSION = "1.11.0"
 YEAR = "2025"
-UPDATE_TIME = "2025-11-22"
+UPDATE_TIME = "2025-11-24"
 
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
