@@ -1,8 +1,28 @@
-# Touhou Project Doujin Works Translation and Reposting Project
+<h1 align="center">
+  Touhou Project Doujin Works Translation and Reposting Project
+</h1>
 
 > This project is a non-profit fan-based translation and reposting initiative aimed at translating and sharing excellent Touhou Project doujin works (primarily Yukkuri Chaban series) to platforms like Bilibili, allowing more Chinese-speaking Touhou fans to enjoy them. This repository stores Python scripts, subtitle files, and some miscellaneous items.
 
-[简体中文](README.md) | [English](README.en.md) | [日本語](README.jpn.md)
+<p align="center">
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/LICENSE-GPT%20|%20CCBYSA%20-green" alt="LICENSE 6.6.2"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
+  </a>
+
+  <a style="text-decoration:none">
+    <img src="https://img.shields.io/badge/Version-1.11.0-blue.svg" alt="Version 1.11.0"/>
+  </a>
+</p>
+
+
+<p align="center">
+<a href="README.md">简体中文 | <a href="README.en.md">English | <a href="README.jpn.md">日本語</a></a> 
+</p>
 
 ## 📜 Project Content List
 

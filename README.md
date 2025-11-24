@@ -21,7 +21,7 @@
 
 
 <p align="center">
-<a href="README.md">简体中文 | <a href="README_en.md">English | <a href="README_jpn.md">日本語</a></a> 
+<a href="README.md">简体中文 | <a href="README.en.md">English | <a href="README.jpn.md">日本語</a></a> 
 </p>
 
 ## 📜 项目内容列表
