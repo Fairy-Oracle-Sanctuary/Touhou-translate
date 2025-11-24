@@ -7,7 +7,7 @@
 <p align="center">
 
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/LICENSE-GPT%20|%20CCBYSA%20-green" alt="LICENSE 6.6.2"/>
+    <img src="https://img.shields.io/badge/LICENSE-GPL%20|%20CCBYSA%20-green" alt="LICENSE 6.6.2"/>
   </a>
 
   <a style="text-decoration:none">
