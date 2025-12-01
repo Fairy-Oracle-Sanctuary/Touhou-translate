@@ -10,20 +10,26 @@ class BaseTaskInterface(ScrollArea):
 
     returnTask = Signal(bool, list, bool)  # 是否重复的任务 任务路径列表 是否发送消息
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        object_name="BaseTaskInterface",
+        processing_text="处理中",
+        task_type="任务",
+        parent=None,
+    ):
         super().__init__(parent)
         self.view = QWidget(self)
         self.vBoxLayout = QVBoxLayout(self.view)
+
+        # 配置项 - 子类可以在初始化后修改这些属性
+        self.object_name = object_name
+        self.processing_text = processing_text
+        self.task_type = task_type  # 用于消息显示
 
         self.tasks = []  # 所有任务
         self.task_paths = []  # 所有任务文件路径
         self.active_threads = []  # 活跃的线程
         self.max_concurrent_tasks = 1
-
-        # 配置项 - 子类可以在初始化后修改这些属性
-        self.object_name = "BaseTaskInterface"
-        self.processing_text = "处理中"
-        self.task_type = "任务"  # 用于消息显示
 
         self._initWidget()
 

@@ -431,7 +431,7 @@ class MainWindow(MSFluentWindow):
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
-                f"压制完成 -{message[-1]}-",
+                f"压制完成 -{message}-",
                 QIcon(":/app/images/logo.png"),
                 3000,
             )
