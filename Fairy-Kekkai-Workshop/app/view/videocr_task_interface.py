@@ -42,6 +42,22 @@ class OcrTaskInterface(BaseTaskInterface):
         """解析OCR输出消息并计算进度"""
         # 这里保持原有的 parseOCRProgress 方法实现
         try:
+            # Mapping frame {i + 1} of {progress_total}
+            if "Mapping frame" in message:
+                import re
+
+                match = re.search(r"Mapping frame\s+(\d+)\s+of\s+(\d+)", message)
+                if match:
+                    current = int(match.group(1))
+                    total = int(match.group(2))
+                    if current - 1 == 0:
+                        self.log_signal.emit("正在处理视频帧中…", False, False)
+                    else:
+                        self.log_signal.emit(
+                            f"正在处理视频帧 {current}/{total}", False, True
+                        )
+                    return 0
+
             # Step 1: Processing image {current} of {total}
             if "Step 1: Processing image" in message:
                 import re
