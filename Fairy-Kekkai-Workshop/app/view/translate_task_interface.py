@@ -17,12 +17,14 @@ class TranslateTaskInterface(BaseTaskInterface):
     )  # 是否重复的任务 任务路径列表 是否发送消息
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.object_name = "translateTaskInterface"
-        self.processing_text = "翻译中"
-        self.task_type = "翻译"
+        super().__init__(
+            object_name="translateTaskInterface",
+            processing_text="翻译中",
+            task_type="翻译",
+            parent=parent,
+        )
 
-        self.translate_paths = []  # 所有待提取文件路径
+        self.translate_paths = []  # 所有待翻译文件路径
 
     def createTask(self, args):
         task = TranslateTask(args)

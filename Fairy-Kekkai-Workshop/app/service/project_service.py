@@ -239,6 +239,7 @@ class Project:
 
     def is_project(self, folder_path):
         """判断文件夹是否为一个合法的项目"""
+        folder_path = Path(folder_path)
         if not (folder_path / "标题.txt").exists():
             return False
         for folder_num in range(

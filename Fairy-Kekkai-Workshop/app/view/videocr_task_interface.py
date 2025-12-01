@@ -13,11 +13,12 @@ class OcrTaskInterface(BaseTaskInterface):
     log_signal = Signal(str, bool, bool)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        # 配置特定属性
-        self.object_name = "ocrTaskInterface"
-        self.processing_text = "提取中"
-        self.task_type = "提取"
+        super().__init__(
+            object_name="ocrTaskInterface",
+            processing_text="提取中",
+            task_type="提取",
+            parent=parent,
+        )
 
     def createTask(self, args):
         return OCRTask(args)

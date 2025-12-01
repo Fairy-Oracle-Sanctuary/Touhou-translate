@@ -152,31 +152,26 @@ class FFmpegThread(QThread):
     def _has_audio_stream(self):
         """检测输入文件是否有音频流"""
         try:
-            ffprobe_cmd = [
-                cfg.get(cfg.ffmpegPath),
-                "-i",
-                self.task.video_path,
-                "-hide_banner",
-                "-loglevel",
-                "error",
-                "-select_streams",
-                "a",
-                "-show_entries",
-                "stream=codec_type",
-                "-of",
-                "csv=p=0",
-            ]
+            ffmpeg_cmd = [cfg.get(cfg.ffmpegPath), "-i", self.task.video_path]
 
             process = QProcess()
-            process.start(ffprobe_cmd[0], ffprobe_cmd[1:])
+            process.start(ffmpeg_cmd[0], ffmpeg_cmd[1:])
             process.waitForFinished(5000)  # 5秒超时
 
-            output = process.readAllStandardOutput().data().decode("utf-8").strip()
-            return bool(output)  # 如果有输出，说明有音频流
+            stderr_output = (
+                process.readAllStandardError().data().decode("utf-8", errors="ignore")
+            )
 
-        except Exception:
-            # 如果检测失败，默认有音频流
-            return True
+            # 从FFmpeg输出中解析时长信息
+            # 查找格式: Audio:
+            if "Audio:" in stderr_output:
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            print(f"使用FFmpeg获取音频流失败: {str(e)}")
+            return False
 
     def _get_video_duration(self):
         """获取视频总时长"""
@@ -388,7 +383,7 @@ class FFmpegThread(QThread):
                 success_msg = "压制完成"
 
             self.finished_signal.emit(True, success_msg)
-            event_bus.ffmpeg_finished_signal.emit(True, self.task.output_file)
+            event_bus.ffmpeg_finished_signal.emit(True, str(self.task.output_file))
         else:
             error_message = f"压制失败，错误码: {exit_code}"
 

@@ -13,11 +13,12 @@ class FFmpegTaskInterface(BaseTaskInterface):
     log_signal = Signal(str, bool, bool)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        # 配置特定属性
-        self.object_name = "ffmpegTaskInterface"
-        self.processing_text = "压制中"
-        self.task_type = "压制"
+        super().__init__(
+            object_name="ocrTaskInterface",
+            processing_text="压制中",
+            task_type="压制",
+            parent=parent,
+        )
 
     def createTask(self, args):
         return FFmpegTask(args)
