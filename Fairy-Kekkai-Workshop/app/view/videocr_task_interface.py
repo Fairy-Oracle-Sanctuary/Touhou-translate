@@ -3,7 +3,7 @@
 from PySide6.QtCore import Signal
 
 from ..components.base_task_interface import BaseTaskInterface
-from ..components.videocr_card import OcrItemWidget
+from ..components.task_card import OcrItemWidget
 from ..service.ocr_service import OCRTask, OCRThread
 
 
@@ -23,14 +23,14 @@ class OcrTaskInterface(BaseTaskInterface):
     def createTask(self, args):
         return OCRTask(args)
 
-    def createTaskItem(self, task, parent):
+    def createTaskItem(self, task: OCRTask, parent):
         return OcrItemWidget(task, parent)
 
-    def createTaskThread(self, task):
+    def createTaskThread(self, task: OCRTask):
         return OCRThread(task)
 
-    def getTaskPath(self, task):
-        return task.video_path
+    def getTaskPath(self, task: OCRTask):
+        return task.input_file
 
     def onPrintOutput(self, task_id, message):
         """处理print输出并计算进度"""

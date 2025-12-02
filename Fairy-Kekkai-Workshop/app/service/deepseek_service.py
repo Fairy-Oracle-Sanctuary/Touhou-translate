@@ -16,8 +16,8 @@ class TranslateTask:
         self.status = "等待中"  # 等待中, 翻译中, 已完成, 失败
         self.progress = 0
         self.error_message = ""
-        self.srt_path = args.get("srt_path")
-        self.output_path = args.get("output_path")
+        self.input_file = args.get("srt_path")
+        self.output_file = args.get("output_path")
         self.origin_lang = args.get("origin_lang")
         self.target_lang = args.get("target_lang")
         self.raw_content = args.get("raw_content")
@@ -70,13 +70,13 @@ class TranslateThread(QThread):
                     print(final_content)
 
                     # 写入文件
-                    Srt.write_raw_content(final_content, self.task.output_path)
+                    Srt.write_raw_content(final_content, self.task.output_file)
 
             # 最终输出
             if content_all and not self.is_cancelled:
                 self.finished_signal.emit(True, "翻译完成")
                 event_bus.translate_finished_signal.emit(
-                    True, [final_content, self.task.output_path]
+                    True, [final_content, self.task.output_file]
                 )
 
         except Exception as e:

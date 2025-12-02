@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal
 
 from ..common.event_bus import event_bus
 from ..components.base_task_interface import BaseTaskInterface
-from ..components.translate_card import TranslateItemWidget
+from ..components.task_card import TranslateItemWidget
 from ..service.deepseek_service import TranslateTask, TranslateThread
 
 
@@ -29,7 +29,7 @@ class TranslateTaskInterface(BaseTaskInterface):
     def createTask(self, args):
         task = TranslateTask(args)
 
-        srt_path = task.srt_path
+        srt_path = task.input_file
         if srt_path in self.translate_paths:
             self.returnTranslateTask.emit(True, self.translate_paths, True)
             return
@@ -39,14 +39,14 @@ class TranslateTaskInterface(BaseTaskInterface):
 
         return task
 
-    def createTaskItem(self, task, parent):
-        return TranslateItemWidget(task, parent)
+    def createTaskItem(self, task: TranslateTask, parent):
+        return TranslateItemWidget(task, progressBar_type="determinate", parent=parent)
 
-    def createTaskThread(self, task):
+    def createTaskThread(self, task: TranslateTask):
         return TranslateThread(task)
 
-    def getTaskPath(self, task):
-        return task.srt_path
+    def getTaskPath(self, task: TranslateTask):
+        return task.input_file
 
     def onTranslateFinished(self, task_id, success, message):
         """提取完成"""
@@ -55,7 +55,7 @@ class TranslateTaskInterface(BaseTaskInterface):
                 if success:
                     task.status = "已完成"
                     event_bus.notification_service.show_success(
-                        "翻译完成", f"-{task.srt_path}- 翻译完成"
+                        "翻译完成", f"-{task.input_file}- 翻译完成"
                     )
                 else:
                     task.status = "失败"
