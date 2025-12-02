@@ -12,23 +12,26 @@ from qfluentwidgets import (
     ImageLabel,
     IndeterminateProgressBar,
     MessageBox,
+    ProgressBar,
     TransparentToolButton,
 )
 
 from ..common.event_bus import event_bus
 
 
-class TranslateItemWidget(CardWidget):
-    """下载任务项组件"""
+class BaseItemWidget(CardWidget):
+    """任务项组件"""
 
     # 定义信号
     removeTaskSignal = Signal(int)  # 任务ID
     retryTaskSignal = Signal(int)  # 任务ID
 
-    def __init__(self, task, parent=None):
+    def __init__(self, task, progressBar_type="common", task_type="默认", parent=None):
         super().__init__(parent)
         self.task = task
         self.task_thread = None
+        self.progressBar_type = progressBar_type
+        self.task_type = task_type
 
         self._initUI()
 
@@ -37,15 +40,19 @@ class TranslateItemWidget(CardWidget):
         self.vBoxLayout = QVBoxLayout()
         self.infoLayout = QHBoxLayout()
 
-        self.fileNameLabel = BodyLabel(self.task.srt_path)
+        self.fileNameLabel = BodyLabel(self.task.input_file)
 
         self.imageLabel = ImageLabel()
         self.imageLabel.setImage(
-            QFileIconProvider().icon(QFileInfo(self.task.srt_path)).pixmap(32, 32)
+            QFileIconProvider().icon(QFileInfo(self.task.input_file)).pixmap(32, 32)
         )
 
-        self.filePathLabel = BodyLabel(self.task.srt_path)
-        self.progressBar = IndeterminateProgressBar()
+        self.filePathLabel = BodyLabel(self.task.input_file)
+
+        if self.progressBar_type == "determinate":
+            self.progressBar = IndeterminateProgressBar()
+        else:
+            self.progressBar = ProgressBar()
 
         self.statusLabel = CaptionLabel(self.task.status)
 
@@ -55,14 +62,14 @@ class TranslateItemWidget(CardWidget):
         self.openFolderBtn.clicked.connect(self.openFolder)
 
         self.cancelBtn = TransparentToolButton(FluentIcon.CLOSE, self)
-        self.cancelBtn.setToolTip("取消翻译")
+        self.cancelBtn.setToolTip(f"取消{self.task_type}")
         self.cancelBtn.setVisible(
-            self.task.status == "翻译中" or self.task.status == "等待中"
+            self.task.status == f"{self.task_type}中" or self.task.status == "等待中"
         )
         self.cancelBtn.clicked.connect(self.cancelTranslate)
 
         self.retryBtn = TransparentToolButton(FluentIcon.SYNC, self)
-        self.retryBtn.setToolTip("重新翻译")
+        self.retryBtn.setToolTip(f"重新{self.task_type}")
         self.retryBtn.setVisible(self.task.status == "失败")
         self.retryBtn.clicked.connect(self.retryTranslate)
 
@@ -92,7 +99,7 @@ class TranslateItemWidget(CardWidget):
         """更新状态标签样式"""
         if self.task.status == "等待中":
             statusPill.setProperty("isSecondary", True)
-        elif self.task.status == "翻译中":
+        elif self.task.status == f"{self.task_type}中":
             statusPill.setProperty("isPrimary", True)
         elif self.task.status == "已完成":
             statusPill.setProperty("isSuccess", True)
@@ -109,20 +116,34 @@ class TranslateItemWidget(CardWidget):
 
         # 显示/隐藏按钮
         self.openFolderBtn.setVisible(status == "已完成")
-        self.cancelBtn.setVisible(status == "翻译中")
+        self.cancelBtn.setVisible(status == f"{self.task_type}中")
         self.retryBtn.setVisible(status == "失败")
 
         # 设置按钮可用性
         self.removeBtn.setEnabled(status == "已完成" or status == "失败")
 
         # 进度条
-        self.progressBar.setVisible(status == "翻译中")
+        self.progressBar.setVisible(status == f"{self.task_type}中")
+
+    def updateProgress(self, progress, input_file):
+        """更新进度"""
+        if self.progressBar_type == "determinate":
+            return
+        self.task.progress = progress
+        if input_file and not self.task.input_file:
+            self.task.input_file = input_file
+            self.fileNameLabel.setText(self.task.input_file)
+
+        self.progressBar.setValue(progress)
+
+        # 更新状态标签
+        self.statusLabel.setText(self.task.status)
 
     def openFolder(self):
         """打开文件夹"""
         # 获取目录
-        if self.task.output_path and os.path.exists(self.task.output_path):
-            folder_path = os.path.dirname(self.task.output_path)
+        if self.task.output_file and os.path.exists(self.task.output_file):
+            folder_path = os.path.dirname(self.task.output_file)
             QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
         else:
             event_bus.notification_service.show_warning(
@@ -132,7 +153,9 @@ class TranslateItemWidget(CardWidget):
     def cancelTranslate(self):
         """取消下载 - 异步版本"""
         # 添加确认对话框
-        box = MessageBox("确认取消", "确定要取消这个翻译任务吗？", self.window())
+        box = MessageBox(
+            "确认取消", f"确定要取消这个{self.task_type}任务吗？", self.window()
+        )
         box.yesButton.setText("确定")
         box.cancelButton.setText("取消")
         if box.exec():
@@ -185,7 +208,7 @@ class TranslateItemWidget(CardWidget):
 
         # 显示取消提示
         event_bus.notification_service.show_info(
-            "提取已取消", f"任务 '{self.task.srt_path}' 已被取消"
+            f"{self.task_type}已取消", f"任务 '{self.task.input_file}' 已被取消"
         )
 
     def retryTranslate(self):

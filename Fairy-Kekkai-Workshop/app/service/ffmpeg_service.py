@@ -16,7 +16,7 @@ class FFmpegTask:
 
     def __init__(self, args):
         self.args = args
-        self.video_path = args["video_path"]
+        self.input_file = args["video_path"]
         self.output_file = args["output_path"]
         self.status = "等待中"  # 等待中, 压制中, 已完成, 失败
         self.progress = 0
@@ -54,7 +54,7 @@ class FFmpegThread(QThread):
                 cmd.extend(["-hwaccel", accelerator])
 
         # 输入视频
-        cmd.extend(["-i", self.task.video_path])
+        cmd.extend(["-i", self.task.input_file])
 
         # 视频编码参数
         cmd.extend(
@@ -152,7 +152,7 @@ class FFmpegThread(QThread):
     def _has_audio_stream(self):
         """检测输入文件是否有音频流"""
         try:
-            ffmpeg_cmd = [cfg.get(cfg.ffmpegPath), "-i", self.task.video_path]
+            ffmpeg_cmd = [cfg.get(cfg.ffmpegPath), "-i", self.task.input_file]
 
             process = QProcess()
             process.start(ffmpeg_cmd[0], ffmpeg_cmd[1:])
@@ -176,7 +176,7 @@ class FFmpegThread(QThread):
     def _get_video_duration(self):
         """获取视频总时长"""
         try:
-            ffmpeg_cmd = [cfg.get(cfg.ffmpegPath), "-i", self.task.video_path]
+            ffmpeg_cmd = [cfg.get(cfg.ffmpegPath), "-i", self.task.input_file]
 
             process = QProcess()
             process.start(ffmpeg_cmd[0], ffmpeg_cmd[1:])

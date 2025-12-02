@@ -3,7 +3,7 @@
 from PySide6.QtCore import Signal
 
 from ..components.base_task_interface import BaseTaskInterface
-from ..components.ffmpeg_card import FFmpegItemWidget
+from ..components.task_card import FFmpegItemWidget
 from ..service.ffmpeg_service import FFmpegTask, FFmpegThread
 
 
@@ -23,14 +23,14 @@ class FFmpegTaskInterface(BaseTaskInterface):
     def createTask(self, args):
         return FFmpegTask(args)
 
-    def createTaskItem(self, task, parent):
+    def createTaskItem(self, task: FFmpegTask, parent):
         return FFmpegItemWidget(task, parent)
 
-    def createTaskThread(self, task):
+    def createTaskThread(self, task: FFmpegTask):
         return FFmpegThread(task)
 
-    def getTaskPath(self, task):
-        return task.video_path
+    def getTaskPath(self, task: FFmpegTask):
+        return task.input_file
 
     def addFFmpegTask(self, args):
         self.addTask(args)

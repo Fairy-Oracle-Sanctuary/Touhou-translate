@@ -19,8 +19,8 @@ class OCRTask:
         self.status = "等待中"  # 等待中, 处理中, 已完成, 失败
         self.progress = 0
         self.error_message = ""
-        self.video_path = args.get("video_path")
-        self.file_path = args.get("file_path")
+        self.input_file = args.get("video_path")
+        self.output_file = args.get("file_path")
 
         OCRTask._id_counter += 1
         self.id = OCRTask._id_counter
@@ -74,7 +74,7 @@ class OCRThread(QThread):
 
             self.log_signal.emit("OCR处理完成")
             self.finished_signal.emit(True, "OCR处理完成")
-            event_bus.ocr_finished_signal.emit(True, self.task.video_path)
+            event_bus.ocr_finished_signal.emit(True, self.task.input_file)
 
         except Exception as e:
             # 如果是取消操作导致的异常，不记录为错误
