@@ -1,10 +1,11 @@
-cpuid==0.0.11
-openai==2.7.1
+cpuid==0.1.1
+openai==2.14.0
+pillow==12.0.0
 pyperclip==1.11.0
-pyqt5_frameless_window==0.7.3
-pyqt_fluent_widgets==1.8.7
-pyside6_fluent_widgets==1.8.7
-pysidesix_frameless_window==0.7.3
+pyqt5_frameless_window==0.7.4
+pyqt_fluent_widgets==1.10.5
+pyside6_fluent_widgets==1.10.5
+pysidesix_frameless_window==0.7.4
 Requests==2.32.5
 srt==3.5.3
 thefuzz==0.22.1

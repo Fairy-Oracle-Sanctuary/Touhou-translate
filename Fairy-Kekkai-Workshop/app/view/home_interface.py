@@ -82,7 +82,7 @@ class HomeInterface(ScrollArea):
             title="视频压制",
             content=self.tr("压制烤制好的视频"),
             routeKey="FFmpegStackedInterface",
-            index=5,
+            index=6,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),
