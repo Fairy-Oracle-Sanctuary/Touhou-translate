@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QRect, QSettings, QSize, Qt, QUrl
+from PySide6.QtCore import QRect, QSettings, Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
@@ -11,7 +11,6 @@ from qfluentwidgets import (
     MessageBox,
     MSFluentWindow,
     NavigationItemPosition,
-    SplashScreen,
 )
 
 from ..common.config import cfg
@@ -32,6 +31,7 @@ from .videocr_interface import VideocrStackedInterfaces
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+
         self.initWindow()
 
         # 初始化版本服务
@@ -109,11 +109,10 @@ class MainWindow(MSFluentWindow):
             self.show_system_tray_message_ffmpeg_finished
         )
 
-        # 初始化完毕 取消启动界面
-        self.splashScreen.finish()
-
         # 恢复窗口状态
         self.restore_window_state()
+
+        self.show()
 
     def paintEvent(self, event):
         """重绘事件，绘制背景图片"""
@@ -226,21 +225,13 @@ class MainWindow(MSFluentWindow):
             NavigationItemPosition.BOTTOM,
         )
 
-        # self.navigationInterface.setCurrentItem(self.homeInterface.objectName())
-
     def initWindow(self):
         self.resize(960, 754 if sys.platform == "win32" else 773)
         self.setMinimumWidth(760)
         self.setWindowIcon(QIcon(":/app/images/logo.png"))
         self.setWindowTitle("Fairy Kekkai Workshop")
 
-        # 创建启动页面
-        self.splashScreen = SplashScreen(self.windowIcon(), self)
-        self.splashScreen.setIconSize(QSize(106, 106))
-        self.splashScreen.raise_()
-
-        screen = QApplication.primaryScreen()
-        desktop = screen.availableGeometry()
+        desktop = QApplication.primaryScreen().availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 

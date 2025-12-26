@@ -89,7 +89,7 @@ def check_project():
 if __name__ == "__main__":
     while True:
         print(
-            "0.退出程序\n1.检查项目\n2.创建项目\n3.根据播放列表一键初始化项目\n4.补充空缺的视频\n5.视频硬字幕框选\n6.硬字幕文件复制\n7.文件改名"
+            "0.退出程序\n1.检查项目\n2.创建项目\n3.根据播放列表一键初始化项目\n4.补充空缺的视频\n5.视频硬字幕框选\n6.硬字幕文件复制\n7.文件改名\n8.重新排布字幕序号"
         )
 
         func = int(input("请选择功能："))
@@ -111,6 +111,8 @@ if __name__ == "__main__":
             file_copy()
         elif func == 7:
             rename_files()
+        elif func == 8:
+            fix_subtitle_numbers()
 
 # https://youtube.com/playlist?list=PLwnprYHAfPHaqEZqQFi2nQiPLg5Igo3mT&si=5RNTZWuao9UJS3p2
 # C:\Users\ZHANGBaoHang\AppData\Local\Programs\Python\Python312\python.exe CLI\videocr_cli.py --video_path D:/东方project/projects/被捡回来的管家我竟要和主人蕾米莉亚交往了/1/生肉copy.mp4 --lang japan --subtitle_position center --output D:/东方project/projects/被捡回来的管家我竟要和主人蕾米莉亚交往了/1/原文copy.srt --time_start 0:00 --conf_threshold 75 --sim_threshold 80 --max_merge_gap 0.1 --ssim_threshold 92 --ocr_image_max_width 1280 --frames_to_skip 1 --min_subtitle_duration 0.2 --use_gpu true --use_fullframe false --use_dual_zone false --use_angle_cls false --post_processing true --use_server_model true --crop_x 1 --crop_y 680 --crop_width 1912 --crop_height 393

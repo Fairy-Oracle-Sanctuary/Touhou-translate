@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import yt_dlp
-
 from get_video_pos import VideoCoordinateTool
 from main import get_project_paths
+
 
 def download_video(url, save_path):
     ydlopts = {
@@ -96,7 +96,7 @@ def create_project():
     """
     print("\n=== 创建新工程 ===")
 
-    base_path = ''
+    base_path = ""
     # 获取工程名
     while True:
         project_name = base_path + input("请输入工程名（父文件夹名）: ").strip()
@@ -413,20 +413,20 @@ def get_video_list(url):
 
 
 def fix_video_list():
-    project_paths = get_project_paths('.')
+    project_paths = get_project_paths(".")
     if not project_paths:
         print("\n=== 未找到任何工程文件夹 ===")
         return
-    
+
     print("\n=== 工程列表 ===")
     for n, project in enumerate(project_paths):
-        project_name = project.split('\\')[-1]
-        print(f"{n+1}.{project_name}")
+        project_name = project.split("\\")[-1]
+        print(f"{n + 1}.{project_name}")
     check_num = int(input("\n请输入要补充视频的项目序号：")) - 1
 
-    #项目名称
-    project_path = project_paths[check_num].split('\\')[-1] + "/"
-    
+    # 项目名称
+    project_path = project_paths[check_num].split("\\")[-1] + "/"
+
     list_url = input("请输入视频列表网址：")
 
     url_list = []
@@ -481,11 +481,143 @@ def fix_video_list():
         download_videos_multithreaded(video_list, save_path=project_path, max_workers=4)
 
         print("下载完成")
-        
+
+
+def fix_subtitle_numbers():
+    """
+    重新排布srt文件的字幕序号
+    """
+    print("\n=== 重新排布字幕序号 ===")
+
+    # 获取当前目录下的所有工程文件夹
+    current_dir = os.getcwd()
+    project_folders = [
+        d
+        for d in os.listdir(current_dir)
+        if os.path.isdir(os.path.join(current_dir, d))
+        and not d.startswith(".")
+        and not d.endswith("tools")
+        and d != os.path.basename(__file__)
+    ]
+
+    if not project_folders:
+        print("当前目录下没有找到任何工程文件夹！")
+        return
+
+    # 显示工程文件夹列表供用户选择
+    print("请选择要处理的工程文件夹：")
+    for i, folder in enumerate(project_folders, 1):
+        print(f"{i}. {folder}")
+
+    # 获取用户选择
+    while True:
+        try:
+            choice = int(input("请输入工程编号: ")) - 1
+            if 0 <= choice < len(project_folders):
+                selected_project = project_folders[choice]
+                break
+            else:
+                print("无效的编号，请重新输入！")
+        except ValueError:
+            print("请输入有效的数字编号！")
+
+    project_path = os.path.join(current_dir, selected_project)
+    print(f"\n正在处理工程: {selected_project}")
+
+    # 列出所有子文件夹
+    subfolders = [
+        d
+        for d in os.listdir(project_path)
+        if os.path.isdir(os.path.join(project_path, d))
+        and d.isdigit()  # 只处理数字命名的子文件夹
+    ]
+
+    if not subfolders:
+        print("未找到数字命名的子文件夹！")
+        return
+
+    # 显示子文件夹列表供用户选择
+    print("请选择要处理的集数（输入序号，多个用逗号分隔）：")
+    for i, subfolder in enumerate(sorted(subfolders), 1):
+        print(f"{i}. 第{subfolder}集")
+
+    # 获取用户输入
+    while True:
+        try:
+            choices = input("请输入序号: ").strip()
+            if not choices:
+                print("输入不能为空！")
+                continue
+
+            selected_indices = [int(x.strip()) - 1 for x in choices.split(",")]
+            sorted_subfolders = sorted(subfolders)
+            if any(
+                idx < 0 or idx >= len(sorted_subfolders) for idx in selected_indices
+            ):
+                print("序号超出范围，请重新输入！")
+                continue
+
+            selected_subfolders = [sorted_subfolders[idx] for idx in selected_indices]
+            break
+        except ValueError:
+            print("请输入有效的数字序号！")
+
+    # 询问要处理的srt文件名
+    srt_filename = input("请输入要处理的srt文件名（例如：译文.srt）: ").strip()
+    if not srt_filename.endswith(".srt"):
+        print("文件名必须以.srt结尾！")
+        return
+
+    # 处理每个选中的子文件夹
+    for subfolder in selected_subfolders:
+        subfolder_path = os.path.join(project_path, subfolder)
+        srt_file_path = os.path.join(subfolder_path, srt_filename)
+
+        if not os.path.exists(srt_file_path):
+            print(f"  跳过第{subfolder}集: 未找到{srt_filename}")
+            continue
+
+        try:
+            with open(srt_file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            # 解析字幕并重新排序
+            subtitles = []
+            current_subtitle = []
+            for line in lines:
+                if line.strip():
+                    current_subtitle.append(line)
+                else:
+                    if current_subtitle:
+                        subtitles.append(current_subtitle)
+                        current_subtitle = []
+            # 添加最后一个字幕
+            if current_subtitle:
+                subtitles.append(current_subtitle)
+
+            # 重新生成字幕文件
+            with open(srt_file_path, "w", encoding="utf-8") as f:
+                for i, subtitle in enumerate(subtitles, 1):
+                    # 写入新的序号
+                    f.write(f"{i}\n")
+                    # 写入时间戳和字幕内容
+                    for j in range(1, len(subtitle)):
+                        f.write(subtitle[j])
+                    # 写入空行分隔
+                    if i < len(subtitles):
+                        f.write("\n")
+
+            print(f"  成功处理第{subfolder}集: 已重新排布{srt_filename}的字幕序号")
+        except Exception as e:
+            print(f"  处理第{subfolder}集时出错: {str(e)}")
+
+    print("\n所有操作已完成!")
+
+
 if __name__ == "__main__":
     while True:
         print(
-            "0.退出程序\n1.项目初始化\n2.硬字幕文件复制\n3.重命名文件\n4.根据播放列表一键初始化项目\n5.视频字幕区域框选"
+            "0.退出程序\n1.项目初始化\n2.硬字幕文件复制\n3.重命名文件\n4.根据播放列表一键初始化项目\n5.视频字幕区域框选\n6.重新排布字幕序号"
         )
 
         func = int(input("请选择功能："))
@@ -503,5 +635,7 @@ if __name__ == "__main__":
         elif func == 5:
             tool = VideoCoordinateTool(input("请输入视频路径："))
             tool.run()
+        elif func == 6:
+            fix_subtitle_numbers()
 
 # # "D:\东方project\油库里茶番剧\被捡回来的管家我竟要和主人蕾米莉亚交往了\8\生肉.mp4"
