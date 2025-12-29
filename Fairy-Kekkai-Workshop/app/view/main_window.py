@@ -32,7 +32,7 @@ class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
 
-        self.initWindow()
+        self._initWindow()
 
         # 初始化版本服务
         self.versionManager = VersionService()
@@ -225,7 +225,7 @@ class MainWindow(MSFluentWindow):
             NavigationItemPosition.BOTTOM,
         )
 
-    def initWindow(self):
+    def _initWindow(self):
         self.resize(960, 754 if sys.platform == "win32" else 773)
         self.setMinimumWidth(760)
         self.setWindowIcon(QIcon(":/app/images/logo.png"))

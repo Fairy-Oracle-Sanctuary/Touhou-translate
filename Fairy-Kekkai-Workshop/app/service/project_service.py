@@ -26,15 +26,14 @@ class Project:
                 self.isLink.append(False)
 
         # 处理外部路径
-        if __name__ == "__name__":
-            link_paths = cfg.linkProject.get("project_link")
-            true_paths = []
-            for path in link_paths:
-                if self.is_project(path):
-                    self.isLink.append(True)
-                    true_paths.append(path)
-                project_paths.append(Path(path))
-            cfg.linkProject.set("project_link", true_paths)
+        link_paths = cfg.linkProject.get("project_link")
+        true_paths = []
+        for path in link_paths:
+            if self.is_project(path):
+                self.isLink.append(True)
+                true_paths.append(path)
+            project_paths.append(Path(path))
+        cfg.linkProject.set("project_link", true_paths)
 
         return project_paths
 
