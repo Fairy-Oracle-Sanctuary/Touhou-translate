@@ -40,14 +40,14 @@ class BaseItemWidget(CardWidget):
         self.vBoxLayout = QVBoxLayout()
         self.infoLayout = QHBoxLayout()
 
-        self.fileNameLabel = BodyLabel(self.task.input_file)
+        self.fileNameLabel = BodyLabel(str(self.task.input_file))
 
         self.imageLabel = ImageLabel()
         self.imageLabel.setImage(
             QFileIconProvider().icon(QFileInfo(self.task.input_file)).pixmap(32, 32)
         )
 
-        self.filePathLabel = BodyLabel(self.task.input_file)
+        self.filePathLabel = BodyLabel(str(self.task.input_file))
 
         if self.progressBar_type == "determinate":
             self.progressBar = IndeterminateProgressBar()
@@ -132,7 +132,7 @@ class BaseItemWidget(CardWidget):
         self.task.progress = progress
         if input_file and not self.task.input_file:
             self.task.input_file = input_file
-            self.fileNameLabel.setText(self.task.input_file)
+            self.fileNameLabel.setText(str(self.task.input_file))
 
         self.progressBar.setValue(progress)
 
