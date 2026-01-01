@@ -32,7 +32,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.nameLabel = TitleLabel(self.tr("Fairy Kekkai Workshop"), self)
         self.updateButton = PrimaryPushButton(self.tr("更新"), self)
         self.companyLabel = HyperlinkLabel(
-            QUrl("https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"),
+            QUrl("https://space.bilibili.com/499929312"),
             "Baby2016",
             self,
         )
@@ -42,11 +42,10 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.updateTimeWidget = StatisticsWidget(self.tr("更新时间"), UPDATE_TIME, self)
 
         self.descriptionLabel = BodyLabel(
-            self.tr("仙·结界工坊"),
+            self.tr("仙 · 结界工坊"),
             self,
         )
 
-        # self.tagButton = PillPushButton(self.tr("M3U8"), self)
         self.githubButton = TransparentToolButton(FluentIcon.GITHUB, self)
         self.githubButton.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl(GITHUB_URL))

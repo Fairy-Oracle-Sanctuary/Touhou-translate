@@ -50,7 +50,7 @@ class TranslateTaskInterface(BaseTaskInterface):
 
     def onTranslateFinished(self, task_id, success, message):
         """提取完成"""
-        for task in self.translate_tasks:
+        for task in self.tasks:
             if task.id == task_id:
                 if success:
                     task.status = "已完成"
@@ -63,16 +63,23 @@ class TranslateTaskInterface(BaseTaskInterface):
                         "翻译失败", message.strip()
                     )
 
-                # 移除活跃翻译
-                for thread in self.active_translate[:]:
+                # 从活动线程列表中移除对应线程引用
+                for thread in self.active_threads[:]:
                     if thread.task.id == task_id:
-                        self.active_translate.remove(thread)
+                        self.active_threads.remove(thread)
                         break
+
+                # 从 translate_paths 中移除已完成/被移除的路径，允许重新添加
+                try:
+                    if task.input_file in self.translate_paths:
+                        self.translate_paths.remove(task.input_file)
+                except Exception:
+                    pass
 
                 self.updateTaskUI(task_id)
 
-                # 开始下一个翻译
-                self.startNextTranslate()
+                # 开始下一个任务
+                self.startNextTask()
                 break
 
     def addTranslateTask(self, args):
@@ -80,3 +87,20 @@ class TranslateTaskInterface(BaseTaskInterface):
 
     def retryTranslate(self, task_id):
         self.retryTask(task_id)
+
+    def removeTask(self, task_id):
+        """覆盖父类移除以同步 translate_paths"""
+        # 在父类删除任务前，尝试获取任务的路径以便从 translate_paths 中移除
+        path = None
+        for task in self.tasks:
+            if task.id == task_id:
+                path = getattr(task, "input_file", None)
+                break
+
+        super().removeTask(task_id)
+
+        if path and path in self.translate_paths:
+            try:
+                self.translate_paths.remove(path)
+            except ValueError:
+                pass

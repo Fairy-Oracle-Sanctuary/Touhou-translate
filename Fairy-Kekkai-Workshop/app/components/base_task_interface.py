@@ -119,6 +119,8 @@ class BaseTaskInterface(ScrollArea):
     def addTask(self, args):
         """添加任务"""
         task = self.createTask(args)
+        if task is None:
+            return
         task_path = self.getTaskPath(task)
 
         if task_path in self.task_paths:

@@ -169,8 +169,8 @@ class SettingInterface(ScrollArea):
             self.tr("检查更新"),
             ":/app/images/logo.png",
             self.tr("关于"),
-            "© "
-            + self.tr("Copyright")
+            "🄯 "
+            + self.tr("Copyleft")
             + f" {YEAR}, {TEAM}. "
             + self.tr("当前版本")
             + " v"
