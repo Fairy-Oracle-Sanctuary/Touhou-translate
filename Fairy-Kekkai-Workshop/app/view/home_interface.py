@@ -2,6 +2,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QVBoxLayout, QWidget
+from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import ScrollArea
 
 from ..common.event_bus import event_bus
@@ -120,8 +121,35 @@ class HomeInterface(ScrollArea):
             url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.3.2/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
         )
 
+        webSampleView = SampleCardView(self.tr("常用网站"), self.view)
+        webSampleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/bilibili.svg"),
+            title="Bilibili",
+            content="哔哩哔哩视频平台",
+            url="https://www.bilibili.com/",
+        )
+        webSampleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/logo/youtube.svg"),
+            title="YouTube",
+            content="油管视频平台",
+            url="https://www.youtube.com/",
+        )
+        webSampleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/deepseek.svg"),
+            title="Deepseek",
+            content="深度求索",
+            url="https://www.deepseek.com/",
+        )
+        webSampleView.addOpenUrlCard(
+            icon=FIF.GITHUB,
+            title="GitHub",
+            content="GitHub代码仓库",
+            url="https://www.github.com/",
+        )
+
         self.vBoxLayout.addWidget(basicInputView)
         self.vBoxLayout.addWidget(urlSamepleView)
+        self.vBoxLayout.addWidget(webSampleView)
 
     def _connectSignalToSlot(self):
         # 检查更新
