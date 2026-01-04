@@ -15,7 +15,13 @@ from qfluentwidgets import (
     qconfig,
 )
 
-from .setting import CONFIG_FILE, CONFIG_FOLDER, EXE_SUFFIX, PIC_SUFFIX
+from .setting import (
+    CONFIG_FILE,
+    CONFIG_FOLDER,
+    EXE_SUFFIX,
+    PADDLEOCR_VERSION,
+    PIC_SUFFIX,
+)
 
 
 def isWin11():
@@ -105,9 +111,6 @@ class Config(QConfig):
     ytdlpPath = ConfigItem(
         "Download", "YTDLPPath", str(Path(f"tools/yt-dlp{EXE_SUFFIX}").absolute())
     )
-    ffmpegPath = ConfigItem(
-        "Download", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute())
-    )
 
     # ytdlp parameters
     # 下载格式选择：mp4(确保mp4格式), best(最佳质量), worst(最差质量), bestvideo(最佳视频), bestaudio(最佳音频)
@@ -116,8 +119,8 @@ class Config(QConfig):
         "YTDLP",
         "DownloadFormat",
         "mp4",
-        # OptionsValidator(["mp4", "best", "worst", "bestvideo", "bestaudio"]),
-        OptionsValidator(["mp4"]),
+        OptionsValidator(["mp4", "best", "worst", "bestvideo", "bestaudio"]),
+        # OptionsValidator(["mp4"]),
         restart=False,
     )
     # 视频质量选择：分辨率选项和最佳/最差选项
@@ -241,7 +244,7 @@ class Config(QConfig):
     videoCodec = OptionsConfigItem(
         "YTDLP",
         "VideoCodec",
-        "h264",
+        "h265",
         OptionsValidator(["h264", "h265", "vp9", "av1", "mp4v"]),
         restart=False,
     )
@@ -282,8 +285,18 @@ class Config(QConfig):
     # OCR Settings
     # paddleocr exe路径
     paddleocrPath = ConfigItem(
-        "OCR", "PaddleocrPath", str(Path(f"tools/paddleocr{EXE_SUFFIX}").absolute())
+        "OCR",
+        "PaddleocrPath",
+        str(
+            Path(
+                f"tools/PaddleOCR-{PADDLEOCR_VERSION}/paddleocr{EXE_SUFFIX}"
+            ).absolute()
+        ),
     )
+    # tools/PaddleOCR-CPU-v1.3.2/paddleocr{EXE_SUFFIX}
+    # tools/PaddleOCR-GPU-v1.3.2-CUDA-11.8/paddleocr{EXE_SUFFIX}
+    # tools/PaddleOCR-GPU-v1.3.2-CUDA-12.9/paddleocr{EXE_SUFFIX}
+
     # support.files路径
     supportFilesPath = ConfigItem(
         "OCR",
@@ -361,7 +374,7 @@ class Config(QConfig):
     gpuEnv = OptionsConfigItem(
         "OCR",
         "GpuEnv",
-        "GPU-v1.3.2-CUDA-11.8",
+        "CPU-v1.3.2",
         OptionsValidator(
             ["CPU-v1.3.2", "GPU-v1.3.2-CUDA-11.8", "GPU-v1.3.2-CUDA-12.9"]
         ),
@@ -409,6 +422,10 @@ class Config(QConfig):
     deepseekApiKey = ConfigItem("Translate", "ApiKey", "", restart=False)
 
     # ffmpeg settings
+    ffmpegPath = ConfigItem(
+        "FFmpeg", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute())
+    )
+
     # 视频编码器
     ffmpegVideoCodec = OptionsConfigItem(
         "FFmpeg",
@@ -573,5 +590,5 @@ class Config(QConfig):
 
 
 cfg = Config()
-cfg.themeMode.value = Theme.LIGHT
+cfg.themeMode.value = Theme.DARK
 qconfig.load(str(CONFIG_FILE.absolute()), cfg)

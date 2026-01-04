@@ -3,7 +3,14 @@ import os
 
 from app.common.config import cfg
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QLabel, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QLabel,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets import (
     FluentIcon,
     Pivot,
@@ -174,12 +181,20 @@ class DownloadInterface(ScrollArea):
                 )
                 return
 
-            # 设置默认下载路径
-            default_download_path = os.path.expanduser(r"~\Downloads")
+            path = QFileDialog.getExistingDirectory(
+                self,
+                self.tr("请选择要下载到的目录"),
+                os.path.expanduser("~\\Downloads"),
+            )
+            if not path:
+                event_bus.notification_service.show_warning(
+                    "输入错误", "请选择要下载到的目录"
+                )
+                return
 
             task = DownloadTask(
                 url=url,
-                download_path=default_download_path,
+                download_path=path,
                 file_name="",  # 使用配置中的输出模板
             )
             self.addDownloadTask(task)
@@ -219,7 +234,7 @@ class DownloadInterface(ScrollArea):
             task = waiting_tasks[0]
             self.startDownload(task)
 
-    def startDownload(self, task):
+    def startDownload(self, task: DownloadTask):
         """开始下载任务"""
         # 检查 yt-dlp 路径
         if not os.path.exists(cfg.ytdlpPath.value):
@@ -230,18 +245,6 @@ class DownloadInterface(ScrollArea):
             task.status = "失败"
             self.updateTaskUI(task.id)
             return
-
-        # 检查 ffmpeg 路径（如果需要）
-        # if (
-        #     cfg.embedSubtitles.value or cfg.embedThumbnail.value
-        # ) and not os.path.exists(cfg.ffmpegPath.value):
-        #     event_bus.notification_service.show_error(
-        #         "配置错误",
-        #         f"FFmpeg 路径不存在: {cfg.ffmpegPath.value}\n请在设置中配置正确的路径",
-        #     )
-        #     task.status = "失败"
-        #     self.updateTaskUI(task.id)
-        #     return
 
         # 创建下载线程
         download_thread = DownloadThread(task)

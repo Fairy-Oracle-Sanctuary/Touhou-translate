@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Fairy-Kekkai-Workshop\app\resource\images\logo.png" alt="logo" width="200"/>
+</p>
+
 <h1 align="center">
   东方Project同人作品翻译转载计划
 </h1>
@@ -89,12 +93,23 @@
 - **资源下载**：内置 YouTube 视频下载器，支持播放列表批量获取。
 - **字幕提取**: 利用 OCR 技术快速识别并提取视频中的硬字幕文本并生成srt字幕文件。
 - **AI翻译**: 接入Deepseek API，实现自动翻译功能(需自备API Key)。
-
-### 🚧 即将推出的功能
-
-- **项目管理增强**：提供更直观、高效的项目管理界面与操作体验。
-- **AI翻译增强**：提供更多翻译模型，提升翻译质量。
+- **视频压制**：集成 ffmpeg 工具，支持压制视频文件。
 
 ---
 
 **感谢所有原作者的精彩创作，以及每一位参与和关注本项目的朋友！**
+
+<a href="https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/graphs/contributors"> <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Touhou-translate" /> </a>
+
+<p>
+  <a href="https://space.bilibili.com/109338384" target="_blank">
+    <img src="https://i0.hdslb.com/bfs/face/af219ece11c0d2c4fd92cf993cb149dcfb5543d4.jpg@160w_160h_1c_1s.webp" alt="寄遗忘之物于流年" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+  <a href="https://space.bilibili.com/3546748681194187" target="_blank">
+    <img src="https://i1.hdslb.com/bfs/face/8cb688c437daa011c9b0c4c5d22885fef313a3c0.jpg@160w_160h_1c_1s.webp" alt="兴趣使然的鸽子口牙" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+  <a href="https://space.bilibili.com/1359356041" target="_blank">
+    <img src="https://i1.hdslb.com/bfs/face/525b8a0ed5081794c1add7888e1e5d7c8f9857bb.jpg@160w_160h_1c_1s.webp" alt="黎仟憶_アリス" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+
+</p>

@@ -47,10 +47,7 @@ Fairy-Kekkai-Workshop/dist/
 _internal/
 
 # 第三方库或预编译模型
-Fairy-Kekkai-Workshop/PaddleOCR-CPU-v1.3.2/
-Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-11.8/
-Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-12.9/
-Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files/
+Fairy-Kekkai-Workshop/tools/
 
 # ===================
 # 测试与临时文件

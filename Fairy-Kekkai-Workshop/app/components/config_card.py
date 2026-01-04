@@ -1,9 +1,12 @@
 # coding:utf-8
+import re
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator, QFont, QIntValidator
 from PySide6.QtWidgets import QFileDialog, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard,
+    Dialog,
     ExpandLayout,
     LineEdit,
     PasswordLineEdit,
@@ -19,6 +22,7 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import SettingCardGroup as CardGroup
 
 from ..common.config import cfg
+from ..common.setting import PADDLEOCR_VERSION
 
 
 class SettingCardGroup(CardGroup):
@@ -146,20 +150,20 @@ class YTDLPSettingInterface(ScrollArea):
         self.formatGroup = SettingCardGroup(
             self.tr("下载格式与质量"), self.scrollWidget
         )
-        self.downloadFormatCard = ComboBoxSettingCard(
-            cfg.downloadFormat,
-            FIF.VIDEO,
-            self.tr("下载格式"),
-            self.tr("选择视频下载格式"),
-            texts=[
-                self.tr("MP4格式"),
-                self.tr("最佳质量"),
-                self.tr("最差质量"),
-                self.tr("最佳视频"),
-                self.tr("最佳音频"),
-            ],
-            parent=self.formatGroup,
-        )
+        # self.downloadFormatCard = ComboBoxSettingCard(
+        #     cfg.downloadFormat,
+        #     FIF.VIDEO,
+        #     self.tr("下载格式"),
+        #     self.tr("选择视频下载格式"),
+        #     texts=[
+        #         self.tr("MP4格式"),
+        #         self.tr("最佳质量"),
+        #         self.tr("最差质量"),
+        #         self.tr("最佳视频"),
+        #         self.tr("最佳音频"),
+        #     ],
+        #     parent=self.formatGroup,
+        # )
         self.downloadQualityCard = ComboBoxSettingCard(
             cfg.downloadQuality,
             FIF.CAMERA,
@@ -177,22 +181,22 @@ class YTDLPSettingInterface(ScrollArea):
             ],
             parent=self.formatGroup,
         )
-        self.videoCodecCard = ComboBoxSettingCard(
-            cfg.videoCodec,
-            FIF.DEVELOPER_TOOLS,
-            self.tr("视频编码器"),
-            self.tr("选择视频编码格式"),
-            texts=["H.264", "H.265", "VP9", "AV1", "MP4V"],
-            parent=self.formatGroup,
-        )
-        self.audioCodecCard = ComboBoxSettingCard(
-            cfg.audioCodec,
-            FIF.MUSIC,
-            self.tr("音频编码器"),
-            self.tr("选择音频编码格式"),
-            texts=["AAC", "FLAC", "MP3", "Opus", "Vorbis"],
-            parent=self.formatGroup,
-        )
+        # self.videoCodecCard = ComboBoxSettingCard(
+        #     cfg.videoCodec,
+        #     FIF.DEVELOPER_TOOLS,
+        #     self.tr("视频编码器"),
+        #     self.tr("选择视频编码格式"),
+        #     texts=["H.264", "H.265", "VP9", "AV1", "MP4V"],
+        #     parent=self.formatGroup,
+        # )
+        # self.audioCodecCard = ComboBoxSettingCard(
+        #     cfg.audioCodec,
+        #     FIF.MUSIC,
+        #     self.tr("音频编码器"),
+        #     self.tr("选择音频编码格式"),
+        #     texts=["AAC", "FLAC", "MP3", "Opus", "Vorbis"],
+        #     parent=self.formatGroup,
+        # )
 
         # 代理设置
         self.proxyGroup = SettingCardGroup(self.tr("代理设置"), self.scrollWidget)
@@ -415,10 +419,10 @@ class YTDLPSettingInterface(ScrollArea):
         self.ytdlpPathGroup.addSettingCard(self.ytdlpPathCard)
 
         # 下载格式与质量
-        self.formatGroup.addSettingCard(self.downloadFormatCard)
+        # self.formatGroup.addSettingCard(self.downloadFormatCard)
         self.formatGroup.addSettingCard(self.downloadQualityCard)
-        self.formatGroup.addSettingCard(self.videoCodecCard)
-        self.formatGroup.addSettingCard(self.audioCodecCard)
+        # self.formatGroup.addSettingCard(self.videoCodecCard)
+        # self.formatGroup.addSettingCard(self.audioCodecCard)
 
         # 代理设置
         self.proxyGroup.addSettingCard(self.systemProxyCard)
@@ -762,9 +766,23 @@ class OCRSettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.featureGroup)
 
     def _onPaddleocrPathCardClicked(self):
-        path, _ = QFileDialog.getOpenFileName(self, self.tr("请选择paddleocr.exe"))
+        path, _ = QFileDialog.getOpenFileName(
+            self, self.tr("请选择paddleocr.exe"), filter="paddleocr.exe (*.exe)"
+        )
 
         if not path or cfg.get(cfg.paddleocrPath) == path:
+            return
+
+        # 检查路径中是否包含中文字符
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", path):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr("paddleocr.exe 路径不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
             return
 
         cfg.set(cfg.paddleocrPath, path)
@@ -778,19 +796,51 @@ class OCRSettingInterface(ScrollArea):
         if not path or cfg.get(cfg.supportFilesPath) == path:
             return
 
+        # 检查路径中是否包含中文字符
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", path):
+            print(path)
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr("PaddleOCR.PP-OCRv5.support.files 路径不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
         cfg.set(cfg.supportFilesPath, path)
         self.supportFilesPathCard.setContent(path)
 
-    def _changeSelection(self, isUseDualZone):
+    def _useDualZoneCardChangeSelection(self, isUseDualZone):
         """更改框选设置"""
         self.changeSelectionSignal.emit(isUseDualZone)
+
+    def _gpuEnvCardChangeSelection(self, gpu_env):
+        """更改框选设置"""
+        if gpu_env == "CPU-v1.3.2":
+            self.useGpuCard.switchButton.setChecked(False)
+            self.useGpuCard.switchButton.setEnabled(False)
+        else:
+            self.useGpuCard.switchButton.setEnabled(True)
 
     def _connectSignalToSlot(self):
         """绑定信号"""
         # self.useFullframeCard.checkedChanged.connect(lambda: self._changeSelection(0))
         self.paddleocrPathCard.clicked.connect(self._onPaddleocrPathCardClicked)
         self.supportFilesPathCard.clicked.connect(self._onSupportFilesPathCardClicked)
-        self.useDualZoneCard.checkedChanged.connect(lambda v: self._changeSelection(v))
+        self.useDualZoneCard.checkedChanged.connect(
+            lambda v: self._useDualZoneCardChangeSelection(v)
+        )
+        self.gpuEnvCard.comboBox.currentTextChanged.connect(
+            lambda v: self._gpuEnvCardChangeSelection(v)
+        )
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._gpuEnvCardChangeSelection(PADDLEOCR_VERSION)
+        self.gpuEnvCard.comboBox.setCurrentText(PADDLEOCR_VERSION)
+        self.gpuEnvCard.comboBox.setEnabled(False)
 
 
 class TranslateSettingInterface(ScrollArea):
@@ -853,6 +903,18 @@ class FFmpegSettingInterface(ScrollArea):
 
         # setting label
         self.settingLabel = TitleLabel(self.tr("FFmpeg 视频压制设置"), self)
+
+        # ffmpeg路径
+        self.ffmpegPathGroup = SettingCardGroup(
+            self.tr("FFmpeg 路径"), self.scrollWidget
+        )
+        self.ffmpegPathCard = PushSettingCard(
+            self.tr("选择文件"),
+            ":/app/images/logo/FFmpeg.svg",
+            "FFmpeg",
+            cfg.get(cfg.ffmpegPath),
+            self.ffmpegPathGroup,
+        )
 
         # 基本视频参数
         self.basicVideoGroup = SettingCardGroup(
@@ -1088,6 +1150,15 @@ class FFmpegSettingInterface(ScrollArea):
 
         self.__initWidget()
 
+    def _onFFmpegPathCardClicked(self):
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择ffmpeg文件"))
+
+        if not path or cfg.get(cfg.ffmpegPath) == path:
+            return
+
+        cfg.set(cfg.ffmpegPath, path)
+        self.ffmpegPathCard.setContent(path)
+
     def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1106,6 +1177,9 @@ class FFmpegSettingInterface(ScrollArea):
 
     def __initLayout(self):
         self.settingLabel.move(36, 40)
+
+        # ffmpeg路径
+        self.ffmpegPathGroup.addSettingCard(self.ffmpegPathCard)
 
         # 基本视频参数
         self.basicVideoGroup.addSettingCard(self.videoCodecCard)
@@ -1145,6 +1219,7 @@ class FFmpegSettingInterface(ScrollArea):
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.ffmpegPathGroup)
         self.expandLayout.addWidget(self.basicVideoGroup)
         self.expandLayout.addWidget(self.audioGroup)
         self.expandLayout.addWidget(self.advancedGroup)
@@ -1154,4 +1229,4 @@ class FFmpegSettingInterface(ScrollArea):
 
     def _connectSignalToSlot(self):
         """绑定信号"""
-        pass
+        self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)

@@ -4,9 +4,9 @@ from pathlib import Path
 
 AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
-VERSION = "1.12.0"
+VERSION = "1.13.0"
 YEAR = "2025"
-UPDATE_TIME = "2026-1-1"
+UPDATE_TIME = "2026-1-5"
 
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
@@ -20,6 +20,11 @@ COVER_FOLDER = CONFIG_FOLDER / "Cover"
 COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 
 PIC_SUFFIX = ".jpg"
+
+PADDLEOCR_VERSION = "GPU-v1.3.2-CUDA-11.8"
+# CPU-v1.3.2
+# GPU-v1.3.2-CUDA-11.8
+# GPU-v1.3.2-CUDA-12.9
 
 # videocr
 videocr_languages_dict = {

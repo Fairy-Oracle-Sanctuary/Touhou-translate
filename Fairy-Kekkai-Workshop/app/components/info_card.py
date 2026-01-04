@@ -14,7 +14,7 @@ from qfluentwidgets import (
     VerticalSeparator,
 )
 
-from ..common.setting import GITHUB_URL, UPDATE_TIME, VERSION
+from ..common.setting import GITHUB_URL, PADDLEOCR_VERSION, UPDATE_TIME, VERSION
 from ..resource import resource_rc  # noqa: F401
 from .statistic_widget import StatisticsWidget
 
@@ -38,8 +38,10 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         )
 
         self.versionWidget = StatisticsWidget(self.tr("版本"), f"v{VERSION}", self)
-        # self.fileSizeWidget = StatisticsWidget(self.tr("文件大小"), "400MB", self)
         self.updateTimeWidget = StatisticsWidget(self.tr("更新时间"), UPDATE_TIME, self)
+        self.paddleocrWidget = StatisticsWidget(
+            self.tr("PaddleOCR"), PADDLEOCR_VERSION, self
+        )
 
         self.descriptionLabel = BodyLabel(
             self.tr("仙 · 结界工坊"),
@@ -105,10 +107,10 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.statisticsLayout.setSpacing(10)
         self.statisticsLayout.addWidget(self.versionWidget)
         self.statisticsLayout.addWidget(VerticalSeparator())
-        # self.statisticsLayout.addWidget(self.fileSizeWidget)
-        # self.statisticsLayout.addWidget(VerticalSeparator())
         self.statisticsLayout.addWidget(self.updateTimeWidget)
         self.statisticsLayout.setAlignment(Qt.AlignLeft)
+        self.statisticsLayout.addWidget(VerticalSeparator())
+        self.statisticsLayout.addWidget(self.paddleocrWidget)
 
         # description label
         self.vBoxLayout.addSpacing(20)

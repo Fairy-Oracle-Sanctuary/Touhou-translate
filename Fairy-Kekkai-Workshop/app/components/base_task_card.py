@@ -1,5 +1,7 @@
 # coding:utf-8
 import os
+import platform
+import subprocess
 
 from PySide6.QtCore import QFileInfo, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
@@ -141,14 +143,30 @@ class BaseItemWidget(CardWidget):
 
     def openFolder(self):
         """打开文件夹"""
-        # 获取目录
-        if self.task.output_file and os.path.exists(self.task.output_file):
-            folder_path = os.path.dirname(self.task.output_file)
-            QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
+        if os.path.exists(self.task.output_file):
+            # 打开文件所在文件夹并选中文件
+            if platform.system() == "Windows":
+                subprocess.Popen(
+                    f'explorer /select,"{self.task.output_file}"',
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+            elif platform.system() == "Darwin":
+                subprocess.Popen(
+                    ["open", "-R", self.task.output_file],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+            else:
+                # Linux系统
+                folder_path = os.path.dirname(self.task.output_file)
+                subprocess.Popen(
+                    ["xdg-open", folder_path],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
         else:
-            event_bus.notification_service.show_warning(
-                "打开文件夹失败", "视频文件路径不存在，无法打开文件夹。"
-            )
+            # 如果文件不存在，只打开文件夹
+            folder_path = os.path.dirname(self.task.output_file)
+            if os.path.exists(folder_path):
+                QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
     def cancelTranslate(self):
         """取消下载 - 异步版本"""

@@ -431,18 +431,18 @@ class ProjectDetailInterface(ScrollArea):
                 result = project.addEpisode(
                     self.card_id,
                     folder_num,
-                    dialog.LineEdit_1.text().strip(),
-                    dialog.LineEdit_2.text().strip(),
                     dialog.LineEdit_3.text().strip(),
+                    dialog.LineEdit_2.text().strip(),
+                    dialog.LineEdit_1.text().strip(),
                     isTranslated=True,
                 )
             else:
                 result = project.addEpisode(
                     self.card_id,
                     folder_num,
-                    dialog.LineEdit_1.text().strip(),
-                    "",
                     dialog.LineEdit_2.text().strip(),
+                    "",
+                    dialog.LineEdit_1.text().strip(),
                     isTranslated=False,
                 )
 

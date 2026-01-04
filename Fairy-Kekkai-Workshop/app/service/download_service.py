@@ -49,7 +49,7 @@ class DownloadThread(QThread):
     finished_signal = Signal(bool, str)  # 成功/失败, 消息
     cancelled_signal = Signal()  # 新增：取消完成信号
 
-    def __init__(self, task):
+    def __init__(self, task: DownloadTask):
         super().__init__()
         self.task = task
         self.is_cancelled = False
@@ -124,11 +124,11 @@ class DownloadThread(QThread):
             cmd.extend(["--cookies", cfg.cookiesFile.value])
 
         # 编码器设置
-        if cfg.videoCodec.value != "h264":
-            cmd.extend(["--video-codec", cfg.videoCodec.value])
+        # if cfg.videoCodec.value != "h264":
+        #     cmd.extend(["--video-codec", cfg.videoCodec.value])
 
-        if cfg.audioCodec.value != "aac":
-            cmd.extend(["--audio-codec", cfg.audioCodec.value])
+        # if cfg.audioCodec.value != "aac":
+        #     cmd.extend(["--audio-codec", cfg.audioCodec.value])
 
         # ffmpeg 路径
         if cfg.ffmpegPath.value:
@@ -186,7 +186,7 @@ class DownloadThread(QThread):
 
             # 构建命令
             cmd = self.build_ytdlp_command()
-            print(f"执行命令: {' '.join(cmd)}")
+            print(f"执行yt-dlp命令: {' '.join(cmd)}")
 
             # 创建QProcess
             self.process = QProcess()

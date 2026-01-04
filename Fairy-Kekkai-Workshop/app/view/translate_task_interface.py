@@ -10,7 +10,7 @@ from ..service.deepseek_service import TranslateTask, TranslateThread
 
 
 class TranslateTaskInterface(BaseTaskInterface):
-    """提取字幕界面"""
+    """翻译字幕界面"""
 
     returnTranslateTask = Signal(
         bool, list, bool

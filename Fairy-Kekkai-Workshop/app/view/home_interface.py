@@ -83,7 +83,7 @@ class HomeInterface(ScrollArea):
             title="视频压制",
             content=self.tr("压制烤制好的视频"),
             routeKey="FFmpegStackedInterface",
-            index=6,
+            index=5,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),
@@ -109,14 +109,14 @@ class HomeInterface(ScrollArea):
         )
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/Paddle.svg"),
-            title="PaddleOCR (未内置)",
+            title="PaddleOCR (已内置)",
             content="PaddleOCR下载地址，根据您的硬件下载\n对应版本后设置其路径",
             url="https://github.com/timminator/PaddleOCR-Standalone/releases/latest",
         )
 
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/Paddle.svg"),
-            title="PaddleOCRv5.support.files (未内置)",
+            title="PaddleOCRv5.support.files (已内置)",
             content="PaddleOCR支持文件下载地址\n下载后设置其路径",
             url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.3.2/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
         )

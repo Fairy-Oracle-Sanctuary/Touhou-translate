@@ -18,6 +18,7 @@ from qfluentwidgets import (
 )
 
 from ..common.event_bus import event_bus
+from ..service.download_service import DownloadTask
 
 
 class DownloadItemWidget(CardWidget):
@@ -27,7 +28,7 @@ class DownloadItemWidget(CardWidget):
     removeTaskSignal = Signal(int)  # 任务ID
     retryDownloadSignal = Signal(int)  # 任务ID
 
-    def __init__(self, task, parent=None):
+    def __init__(self, task: DownloadTask, parent=None):
         super().__init__(parent)
         self.task = task
         self.download_thread = None
@@ -40,26 +41,33 @@ class DownloadItemWidget(CardWidget):
     def _initUI(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 10, 15, 10)
+        layout.setSpacing(8)
 
         # 第一行：标题和状态
         titleLayout = QHBoxLayout()
 
-        # 文件图标
+        # 文件图标（增大并居中）
         iconWidget = IconWidget(FluentIcon.VIDEO, self)
+        iconWidget.setFixedSize(44, 44)
 
-        # 标题和项目信息
+        # 标题和项目信息（更清晰的层次）
         titleInfoLayout = QVBoxLayout()
-        self.titleLabel = StrongBodyLabel("视频下载", self)
-
-        projectInfo = StrongBodyLabel(f"{self.task.download_path}", self)
+        titleInfoLayout.setSpacing(2)
+        # 显示文件名（若有）或默认标题
+        self.titleLabel = StrongBodyLabel(self.task.filename or "视频下载", self)
+        # 路径或项目信息用较小的说明文本
+        projectInfo = CaptionLabel(self.task.download_path, self)
+        projectInfo.setToolTip(self.task.download_path)
 
         titleInfoLayout.addWidget(self.titleLabel)
         titleInfoLayout.addWidget(projectInfo)
 
         # 状态标签
-        self.statusPill = PillPushButton(self.task.status, self)  # 改为实例变量
+        # 状态标签：保留 Pill 风格，设置固定宽度便于对齐
+        self.statusPill = PillPushButton(self.task.status, self)
         self.statusPill.setDisabled(True)
         self.statusPill.setChecked(True)
+        self.statusPill.setFixedWidth(110)
         self.updateStatusStyle(self.statusPill)
 
         titleLayout.addWidget(iconWidget)
@@ -70,12 +78,13 @@ class DownloadItemWidget(CardWidget):
         # 第二行：进度条和速度
         progressLayout = QHBoxLayout()
 
+        # 进度条与速度（更紧凑的进度条）
         self.progressBar = ProgressBar(self)
         self.progressBar.setValue(self.task.progress)
+        self.progressBar.setFixedHeight(8)
 
-        self.speedLabel = CaptionLabel(
-            self.task.speed or "初始化中", self
-        )  # 改为实例变量
+        self.speedLabel = CaptionLabel(self.task.speed or "初始化中", self)
+        self.speedLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         progressLayout.addWidget(self.progressBar, 4)
         progressLayout.addWidget(self.speedLabel, 1)
@@ -83,37 +92,46 @@ class DownloadItemWidget(CardWidget):
         # 第三行：URL信息和操作按钮
         infoLayout = QHBoxLayout()
 
-        urlLabel = CaptionLabel(
+        # URL 信息（短显示，完整地址在 Tooltip）
+        short_url = (
             f"URL: {self.task.url[:50]}..."
             if len(self.task.url) > 50
-            else f"URL: {self.task.url}",
-            self,
+            else f"URL: {self.task.url}"
         )
+        urlLabel = CaptionLabel(short_url, self)
+        urlLabel.setToolTip(self.task.url)
         urlLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
         # 操作按钮
         buttonLayout = QHBoxLayout()
 
+        # 操作按钮（紧凑排列并统一大小）
+        btn_size = 26
         self.openFolderBtn = TransparentToolButton(FluentIcon.FOLDER, self)
         self.openFolderBtn.setToolTip("打开文件夹")
         self.openFolderBtn.setVisible(self.task.status == "已完成")
+        self.openFolderBtn.setFixedSize(btn_size, btn_size)
         self.openFolderBtn.clicked.connect(self.openFolder)
 
         self.cancelBtn = TransparentToolButton(FluentIcon.CLOSE, self)
         self.cancelBtn.setToolTip("取消下载")
         self.cancelBtn.setVisible(self.task.status == "下载中")
+        self.cancelBtn.setFixedSize(btn_size, btn_size)
         self.cancelBtn.clicked.connect(self.cancelDownload)
 
         self.retryBtn = TransparentToolButton(FluentIcon.SYNC, self)
         self.retryBtn.setToolTip("重新下载")
         self.retryBtn.setVisible(self.task.status == "失败")
+        self.retryBtn.setFixedSize(btn_size, btn_size)
         self.retryBtn.clicked.connect(self.retryDownload)
 
         self.removeBtn = TransparentToolButton(FluentIcon.DELETE, self)
         self.removeBtn.setToolTip("移除任务")
         self.removeBtn.setDisabled(True)
+        self.removeBtn.setFixedSize(btn_size, btn_size)
         self.removeBtn.clicked.connect(self.removeTask)
 
+        buttonLayout.setSpacing(6)
         buttonLayout.addWidget(self.openFolderBtn)
         buttonLayout.addWidget(self.cancelBtn)
         buttonLayout.addWidget(self.retryBtn)
