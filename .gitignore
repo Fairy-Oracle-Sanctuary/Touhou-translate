@@ -34,6 +34,7 @@ project-x/
 Output/
 build/
 dist/
+PADDLEOCR_VERSION
 
 # Fairy-Kekkai-Workshop 项目的构建产物
 Fairy-Kekkai-Workshop/build/
