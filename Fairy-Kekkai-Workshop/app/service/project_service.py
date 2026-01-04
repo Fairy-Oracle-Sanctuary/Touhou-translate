@@ -9,7 +9,7 @@ class Project:
         self.project_path = self.get_project_paths()
         self.project_num = self.project_path.__len__()
         self.project_video_url = [[] for _ in range(self.project_num)]
-        self.project_subtitle_isTranslated = [[] for _ in range(self.project_num)]
+        self.project_subtitle_isTranslated = []
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
         self.project_subtitle = self.get_project_subtitles()
@@ -26,16 +26,35 @@ class Project:
                 self.isLink.append(False)
 
         # 处理外部路径
-        link_paths = cfg.linkProject.get("project_link")
-        true_paths = []
-        for path in link_paths:
-            if self.is_project(path):
-                self.isLink.append(True)
-                true_paths.append(path)
-            project_paths.append(Path(path))
-        cfg.linkProject.set("project_link", true_paths)
+        try:
+            link_paths = cfg.linkProject.get("project_link")
+            true_paths = []
+            for path in link_paths:
+                if self.is_project(path):
+                    self.isLink.append(True)
+                    true_paths.append(path)
+                project_paths.append(Path(path))
+            cfg.linkProject.set("project_link", true_paths)
+        except Exception:
+            pass
 
         return project_paths
+
+    def get_project_subtitle_isTranslated(self):
+        """获取工程标题是否翻译"""
+        project_subtitle_isTranslated = []
+        for path in range(self.project_num):
+            with open(self.project_path[path] / "标题.txt", "r", encoding="utf-8") as f:
+                content = f.readlines()
+                for n, line in enumerate(content):
+                    if line == "\n" and content[n + 3] == "\n":
+                        project_subtitle_isTranslated.append(True)
+                        break
+                    elif line == "\n" and content[n + 3] != "\n":
+                        project_subtitle_isTranslated.append(False)
+                        break
+
+        return project_subtitle_isTranslated
 
     def get_project_names(self):
         """获取工程名"""
@@ -277,13 +296,13 @@ class Project:
                 lines.insert(line_number, trans_title + "\n")
                 lines.insert(line_number, video_url + "\n")
                 lines.insert(line_number, "\n")
-                lines.insert(id, origin_title + "\n")
+                lines.insert(episode_num - 1, video_url + "\n")
             else:
                 line_number = length + 3 * (episode_num - 1)
                 lines.insert(line_number, origin_title + "\n")
                 lines.insert(line_number, video_url + "\n")
                 lines.insert(line_number, "\n")
-                lines.insert(id, origin_title + "\n")
+                lines.insert(episode_num - 1, video_url + "\n")
 
             # 将修改后的内容写回文件
             with file_path.open("w", encoding="utf-8") as file:

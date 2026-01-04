@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Fairy-Kekkai-Workshop\app\resource\images\logo.png" alt="logo" width="200"/>
+</p>
+
 <h1 align="center">
   東方Project二次創作翻訳転載プロジェクト
 </h1>
@@ -89,11 +93,23 @@
 *   **リソースダウンロード:** YouTubeビデオダウンローダー内蔵、プレイリストからの一括取得をサポート。
 *   **字幕抽出:** OCR技術を利用して、動画内のハードコードされた字幕テキストを素早く認識・抽出し、SRT字幕ファイルを生成します。
 *   **AI翻訳:** Deepseek APIに接続し、自動翻訳機能を実現（API Keyは各自で準備が必要）。
+*   **视频压制:** ffmpeg ツールを組み込み、動画ファイルの压制をサポート。
 
-### 🚧 近日公開予定の機能
-
-*   **プロジェクト管理機能の強化:** より直感的で効率的なプロジェクト管理インターフェースと操作性を提供します。
-*   **AI翻訳機能の強化:** より多くの翻訳モデルを提供し、翻訳品質の向上を図ります。
 ---
 
 **すべての原作者の素晴らしい創作と、このプロジェクトに参加、注目してくださるすべての皆様に感謝します！**
+
+<a href="https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/graphs/contributors"> <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Touhou-translate" /> </a>
+
+<p>
+  <a href="https://space.bilibili.com/109338384" target="_blank">
+    <img src="https://i0.hdslb.com/bfs/face/af219ece11c0d2c4fd92cf993cb149dcfb5543d4.jpg@160w_160h_1c_1s.webp" alt="寄遗忘之物于流年" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+  <a href="https://space.bilibili.com/3546748681194187" target="_blank">
+    <img src="https://i1.hdslb.com/bfs/face/8cb688c437daa011c9b0c4c5d22885fef313a3c0.jpg@160w_160h_1c_1s.webp" alt="兴趣使然的鸽子口牙" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+  <a href="https://space.bilibili.com/1359356041" target="_blank">
+    <img src="https://i1.hdslb.com/bfs/face/525b8a0ed5081794c1add7888e1e5d7c8f9857bb.jpg@160w_160h_1c_1s.webp" alt="黎仟憶_アリス" style="border-radius: 50%; width: 65px; height: 65px; margin: 0 1px;" />
+  </a>
+
+</p>

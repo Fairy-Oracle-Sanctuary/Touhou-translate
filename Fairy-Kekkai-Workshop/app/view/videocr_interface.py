@@ -2,6 +2,10 @@
 # coding:utf-8
 
 
+import os
+import re
+import tempfile
+
 import cv2
 from PySide6.QtCore import Qt, QTime
 from PySide6.QtWidgets import (
@@ -12,6 +16,7 @@ from qfluentwidgets import (
     CaptionLabel,
     CardWidget,
     ComboBox,
+    Dialog,
     ExpandSettingCard,
     PushButton,
     Slider,
@@ -256,6 +261,31 @@ class VideocrInterface(BaseFunctionInterface):
 
     def _start_processing(self):
         """开始OCR处理"""
+        # 先检测临时文件夹路径是否有中文
+        temp_path = tempfile.gettempdir()
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", temp_path):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr(f"临时文件夹路径 {temp_path} 不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        if not os.path.exists(cfg.get(cfg.paddleocrPath)):
+            self.show_error_message(
+                f"PaddleOCR路径不存在: {cfg.get(cfg.paddleocrPath)}"
+            )
+            return
+
+        if not os.path.exists(cfg.get(cfg.supportFilesPath)):
+            self.show_error_message(
+                f"支持文件夹路径不存在: {cfg.get(cfg.supportFilesPath)}"
+            )
+            return
+
         if not self.file_path:
             self.show_error_message("请先选择视频文件")
             return

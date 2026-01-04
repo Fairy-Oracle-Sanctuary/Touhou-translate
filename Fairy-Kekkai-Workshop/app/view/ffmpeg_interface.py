@@ -32,9 +32,9 @@ class FFmpegInterface(BaseFunctionInterface):
         self.file_video = None
         super().__init__(parent, "压制")
 
-        self.file_extension = "*.mp4;*.flv;*.mkv;*.avi;*.wmv;*.mpg;*.avs"
-        self.default_output_suffix = "_.mp4"
-        self.special_filename_mapping = {"熟肉.mp4": "熟肉_.mp4"}
+        self.file_extension = "*.mp4;*.flv;*.mkv;*.avi;*.wmv;*.mpg;*.avs;*.mov"
+        self.default_output_suffix = "_compressed.mp4"
+        self.special_filename_mapping = {"熟肉.mp4": "熟肉_compressed.mp4"}
 
         self.settingsGroup.setVisible(False)
 

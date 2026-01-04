@@ -1,7 +1,7 @@
 import os
 import sys
 
-from app.common.setting import VERSION
+from app.common.setting import PADDLEOCR_VERSION, VERSION
 
 if sys.platform == "win32":
     args = [
@@ -20,12 +20,11 @@ if sys.platform == "win32":
         f"--windows-product-version={VERSION}",
         '--windows-file-description="Fairy Kekkai Workshop"',
         "--output-dir=Fairy-Kekkai-Workshop/dist",
-        # --- 新增的参数 ---
+        # tools/
         "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
         "--include-data-files=Fairy-Kekkai-Workshop/tools/ffmpeg.exe=tools/ffmpeg.exe",
-        # "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR-GPU-v1.3.2-CUDA-12.9=PaddleOCR-GPU-v1.3.2-CUDA-12.9",
-        # "--include-data-dir=Fairy-Kekkai-Workshop/PaddleOCR.PP-OCRv5.support.files=PaddleOCR.PP-OCRv5.support.files",
-        # --- 新增参数结束 ---
+        "--include-data-dir=Fairy-Kekkai-Workshop/tools/PaddleOCR.PP-OCRv5.support.files=tools/PaddleOCR.PP-OCRv5.support.files",
+        f"--include-data-dir=Fairy-Kekkai-Workshop/tools/PaddleOCR-{PADDLEOCR_VERSION}=tools/PaddleOCR-{PADDLEOCR_VERSION}",
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]
 
