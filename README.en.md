@@ -111,4 +111,7 @@ This repository houses a collection of self-developed auxiliary scripts and tool
   <a href="https://space.bilibili.com/1359356041" target="_blank">
     <img src="https://i1.hdslb.com/bfs/face/525b8a0ed5081794c1add7888e1e5d7c8f9857bb.jpg@160w_160h_1c_1s.webp" alt="黎仟憶_アリス" style="border-radius: 50%; width: 65px; height: 65px; display: inline-block; overflow: hidden;" />
   </a>
+  <a href="https://space.bilibili.com/269144656" target="_blank">
+    <img src="https://i2.hdslb.com/bfs/face/fa194eb0a40adb2bd8a2ba5e25a98a4b35e98ab7.jpg@128w_128h_1c_1s.webp" alt="孤独红人馆" style="border-radius: 50%; width: 65px; height: 65px; display: inline-block; overflow: hidden;" />
+  </a>
 </p>
