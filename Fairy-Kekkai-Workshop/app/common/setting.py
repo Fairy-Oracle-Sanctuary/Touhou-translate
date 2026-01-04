@@ -21,7 +21,8 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 
 PIC_SUFFIX = ".jpg"
 
-PADDLEOCR_VERSION = "GPU-v1.3.2-CUDA-11.8"
+with open("PADDLEOCR_VERSION", "r") as f:
+    PADDLEOCR_VERSION = f.read().strip()
 # CPU-v1.3.2
 # GPU-v1.3.2-CUDA-11.8
 # GPU-v1.3.2-CUDA-12.9

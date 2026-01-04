@@ -1,7 +1,7 @@
 import os
 import sys
 
-from app.common.setting import PADDLEOCR_VERSION, VERSION
+from app.common.setting import VERSION
 
 if sys.platform == "win32":
     args = [
@@ -23,8 +23,6 @@ if sys.platform == "win32":
         # tools/
         "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
         "--include-data-files=Fairy-Kekkai-Workshop/tools/ffmpeg.exe=tools/ffmpeg.exe",
-        "--include-data-dir=Fairy-Kekkai-Workshop/tools/PaddleOCR.PP-OCRv5.support.files=tools/PaddleOCR.PP-OCRv5.support.files",
-        f"--include-data-dir=Fairy-Kekkai-Workshop/tools/PaddleOCR-{PADDLEOCR_VERSION}=tools/PaddleOCR-{PADDLEOCR_VERSION}",
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]
 

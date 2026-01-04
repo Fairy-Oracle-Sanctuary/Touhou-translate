@@ -261,7 +261,33 @@ class VideocrInterface(BaseFunctionInterface):
 
     def _start_processing(self):
         """开始OCR处理"""
-        # 先检测临时文件夹路径是否有中文
+        # 检测paddleocr路径内是否有中文
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", cfg.get(cfg.paddleocrPath)):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr(f"PaddleOCR路径 {cfg.get(cfg.paddleocrPath)} 不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        # 检测supportFiles路径是否有中文
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", cfg.get(cfg.supportFilesPath)):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr(
+                    f"支持文件夹路径 {cfg.get(cfg.supportFilesPath)} 不能包含中文字符"
+                ),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        # 检测临时文件夹路径是否有中文
         temp_path = tempfile.gettempdir()
         if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", temp_path):
             dialog = Dialog(
