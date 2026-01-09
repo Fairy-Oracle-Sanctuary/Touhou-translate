@@ -19,7 +19,7 @@
   </a>
 
   <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Version-1.11.0-blue.svg" alt="Version 1.12.0"/>
+    <img src="https://img.shields.io/badge/Version-1.13.0-blue.svg" alt="Version 1.13.0"/>
   </a>
 </p>
 
