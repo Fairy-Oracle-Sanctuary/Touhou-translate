@@ -122,7 +122,9 @@ class BaseItemWidget(CardWidget):
         self.retryBtn.setVisible(status == "失败")
 
         # 设置按钮可用性
-        self.removeBtn.setEnabled(status == "已完成" or status == "失败")
+        self.removeBtn.setEnabled(
+            status == "已完成" or status == "失败" or status == "已取消"
+        )
 
         # 进度条
         self.progressBar.setVisible(status == f"{self.task_type}中")

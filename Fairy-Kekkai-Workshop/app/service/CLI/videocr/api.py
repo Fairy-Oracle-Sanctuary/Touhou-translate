@@ -19,7 +19,7 @@ def save_subtitles_to_file(
     use_gpu=False,
     use_angle_cls=False,
     use_server_model=False,
-    brightness_threshold=None,
+    # brightness_threshold=None,
     ssim_threshold=92,
     subtitle_position="center",
     frames_to_skip=1,
@@ -27,7 +27,6 @@ def save_subtitles_to_file(
     ocr_image_max_width=1280,
     post_processing=False,
     min_subtitle_duration_sec=0.2,
-    gpu_env="CPU-v1.3.2",
 ) -> None:
     if crop_zones is None:
         crop_zones = []
@@ -66,7 +65,7 @@ def save_subtitles_to_file(
         time_end,
         conf_threshold,
         use_fullframe,
-        brightness_threshold,
+        # brightness_threshold,
         ssim_threshold,
         subtitle_position,
         frames_to_skip,

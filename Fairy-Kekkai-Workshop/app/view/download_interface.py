@@ -23,7 +23,7 @@ from ..common.event_bus import event_bus
 from ..components.config_card import YTDLPSettingInterface
 from ..components.dialog import CustomMessageBox
 from ..components.download_card import DownloadItemWidget
-from ..service.download_service import DownloadTask, DownloadThread
+from ..service.download_service import DownloadProcess, DownloadTask
 
 
 class DownloadStackedInterface(QWidget):
@@ -247,7 +247,7 @@ class DownloadInterface(ScrollArea):
             return
 
         # 创建下载线程
-        download_thread = DownloadThread(task)
+        download_thread = DownloadProcess(task)
         download_thread.progress_signal.connect(
             lambda progress, speed, filename: self.onDownloadProgress(
                 task.id, progress, speed, filename

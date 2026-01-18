@@ -100,7 +100,6 @@ class OCRThread(QThread):
             return
 
         self.is_cancelled = True
-        self.task.status = "已取消"
 
         # 立即发送取消日志，不等待线程结束
         self.log_signal.emit("正在取消OCR处理...")

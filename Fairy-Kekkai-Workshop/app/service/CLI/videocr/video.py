@@ -89,7 +89,7 @@ class Video:
         time_end: str,
         conf_threshold: int,
         use_fullframe: bool,
-        brightness_threshold: int,
+        # brightness_threshold: int,
         ssim_threshold: int,
         subtitle_position: str,
         frames_to_skip: int,

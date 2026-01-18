@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime
 
-from PySide6.QtCore import QProcess, QThread, QTimer, Signal
+from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -28,8 +28,8 @@ class FFmpegTask:
         self.id = FFmpegTask._id_counter
 
 
-class FFmpegThread(QThread):
-    """FFmpeg压制线程"""
+class FFmpegProcess(QObject):
+    """FFmpeg压制进程"""
 
     progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 状态信息
     finished_signal = Signal(bool, str)  # 成功/失败, 消息
@@ -206,7 +206,7 @@ class FFmpegThread(QThread):
             print(f"使用FFmpeg获取时长失败: {str(e)}")
             return [False, str(e)]
 
-    def run(self):
+    def start(self):
         self.task.status = "压制中"
         self.task.start_time = datetime.now()
 
@@ -247,9 +247,6 @@ class FFmpegThread(QThread):
 
             # 启动进程
             self.process.start()
-
-            # 等待进程完成（在事件循环中）
-            self.exec()
 
         except Exception as e:
             if not self.is_cancelled:
@@ -398,9 +395,6 @@ class FFmpegThread(QThread):
             self.finished_signal.emit(False, error_message)
             event_bus.ffmpeg_finished_signal.emit(False, error_message)
 
-        # 退出事件循环
-        self.quit()
-
     def handle_error(self, error):
         """处理进程错误"""
         if self.is_cancelled:
@@ -420,7 +414,7 @@ class FFmpegThread(QThread):
 
     def cancel(self):
         """取消压制 - 异步非阻塞版本"""
-        if not self.isRunning() or self.is_cancelled:
+        if self.is_cancelled:
             return
 
         self.is_cancelled = True

@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 
 import requests
-from PySide6.QtCore import QProcess, QThread, QTimer, Signal
+from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -42,8 +42,8 @@ class DownloadTask:
         self.id = DownloadTask._id_counter
 
 
-class DownloadThread(QThread):
-    """下载线程 - 使用QProcess版本"""
+class DownloadProcess(QObject):
+    """下载进程 - 使用QProcess版本"""
 
     progress_signal = Signal(int, str, str)  # 进度百分比, 速度, 文件名
     finished_signal = Signal(bool, str)  # 成功/失败, 消息
@@ -149,7 +149,7 @@ class DownloadThread(QThread):
 
         return cmd
 
-    def run(self):
+    def start(self):
         # 网络检查部分保持不变
         try:
             resp = requests.get("https://www.youtube.com", timeout=3)
@@ -203,12 +203,6 @@ class DownloadThread(QThread):
 
             # 启动进程
             self.process.start()
-
-            # 等待进程完成（在事件循环中）
-            self.exec()
-
-            # 发送信号
-            event_bus.download_finished_signal.emit(True, self.task.download_path)
 
         except Exception as e:
             if not self.is_cancelled:
@@ -298,6 +292,7 @@ class DownloadThread(QThread):
             self.task.progress = 100
             self.task.end_time = datetime.now()
             self.finished_signal.emit(True, "下载完成")
+            event_bus.download_finished_signal.emit(True, self.task.download_path)
         else:
             # 获取详细的错误信息
             error_detail = self.get_error_detail(exit_code)
@@ -312,9 +307,6 @@ class DownloadThread(QThread):
             self.task.error_message = error_message
             self.task.end_time = datetime.now()
             self.finished_signal.emit(False, error_message)
-
-        # 退出事件循环
-        self.quit()
 
     def handle_error(self, error):
         """处理进程错误"""
@@ -397,7 +389,7 @@ class DownloadThread(QThread):
 
     def cancel(self):
         """取消下载 - 异步非阻塞版本"""
-        if not self.isRunning() or self.is_cancelled:
+        if self.is_cancelled:
             return
 
         self.is_cancelled = True
