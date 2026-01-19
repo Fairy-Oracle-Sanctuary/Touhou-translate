@@ -132,7 +132,7 @@ subtitle_positions_list = {
 }
 
 # translate
-translate_deepseek_language_dict = {
+translate_language_dict = {
     "英语": "en",
     "中文": "zh",
     "日语": "ja",
@@ -163,6 +163,10 @@ translate_deepseek_language_dict = {
     "波斯语": "fa",
     "希伯来语": "he",
 }
+
+# AI模型
+AI_model_dict = {"GLM-4.5-FLASH": "glm-4.5-flash", "Deepseek": "deepseek"}
+
 
 if sys.platform == "win32":
     EXE_SUFFIX = ".exe"

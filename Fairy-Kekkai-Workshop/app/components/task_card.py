@@ -1,3 +1,5 @@
+from PySide6.QtGui import QIcon
+
 from .base_task_card import BaseItemWidget
 
 
@@ -12,9 +14,22 @@ class TranslateItemWidget(BaseItemWidget):
     """翻译任务项组件"""
 
     def __init__(
-        self, task, progressBar_type="determinate", task_type="翻译", parent=None
+        self,
+        task,
+        progressBar_type="determinate",
+        task_type="翻译",
+        ai_model=None,
+        parent=None,
     ):
         super().__init__(task, progressBar_type, task_type, parent)
+        self.ai_model = ai_model
+        self.setImage(ai_model)
+
+    def setImage(self, ai_model):
+        """设置图标"""
+        self.imageLabel.setImage(
+            QIcon(f":/app/images/icons/{ai_model}.svg").pixmap(32, 32)
+        )
 
 
 class FFmpegItemWidget(BaseItemWidget):

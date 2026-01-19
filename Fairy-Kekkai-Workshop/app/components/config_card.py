@@ -2,7 +2,13 @@
 import re
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QDoubleValidator, QFont, QIntValidator
+from PySide6.QtGui import (
+    QDoubleValidator,
+    QFont,
+    QIcon,
+    QIntValidator,
+    QValidator,
+)
 from PySide6.QtWidgets import QFileDialog, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard,
@@ -113,7 +119,7 @@ class NumberLineEditSettingCard(SettingCard):
         if text and self.validator:
             # 检查输入是否有效
             state, _, _ = self.validator.validate(text, 0)
-            if state == self.validator.Acceptable:
+            if state == QValidator.Acceptable:  # 修改为使用 QValidator.Acceptable
                 # 根据配置项类型转换值
                 if isinstance(self.validator, QIntValidator):
                     value = int(text)
@@ -407,7 +413,6 @@ class YTDLPSettingInterface(ScrollArea):
         # initialize style sheet
         setFont(self.settingLabel, 23, QFont.Weight.DemiBold)
         self.enableTransparentBackground()
-
         # initialize layout
         self.__initLayout()
         self._connectSignalToSlot()
@@ -852,19 +857,41 @@ class TranslateSettingInterface(ScrollArea):
         self.expandLayout = ExpandLayout(self.scrollWidget)
 
         # setting label
-        self.settingLabel = TitleLabel(self.tr("翻译设置"), self)
+        self.settingLabel = TitleLabel(self.tr("AI设置"), self)
+
+        # AI参数设置
+        self.aiGroup = SettingCardGroup(self.tr("AI参数"), self.scrollWidget)
+        self.aiTemperatureCard = NumberLineEditSettingCard(
+            cfg.aiTemperature,
+            FIF.SPEED_HIGH,
+            self.tr("AI温度"),
+            self.tr("调整AI生成文本的温度(0~2)"),
+            placeholderText=str(cfg.aiTemperature.value),
+            validator=QDoubleValidator(0.1, 2.0, 1),
+            parent=self.aiGroup,
+        )
 
         # Deepseek Api Key
         self.keyGroup = SettingCardGroup(self.tr("Api Key"), self.scrollWidget)
-        self.ApiKeyCard = PasswordLineEditSettingCard(
+        self.DeepseekApiKeyCard = PasswordLineEditSettingCard(
             cfg.deepseekApiKey,
-            FIF.CAFE,
-            self.tr("Api Key"),
+            QIcon(":/app/images/icons/deepseek.svg"),
+            self.tr("Deepseek"),
             self.tr("设置你的Deepseek Api Key"),
             placeholderText="",
             parent=self.keyGroup,
         )
-        self.ApiKeyCard.lineEdit.setFixedWidth(350)
+        self.DeepseekApiKeyCard.lineEdit.setFixedWidth(350)
+
+        self.GplApiKeyCard = PasswordLineEditSettingCard(
+            cfg.glmApiKey,
+            QIcon(":/app/images/icons/GLM.png"),
+            self.tr("智谱 GLM-4.5-FLASH"),
+            self.tr("设置你的GLM-4.5-FLASH Api Key"),
+            placeholderText="",
+            parent=self.keyGroup,
+        )
+        self.GplApiKeyCard.lineEdit.setFixedWidth(350)
 
         self.__initWidget()
 
@@ -887,9 +914,16 @@ class TranslateSettingInterface(ScrollArea):
     def __initLayout(self):
         self.settingLabel.move(36, 40)
 
-        # Api Key设置
-        self.keyGroup.addSettingCard(self.ApiKeyCard)
+        # AI参数设置
+        self.aiGroup.addSettingCard(self.aiTemperatureCard)
 
+        # Api Key设置
+        self.keyGroup.addSettingCard(self.DeepseekApiKeyCard)
+        self.keyGroup.addSettingCard(self.GplApiKeyCard)
+
+        self.expandLayout.setSpacing(26)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.aiGroup)
         self.expandLayout.addWidget(self.keyGroup)
 
 

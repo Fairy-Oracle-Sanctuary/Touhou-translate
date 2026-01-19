@@ -80,3 +80,6 @@ nuitka-crash-report.xml
 
 # Windows 用户应用数据目录
 AppData/
+
+# API 相关
+API/

@@ -15,9 +15,8 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import (
     CaptionLabel,
     CardWidget,
-    ComboBox,
+    ComboBoxSettingCard,
     Dialog,
-    ExpandSettingCard,
     PushButton,
     Slider,
     StrongBodyLabel,
@@ -87,32 +86,24 @@ class VideocrInterface(BaseFunctionInterface):
     def _create_settings_cards(self):
         """创建OCR设置卡片"""
         # 语言设置卡片
-        self.languageCard = ExpandSettingCard(
-            FIF.LANGUAGE, "识别语言", "选择字幕文本的语言", self.settingsGroup
+        self.languageCard = ComboBoxSettingCard(
+            configItem=cfg.ocr_lang,
+            icon=FIF.LANGUAGE,
+            title="识别语言",
+            content="选择字幕文本的语言",
+            texts=videocr_languages_dict.keys(),
         )
-
-        self.language_combo = ComboBox()
-        self.language_combo.addItems(videocr_languages_dict.keys())
-        self.language_combo.setCurrentText(cfg.get(cfg.ocr_lang))
-        self.languageCard.viewLayout.addWidget(self.language_combo)
         self.settingsGroup.addSettingCard(self.languageCard)
 
         # 位置设置卡片
-        self.positionCard = ExpandSettingCard(
-            FIF.LAYOUT, "文本对齐", "指定字幕的对齐方式", self.settingsGroup
+        self.positionCard = ComboBoxSettingCard(
+            configItem=cfg.ocr_position,
+            icon=FIF.LAYOUT,
+            title="文本对齐",
+            content="指定字幕的对齐方式",
+            texts=subtitle_positions_list.keys(),
         )
-
-        self.position_combo = ComboBox()
-        self.position_combo.addItems(subtitle_positions_list.keys())
-        self.position_combo.setCurrentText("居中")
-        self.positionCard.viewLayout.addWidget(self.position_combo)
         self.settingsGroup.addSettingCard(self.positionCard)
-
-        # 连接信号
-        self.language_combo.currentTextChanged.connect(
-            lambda: cfg.set(cfg.ocr_lang, self.language_combo.currentText())
-        )
-        self.position_combo.currentTextChanged.connect(self._on_position_changed)
 
     def create_preview_card(self):
         """创建视频预览卡片"""
@@ -180,13 +171,6 @@ class VideocrInterface(BaseFunctionInterface):
     def _start_btn_enabled(self, enabled):
         """设置开始按钮可用性"""
         self.start_btn.setEnabled(enabled)
-
-    def _on_position_changed(self, position):
-        """字幕位置选项改变时的处理"""
-        if position == "自定义区域":
-            self._log_message("请使用框选工具在视频预览中选择字幕区域")
-        elif position == "自动检测":
-            self.video_preview._clear_selection()
 
     def load_file_content(self, file_path):
         """加载视频文件"""
@@ -339,9 +323,7 @@ class VideocrInterface(BaseFunctionInterface):
         args = {}
         args["video_path"] = self.file_path
         args["file_path"] = self.output_path_edit.text()
-        args["lang"] = videocr_languages_dict.get(
-            self.language_combo.currentText(), "ch"
-        )
+        args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
         args["time_start"] = "0:00"
         args["time_end"] = ""
         args["conf_threshold"] = cfg.get(cfg.confThreshold)
@@ -353,7 +335,7 @@ class VideocrInterface(BaseFunctionInterface):
         args["use_server_model"] = cfg.get(cfg.useServerModel)
         # args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
         args["subtitle_position"] = subtitle_positions_list.get(
-            self.position_combo.currentText(), "center"
+            cfg.get(cfg.ocr_position), "center"
         )
         args["frames_to_skip"] = cfg.get(cfg.framesToSkip)
         args["crop_zones"] = self._get_crop_zones()

@@ -6,15 +6,14 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     CardWidget,
-    ComboBox,
-    ExpandSettingCard,
+    ComboBoxSettingCard,
     TableWidget,
 )
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import translate_deepseek_language_dict
+from ..common.setting import AI_model_dict, translate_language_dict
 from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
 from ..components.config_card import TranslateSettingInterface
@@ -57,34 +56,33 @@ class TranslationInterface(BaseFunctionInterface):
     def _create_settings_cards(self):
         """创建翻译设置卡片"""
         # 原语言设置卡片
-        self.origin_languageCard = ExpandSettingCard(
-            FIF.GLOBE, "原文语言", "选择字幕文本的语言", self.settingsGroup
+        self.origin_languageCard = ComboBoxSettingCard(
+            configItem=cfg.origin_lang,
+            icon=FIF.GLOBE,
+            title="原文语言",
+            content="选择字幕文本的语言",
+            texts=translate_language_dict.keys(),
         )
-
-        self.origin_language_combo = ComboBox()
-        self.origin_language_combo.addItems(translate_deepseek_language_dict.keys())
-        self.origin_language_combo.setCurrentText(cfg.get(cfg.origin_lang))
-        self.origin_languageCard.viewLayout.addWidget(self.origin_language_combo)
         self.settingsGroup.addSettingCard(self.origin_languageCard)
 
-        # 目标语言设置卡片
-        self.target_languageCard = ExpandSettingCard(
-            FIF.LANGUAGE, "翻译语言", "选择翻译后的语言", self.settingsGroup
+        # 翻译语言设置卡片
+        self.target_languageCard = ComboBoxSettingCard(
+            configItem=cfg.target_lang,
+            icon=FIF.LANGUAGE,
+            title="翻译语言",
+            content="选择翻译后的语言",
+            texts=translate_language_dict.keys(),
         )
-
-        self.target_language_combo = ComboBox()
-        self.target_language_combo.addItems(translate_deepseek_language_dict.keys())
-        self.target_language_combo.setCurrentText(cfg.get(cfg.target_lang))
-        self.target_languageCard.viewLayout.addWidget(self.target_language_combo)
         self.settingsGroup.addSettingCard(self.target_languageCard)
 
-        # 连接信号
-        self.origin_language_combo.currentTextChanged.connect(
-            lambda: cfg.set(cfg.origin_lang, self.origin_language_combo.currentText())
+        self.AI_modelCard = ComboBoxSettingCard(
+            configItem=cfg.ai_model,
+            icon=FIF.BOOK_SHELF,
+            title="AI模型",
+            content="选择AI模型",
+            texts=AI_model_dict.keys(),
         )
-        self.target_language_combo.currentTextChanged.connect(
-            lambda: cfg.set(cfg.target_lang, self.target_language_combo.currentText())
-        )
+        self.settingsGroup.addSettingCard(self.AI_modelCard)
 
     def create_preview_card(self):
         """创建内容预览卡片"""
@@ -133,14 +131,15 @@ class TranslationInterface(BaseFunctionInterface):
 
     def _start_processing(self):
         """开始翻译"""
-        if not cfg.get(cfg.deepseekApiKey):
+        if cfg.get(cfg.ai_model) == "Deepseek" and not cfg.get(cfg.deepseekApiKey):
             self.show_error_message("请先填写您的DeepSeek API Key")
             return
 
-        if (
-            self.origin_language_combo.currentText()
-            == self.target_language_combo.currentText()
-        ):
+        elif cfg.get(cfg.ai_model) == "GLM-4.5-FLASH" and not cfg.get(cfg.glmApiKey):
+            self.show_error_message("请先填写您的GLM-4.5-FLASH API Key")
+            return
+
+        if cfg.get(cfg.origin_lang) == cfg.get(cfg.target_lang):
             self.show_error_message("原语言和目标语言相同")
             return
 
@@ -152,9 +151,12 @@ class TranslationInterface(BaseFunctionInterface):
         args = {}
         args["srt_path"] = str(self.file_srt.file_path)
         args["output_path"] = self.output_path_edit.text()
-        args["origin_lang"] = self.origin_language_combo.currentText()
-        args["target_lang"] = self.target_language_combo.currentText()
+        args["origin_lang"] = cfg.get(cfg.origin_lang)
+        args["target_lang"] = cfg.get(cfg.target_lang)
         args["raw_content"] = self.file_srt.raw_content
+        args["AI"] = AI_model_dict.get(cfg.get(cfg.ai_model), "glm-4.5-flash")
+        args["temperature"] = cfg.get(cfg.aiTemperature)
+
         return args
 
     def update_preview_table(self, subtitles_data):

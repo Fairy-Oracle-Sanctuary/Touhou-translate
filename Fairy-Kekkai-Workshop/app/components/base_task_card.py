@@ -28,7 +28,13 @@ class BaseItemWidget(CardWidget):
     removeTaskSignal = Signal(int)  # 任务ID
     retryTaskSignal = Signal(int)  # 任务ID
 
-    def __init__(self, task, progressBar_type="common", task_type="默认", parent=None):
+    def __init__(
+        self,
+        task,
+        progressBar_type="common",
+        task_type="默认",
+        parent=None,
+    ):
         super().__init__(parent)
         self.task = task
         self.task_thread = None

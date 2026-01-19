@@ -21,6 +21,10 @@ from .setting import (
     EXE_SUFFIX,
     PADDLEOCR_VERSION,
     PIC_SUFFIX,
+    AI_model_dict,
+    subtitle_positions_list,
+    translate_language_dict,
+    videocr_languages_dict,
 )
 
 
@@ -321,7 +325,23 @@ class Config(QConfig):
 
     # 字幕语言
     # 命令行使用：--lang
-    ocr_lang = ConfigItem("OCR", "Lang", "ch", restart=False)
+    ocr_lang = OptionsConfigItem(
+        "OCR",
+        "Lang",
+        "中文与英文",
+        OptionsValidator(list(videocr_languages_dict.keys())),
+        restart=False,
+    )
+
+    # 字幕位置
+    # 命令行使用：--subtitle_position
+    ocr_position = OptionsConfigItem(
+        "OCR",
+        "Position",
+        "居中",
+        OptionsValidator(list(subtitle_positions_list.keys())),
+        restart=False,
+    )
 
     # 置信度阈值 (0-100)
     # 命令行使用：--conf_threshold
@@ -420,13 +440,40 @@ class Config(QConfig):
 
     # translate settings
     # 原语言
-    origin_lang = ConfigItem("Translate", "OriginLang", "日语", restart=False)
+    origin_lang = OptionsConfigItem(
+        "Translate",
+        "OriginLang",
+        "日语",
+        OptionsValidator(list(translate_language_dict.keys())),
+        restart=False,
+    )
 
     # 目标语言
-    target_lang = ConfigItem("Translate", "TargetLang", "中文", restart=False)
+    target_lang = OptionsConfigItem(
+        "Translate",
+        "TargetLang",
+        "中文",
+        OptionsValidator(list(translate_language_dict.keys())),
+        restart=False,
+    )
 
-    # Deepseek API Key
-    deepseekApiKey = ConfigItem("Translate", "ApiKey", "", restart=False)
+    # AI模型选择
+    ai_model = OptionsConfigItem(
+        "Translate",
+        "AiModel",
+        "GLM-4.5-FLASH",
+        OptionsValidator(list(AI_model_dict.keys())),
+        restart=False,
+    )
+
+    # Deepseek API Key (付费)
+    deepseekApiKey = ConfigItem("Translate", "DeepseekApiKey", "", restart=False)
+
+    # glm-4.5-flash API Key (免费)
+    glmApiKey = ConfigItem("Translate", "GlmApiKey", "", restart=False)
+
+    # AI温度 (0-2)
+    aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
 
     # ffmpeg settings
     ffmpegPath = ConfigItem(
