@@ -37,6 +37,7 @@ from ..components.dialog import (
 from ..resource import resource_rc  # noqa: F401
 from ..service.donwload_list_service import DownloadListThread
 from ..service.project_service import project
+from .dialog import projectProgressDialog
 
 
 class ProjectInterface(ScrollArea):
@@ -105,6 +106,7 @@ class ProjectInterface(ScrollArea):
         project_card.refreshProject.connect(
             lambda isMessage: self.refreshProjectList(isMessage)
         )
+        project_card.clicked.connect(lambda: self.showProjectProgress(id, title))
         self.cardsLayout.addWidget(project_card, 0, Qt.AlignmentFlag.AlignTop)
 
     def addNewProjectCard(self):
@@ -289,6 +291,13 @@ class ProjectInterface(ScrollArea):
     def showProjectList(self):
         """显示项目列表页面"""
         self.stackedWidget.setCurrentWidget(self.projectListPage)
+
+    def showProjectProgress(self, id, title):
+        """显示项目进度对话框"""
+        dialog = projectProgressDialog(
+            progress=project.get_project_progress(id), title=title, parent=self
+        )
+        dialog.exec()
 
 
 class TopButtonCard(CardWidget):

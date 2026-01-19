@@ -45,6 +45,41 @@ from ..components.dialog import (
 from ..service.project_service import project
 
 
+class LoadProjectThread(QThread):
+    """异步加载项目详情"""
+
+    finished = Signal(
+        list, int, int, int
+    )  # subfolders, total_episodes, total_pages, current_page
+
+    def __init__(self, project_path, card_id, items_per_page, current_page):
+        super().__init__()
+        self.project_path = project_path
+        self.card_id = card_id
+        self.items_per_page = items_per_page
+        self.current_page = current_page
+
+    def run(self):
+        """执行耗时的数据准备"""
+        project.refresh_project(self.card_id)
+        subfolders = self.get_subfolders(self.project_path)
+        total_episodes = len(subfolders)
+        total_pages = (total_episodes + self.items_per_page - 1) // self.items_per_page
+        current_page = min(self.current_page, total_pages) if total_pages > 0 else 1
+        self.finished.emit(subfolders, total_episodes, total_pages, current_page)
+
+    def get_subfolders(self, project_path):
+        """获取所有子文件夹"""
+        subfolders = []
+        for item in os.listdir(project_path):
+            item_path = os.path.join(project_path, item)
+            if os.path.isdir(item_path) and item.isdigit():
+                subfolders.append((int(item), item_path))
+        # 按数字排序
+        subfolders.sort(key=lambda x: x[0])
+        return subfolders
+
+
 class ProjectDetailInterface(ScrollArea):
     """项目详情界面"""
 
@@ -131,21 +166,11 @@ class ProjectDetailInterface(ScrollArea):
                 if sub_layout is not None:
                     self._clearLayout(sub_layout)
 
-    def get_subfolders(self, project_path):
-        """获取所有子文件夹"""
-        subfolders = []
-        for item in os.listdir(project_path):
-            item_path = os.path.join(project_path, item)
-            if os.path.isdir(item_path) and item.isdigit():  # 只处理数字命名的文件夹
-                subfolders.append((int(item), item_path))
-
-        # 按数字排序
-        subfolders.sort(key=lambda x: x[0])
-        return subfolders
-
     def loadProject(self, project_path, id, isMessage=False):
-        """加载项目详情"""
-        project.refresh_project(id)
+        """加载项目详情（异步）"""
+        # 如果有正在运行的线程，忽略新的请求
+        if hasattr(self, "load_thread") and self.load_thread.isRunning():
+            return
 
         self.items_per_page = cfg.get(cfg.detailProjectItemNum)
 
@@ -154,10 +179,24 @@ class ProjectDetailInterface(ScrollArea):
 
         # 同步参数
         self.card_id = id
+        self.isMessage = isMessage
 
-        # 获取所有子文件夹
-        self.subfolders = self.get_subfolders(project_path)
-        self.total_episodes = len(self.subfolders)
+        # 启动异步加载线程
+        self.load_thread = LoadProjectThread(
+            project_path, id, self.items_per_page, self.current_page
+        )
+        self.load_thread.finished.connect(self.on_load_finished)
+        self.load_thread.start()
+
+    def on_load_finished(self, subfolders, total_episodes, total_pages, current_page):
+        """异步加载完成后的UI更新"""
+        # 断开信号连接并清理线程引用
+        self.load_thread.finished.disconnect(self.on_load_finished)
+        del self.load_thread
+
+        self.subfolders = subfolders
+        self.total_episodes = total_episodes
+        self.current_page = current_page
 
         # 清空当前布局
         try:
@@ -168,6 +207,7 @@ class ProjectDetailInterface(ScrollArea):
                 "错误", f"刷新时出错: {str(e).strip()}"
             )
             self.backToProjectListSignal.emit()
+            return
 
         # 创建返回按钮
         backButton = PrimaryPushButton("返回项目列表", self.view)
@@ -182,18 +222,14 @@ class ProjectDetailInterface(ScrollArea):
         )
 
         # 创建项目标题
-        projectTitle = TitleLabel(os.path.basename(project_path), self.view)
+        projectTitle = TitleLabel(
+            os.path.basename(self.current_project_path), self.view
+        )
         projectTitle.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
 
         # 创建分页信息标签
-        total_pages = (
-            self.total_episodes + self.items_per_page - 1
-        ) // self.items_per_page
-        self.current_page = (
-            total_pages if self.current_page > total_pages else self.current_page
-        )
         page_info_label = BodyLabel(
             f"共 {self.total_episodes} 集，第 {self.current_page}/{total_pages} 页",
             self.view,
@@ -281,7 +317,7 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addStretch(1)
         event_bus.project_detail_interface = self.view
 
-        if isMessage:
+        if self.isMessage:
             event_bus.notification_service.show_success("成功", "已刷新文件列表")
 
     def _create_episode_widget(self, folder_num, folder_path, parent_layout):

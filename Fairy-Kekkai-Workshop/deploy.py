@@ -5,6 +5,8 @@ from app.common.setting import VERSION
 
 if sys.platform == "win32":
     args = [
+        sys.executable,  # 使用当前Python解释器
+        "-m",
         "nuitka",
         "--standalone",
         "--windows-uac-admin",

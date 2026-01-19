@@ -143,7 +143,7 @@ class VideocrInterface(BaseFunctionInterface):
         control_layout.addWidget(self.time_label, 1)
 
         self.log_text = TextEdit()
-        self.log_text.setMaximumHeight(150)
+        self.log_text.setMinimumHeight(200)
         self.log_text.setReadOnly(True)
         self.log_text.setPlaceholderText("处理日志将显示在这里...")
 
@@ -352,7 +352,6 @@ class VideocrInterface(BaseFunctionInterface):
         args["use_angle_cls"] = cfg.get(cfg.useAngleCls)
         args["use_server_model"] = cfg.get(cfg.useServerModel)
         # args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
-        args["ssim_threshold"] = cfg.get(cfg.ssimThreshold)
         args["subtitle_position"] = subtitle_positions_list.get(
             self.position_combo.currentText(), "center"
         )
@@ -362,6 +361,8 @@ class VideocrInterface(BaseFunctionInterface):
         args["post_processing"] = cfg.get(cfg.postProcessing)
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
         args["gpu_env"] = cfg.get(cfg.gpuEnv)
+        args["paddleocr_path"] = cfg.get(cfg.paddleocrPath)
+        args["supportFilesPath"] = cfg.get(cfg.supportFilesPath)
 
         return args
 
@@ -417,6 +418,9 @@ class VideocrInterface(BaseFunctionInterface):
             self.output_path_edit.setText(str(output_path))
             self.load_file_content(video_path)
             self.video_preview.select_btn.setEnabled(True)
+            self.video_preview.refresh_select_btn()
+            self.refresh_start_btn()
+            self.update_adjacent_button()
 
     def closeEvent(self, event):
         """关闭事件处理"""
