@@ -184,6 +184,14 @@ class BaseTaskInterface(ScrollArea):
                 lambda message: self.onPrintOutput(task.id, message)
             )
 
+        # 如果有打印日志信号，连接它
+        if hasattr(task_thread, "log_signal"):
+            task_thread.log_signal.connect(
+                lambda message, is_error, is_flush: self.onPrintLog(
+                    task.id, message, is_error, is_flush
+                )
+            )
+
         # 存储线程引用到对应的任务项
         for i in range(self.taskListLayout.count()):
             widget = self.taskListLayout.itemAt(i).widget()

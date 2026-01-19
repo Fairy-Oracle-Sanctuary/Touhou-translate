@@ -1,8 +1,16 @@
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGridLayout
-from qfluentwidgets import LineEdit, MessageBoxBase, StrongBodyLabel, SubtitleLabel
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout
+from qfluentwidgets import (
+    LineEdit,
+    MessageBoxBase,
+    PillPushButton,
+    ProgressBar,
+    ProgressRing,
+    StrongBodyLabel,
+    SubtitleLabel,
+)
 
 from ..common.event_bus import event_bus
 
@@ -318,3 +326,89 @@ class CustomTripleMessageBox(BaseInputDialog):
             self.LineEdit_2.text().strip(),
             self.LineEdit_3.text().strip(),
         )
+
+
+class projectProgressDialog(MessageBoxBase):
+    """项目进度对话框"""
+
+    def __init__(self, progress, title, parent=None):
+        super().__init__(parent)
+        self.progress = progress
+        self.title = title
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.yesButton.setText("我知道了")
+        self.cancelButton.setVisible(False)
+
+        progress_all = sum(self.progress) / 5
+
+        progress_view = QHBoxLayout()
+        self.viewLayout.addLayout(progress_view)
+
+        self.titleLabel = SubtitleLabel(self.title)
+        self.progress_pill = PillPushButton(self)
+        self.progress_pill.setText(f"{progress_all:.2f}%")
+        self.progress_pill.setEnabled(False)
+        progress_view.addWidget(self.titleLabel)
+        progress_view.addStretch(1)
+        progress_view.addWidget(self.progress_pill)
+
+        grid_layout = QGridLayout()
+        self.viewLayout.addLayout(grid_layout)
+
+        # 一个项目的每一集都有一个封面, 一个原视频，一个翻译后的视频，一个原字幕，一个翻译后的字幕，对应五个ring
+        self.ring_cover = ProgressRing(self)
+        self.ring_video = ProgressRing(self)
+        self.ring_translated_video = ProgressRing(self)
+        self.ring_subtitle = ProgressRing(self)
+        self.ring_translated_subtitle = ProgressRing(self)
+
+        self.label_cover = StrongBodyLabel("封面", self)
+        self.label_video = StrongBodyLabel("原视频", self)
+        self.label_translated_video = StrongBodyLabel("翻译后的视频", self)
+        self.label_subtitle = StrongBodyLabel("原字幕", self)
+        self.label_translated_subtitle = StrongBodyLabel("翻译后的字幕", self)
+
+        rings = [
+            self.ring_cover,
+            self.ring_video,
+            self.ring_translated_video,
+            self.ring_subtitle,
+            self.ring_translated_subtitle,
+        ]
+        for ring, p in zip(rings, self.progress):
+            ring.setMinimum(0)
+            ring.setMaximum(100)
+            ring.setValue(int(p))
+            ring.setTextVisible(True)
+
+        # 设置所有标签文字居中
+        labels = [
+            self.label_cover,
+            self.label_video,
+            self.label_translated_video,
+            self.label_subtitle,
+            self.label_translated_subtitle,
+        ]
+
+        for label in labels:
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        grid_layout.addWidget(self.ring_cover, 0, 0)
+        grid_layout.addWidget(self.ring_video, 0, 1)
+        grid_layout.addWidget(self.ring_translated_video, 0, 2)
+        grid_layout.addWidget(self.ring_subtitle, 0, 3)
+        grid_layout.addWidget(self.ring_translated_subtitle, 0, 4)
+
+        grid_layout.addWidget(self.label_cover, 1, 0)
+        grid_layout.addWidget(self.label_video, 1, 1)
+        grid_layout.addWidget(self.label_translated_video, 1, 2)
+        grid_layout.addWidget(self.label_subtitle, 1, 3)
+        grid_layout.addWidget(self.label_translated_subtitle, 1, 4)
+
+        self.progress_bar = ProgressBar(self)
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(int(progress_all))
+        self.viewLayout.addWidget(self.progress_bar)

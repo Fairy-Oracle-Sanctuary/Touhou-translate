@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-from ....common.config import cfg
 from . import utils
 from .video import Video
 
@@ -27,11 +26,12 @@ def save_subtitles_to_file(
     ocr_image_max_width=1280,
     post_processing=False,
     min_subtitle_duration_sec=0.2,
+    paddleocr_path=None,
+    supportFilesPath=None,
 ) -> None:
     if crop_zones is None:
         crop_zones = []
 
-    paddleocr_path = cfg.get(cfg.paddleocrPath)
     if Path(paddleocr_path).exists():
         print(f"找到PaddleOCR路径: {paddleocr_path}")
     else:
@@ -45,9 +45,9 @@ def save_subtitles_to_file(
         sys.exit(1)
 
     det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
-        lang, use_server_model, cfg.get(cfg.supportFilesPath)
+        lang, use_server_model, supportFilesPath
     )
-    print(f"找到模型路径: \n{det_model_dir}\n{rec_model_dir}\n{cls_model_dir}")
+    print(f"找到模型路径: {det_model_dir} {rec_model_dir} {cls_model_dir}")
 
     v = Video(
         video_path,

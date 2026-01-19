@@ -4,7 +4,7 @@ from PySide6.QtCore import Signal
 
 from ..components.base_task_interface import BaseTaskInterface
 from ..components.task_card import OcrItemWidget
-from ..service.ocr_service import OCRTask, OCRThread
+from ..service.ocr_service import OCRProcess, OCRTask
 
 
 class OcrTaskInterface(BaseTaskInterface):
@@ -27,10 +27,14 @@ class OcrTaskInterface(BaseTaskInterface):
         return OcrItemWidget(task, parent)
 
     def createTaskThread(self, task: OCRTask):
-        return OCRThread(task)
+        return OCRProcess(task)
 
     def getTaskPath(self, task: OCRTask):
         return task.input_file
+
+    def onPrintLog(self, task_id, message, is_error, is_flush):
+        """处理日志输出"""
+        self.log_signal.emit(message, is_error, is_flush)
 
     def onPrintOutput(self, task_id, message):
         """处理print输出并计算进度"""
@@ -118,7 +122,18 @@ class OcrTaskInterface(BaseTaskInterface):
                 self.log_signal.emit(message, False, False)
 
             elif "找到模型路径:" in message:
-                self.log_signal.emit(message, False, False)
+                message = message.split(" ")
+                self.log_signal.emit(
+                    message[0]
+                    + "\n"
+                    + message[1]
+                    + "\n"
+                    + message[2]
+                    + "\n"
+                    + message[3],
+                    False,
+                    False,
+                )
 
             elif "找不到PaddleOCR路径:" in message:
                 self.onTaskFinished(task_id, False, message)

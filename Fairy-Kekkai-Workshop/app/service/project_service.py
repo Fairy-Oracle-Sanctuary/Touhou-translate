@@ -376,6 +376,40 @@ class Project:
         except Exception as e:
             return [False, str(e).strip()]
 
+    def get_project_progress(self, id):
+        """
+        根据id获取项目进度
+        返回一个列表 列表从0~4分别是为封面 原视频 翻译后的视频 原字幕 翻译后的字幕
+        注意一个项目文件夹内内有几个子文件夹就有几集
+        """
+        project_dir = self.project_path[id]
+        progress = [0, 0, 0, 0, 0]  # 封面 原视频 翻译后的视频 原字幕 翻译后的字幕
+
+        for episode_folder in project_dir.iterdir():
+            if episode_folder.is_dir():
+                # 检查封面
+                if (episode_folder / "封面.jpg").exists():
+                    progress[0] += 1
+                # 检查原视频
+                if (episode_folder / "生肉.mp4").exists():
+                    progress[1] += 1
+                # 检查翻译后的视频
+                if (episode_folder / "熟肉.mp4").exists():
+                    progress[2] += 1
+                # 检查原字幕
+                if (episode_folder / "原文.srt").exists():
+                    progress[3] += 1
+                # 检查翻译后的字幕
+                if (episode_folder / "译文.srt").exists():
+                    progress[4] += 1
+
+        # 计算百分比
+        total_episodes = sum(1 for item in project_dir.iterdir() if item.is_dir())
+        if total_episodes > 0:
+            progress = [p / total_episodes * 100 for p in progress]
+
+        return progress
+
     @staticmethod
     def isAdjacentFileExists(file_path):
         """判断这个文件上一个和下一个同名文件是否存在"""
@@ -427,6 +461,7 @@ class Project:
 if __name__ == "__main__":
     project = Project()
     print(project.project_path)
+    print(project.get_project_progress(3))
     pass
 else:
     from ..common.config import cfg

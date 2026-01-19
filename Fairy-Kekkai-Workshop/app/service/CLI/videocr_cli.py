@@ -146,6 +146,15 @@ def main():
     parser.add_argument(
         "--crop_height2", type=int, default=None, help="(Zone 2) Crop height"
     )
+    parser.add_argument(
+        "--paddleocr_path", type=str, default=None, help="Path to PaddleOCR exe"
+    )
+    parser.add_argument(
+        "--supportFilesPath",
+        type=str,
+        default=None,
+        help="Path to PaddleOCR support files",
+    )
 
     args = parser.parse_args()
 
@@ -211,6 +220,8 @@ def main():
         post_processing=args.post_processing,
         min_subtitle_duration_sec=args.min_subtitle_duration,
         ocr_image_max_width=args.ocr_image_max_width,
+        paddleocr_path=args.paddleocr_path,
+        supportFilesPath=args.supportFilesPath,
     )
 
 

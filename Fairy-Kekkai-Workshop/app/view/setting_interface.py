@@ -5,12 +5,11 @@ import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QFont
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QDesktopServices, QFont, QPainter
+from PySide6.QtWidgets import QFileDialog, QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
-    CardWidget,
     ComboBoxSettingCard,
     Dialog,
     ExpandLayout,
@@ -22,6 +21,7 @@ from qfluentwidgets import (
     ScrollArea,
     SwitchSettingCard,
     TitleLabel,
+    isDarkTheme,
     setFont,
     setTheme,
     setThemeColor,
@@ -35,7 +35,7 @@ from ..common.event_bus import event_bus
 from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR
 
 
-class DetectionCard(CardWidget):
+class DetectionCard(QFrame):
     def __init__(self, icon, title, content, parent=None):
         super().__init__(parent)
         self.iconWidget = IconWidget(icon)
@@ -66,7 +66,18 @@ class DetectionCard(CardWidget):
         self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
         self.hBoxLayout.addSpacing(5)
 
-        self.setClickEnabled(False)
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing)
+
+        if isDarkTheme():
+            painter.setBrush(QColor(255, 255, 255, 13))
+            painter.setPen(QColor(0, 0, 0, 50))
+        else:
+            painter.setBrush(QColor(255, 255, 255, 170))
+            painter.setPen(QColor(0, 0, 0, 19))
+
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
 
 
 class SettingCardGroup(CardGroup):
