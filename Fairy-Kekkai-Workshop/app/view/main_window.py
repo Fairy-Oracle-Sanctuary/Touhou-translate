@@ -77,8 +77,6 @@ class MainWindow(MSFluentWindow):
             self.ffmpegInterface,
             self.settingInterface,
         ]
-        # 连接信号
-        # self.projectInterface.topButtonCard.newFromPlaylistButton.clicked.connect(self.switch_to_download_interface)
 
         self.initNavigation()
 
@@ -203,9 +201,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.projectInterface, FIF.FOLDER, "项目")
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
         self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
-        self.addSubInterface(
-            self.translateInterface, QIcon(":/app/images/icons/deepseek.svg"), "翻译"
-        )
+        self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
 
         # 添加自定义导航组件
@@ -395,7 +391,7 @@ class MainWindow(MSFluentWindow):
         else:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
-                f"翻译失败 -{message}-",
+                f"翻译失败 -{message[0]}-",
                 QIcon(":/app/images/logo.png"),
                 3000,
             )

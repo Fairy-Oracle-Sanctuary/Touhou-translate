@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal
 from ..common.event_bus import event_bus
 from ..components.base_task_interface import BaseTaskInterface
 from ..components.task_card import TranslateItemWidget
-from ..service.deepseek_service import TranslateTask, TranslateThread
+from ..service.translate_service import TranslateTask, TranslateThread
 
 
 class TranslateTaskInterface(BaseTaskInterface):
@@ -40,7 +40,9 @@ class TranslateTaskInterface(BaseTaskInterface):
         return task
 
     def createTaskItem(self, task: TranslateTask, parent):
-        return TranslateItemWidget(task, progressBar_type="determinate", parent=parent)
+        return TranslateItemWidget(
+            task, progressBar_type="determinate", ai_model=task.AI, parent=parent
+        )
 
     def createTaskThread(self, task: TranslateTask):
         return TranslateThread(task)

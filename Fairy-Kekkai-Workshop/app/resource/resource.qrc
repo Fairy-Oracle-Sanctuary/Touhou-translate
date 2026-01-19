@@ -16,5 +16,6 @@
     <file>qss/light/sample_card.qss</file>
     <file>images/logo/bilibili.svg</file>
     <file>images/logo/youtube.svg</file>
+    <file>images/icons/glm-4.5-flash.svg</file>
   </qresource>
 </RCC>
