@@ -1,4 +1,5 @@
 import sys
+import tempfile
 from pathlib import Path
 
 from . import utils
@@ -8,6 +9,7 @@ from .video import Video
 def save_subtitles_to_file(
     video_path: str,
     file_path="subtitle.srt",
+    temp_dir=tempfile.gettempdir(),
     lang="ch",
     time_start="0:00",
     time_end="",
@@ -55,6 +57,7 @@ def save_subtitles_to_file(
         det_model_dir,
         rec_model_dir,
         cls_model_dir,
+        temp_dir,
         time_end,
     )
     v.run_ocr(

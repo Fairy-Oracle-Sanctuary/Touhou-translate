@@ -6,7 +6,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import threading
 
 import fast_ssim
@@ -48,6 +47,7 @@ class Video:
         det_model_dir: str,
         rec_model_dir: str,
         cls_model_dir: str,
+        temp_dir: str,
         time_end: str | None = None,
     ):
         self.path = path
@@ -55,6 +55,8 @@ class Video:
         self.det_model_dir = det_model_dir
         self.rec_model_dir = rec_model_dir
         self.cls_model_dir = cls_model_dir
+        self.temp_dir = temp_dir
+
         self.frame_timestamps = {}
         self.start_time_offset_ms = 0.0
 
@@ -147,22 +149,26 @@ class Video:
                 }
             )
 
-        TEMP_PREFIX = "videocr_temp_"
-        base_temp = tempfile.gettempdir()
-        try:
-            for name in os.listdir(base_temp):
-                if name.startswith(TEMP_PREFIX):
-                    try:
-                        shutil.rmtree(os.path.join(base_temp, name), ignore_errors=True)
-                    except Exception as e:
-                        print(
-                            f"Could not remove leftover temp dir '{name}': {e}",
-                            flush=True,
-                        )
-        except Exception:
-            pass
+        # TEMP_PREFIX = "videocr_temp_"
+        # base_temp = tempfile.gettempdir()
+        # try:
+        #     for name in os.listdir(base_temp):
+        #         if name.startswith(TEMP_PREFIX):
+        #             try:
+        #                 shutil.rmtree(os.path.join(base_temp, name), ignore_errors=True)
+        #             except Exception as e:
+        #                 print(
+        #                     f"Could not remove leftover temp dir '{name}': {e}",
+        #                     flush=True,
+        #                 )
+        # except Exception:
+        #     pass
 
-        temp_dir = tempfile.mkdtemp(prefix=TEMP_PREFIX)
+        # temp_dir = tempfile.mkdtemp(prefix=TEMP_PREFIX)
+
+        temp_dir = self.temp_dir
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        os.makedirs(temp_dir, exist_ok=True)
 
         # get frames from ocr_start to ocr_end
         frame_paths = []
