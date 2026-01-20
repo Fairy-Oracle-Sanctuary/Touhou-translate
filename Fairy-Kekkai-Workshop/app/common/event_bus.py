@@ -37,6 +37,9 @@ class GlobalEventBus(QObject):
     # 翻译相关事件
     translate_finished_signal = Signal(bool, list)
     translate_requested = Signal(str, str)
+    translate_update_signal = Signal(
+        str, str
+    )  # 实时翻译更新信号 (task_id, content_chunk)
 
     # 压制相关事件
     ffmpeg_finished_signal = Signal(bool, str)

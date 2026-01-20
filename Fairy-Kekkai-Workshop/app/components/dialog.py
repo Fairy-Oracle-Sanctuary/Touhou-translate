@@ -6,6 +6,7 @@ from qfluentwidgets import (
     LineEdit,
     MessageBoxBase,
     PillPushButton,
+    PlainTextEdit,
     ProgressBar,
     ProgressRing,
     StrongBodyLabel,
@@ -39,13 +40,9 @@ class BaseInputDialog(MessageBoxBase):
         return errors
 
     def accept(self):
-        """重写接受方法，添加验证逻辑"""
-        if hasattr(self, "validateInput"):
-            errors = self.validateInput()
-            if errors:
-                error_message = "\n".join(errors)
-                event_bus.notification_service.show_error("输入错误", error_message)
-                return
+        """重写接受方法，停止定时器"""
+        if hasattr(self, "timer"):
+            self.timer.stop()
         super().accept()
 
 
@@ -412,3 +409,57 @@ class projectProgressDialog(MessageBoxBase):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(int(progress_all))
         self.viewLayout.addWidget(self.progress_bar)
+
+
+class translateProgressDialog(MessageBoxBase):
+    """翻译进度对话框"""
+
+    def __init__(self, task=None, parent=None):
+        super().__init__(parent)
+        self.task = task
+        self.current_content = ""  # 存储当前翻译内容
+        self.setup_ui()
+        if task:
+            self.connect_signals()
+            # 如果文件已存在，先加载初始内容
+            if self.task.output_file and os.path.exists(self.task.output_file):
+                try:
+                    with open(self.task.output_file, "r", encoding="utf-8") as f:
+                        self.current_content = f.read()
+                        self.textEdit.setPlainText(self.current_content)
+                except Exception as e:
+                    print(f"读取翻译文件失败: {e}")
+
+    def setup_ui(self):
+        self.titleLabel = SubtitleLabel("翻译进度")
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.textEdit = PlainTextEdit(self)
+        self.textEdit.setReadOnly(True)
+        self.textEdit.setPlaceholderText("翻译文本将在这里显示...")
+        self.viewLayout.addWidget(self.textEdit)
+
+        self.yesButton.setText("关闭")
+        self.cancelButton.setVisible(False)
+
+        # 设置对话框大小
+        self.widget.setMinimumWidth(600)
+        self.widget.setMinimumHeight(500)
+
+    def connect_signals(self):
+        """连接实时翻译信号"""
+        event_bus.translate_update_signal.connect(self.on_translate_update)
+
+    def on_translate_update(self, task_id, content_chunk):
+        """处理实时翻译更新"""
+        # 只处理当前任务的更新
+        if self.task and str(self.task.id) == task_id:
+            self.current_content += content_chunk
+            self.textEdit.setPlainText(self.current_content)
+            scrollbar = self.textEdit.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+    def accept(self):
+        """重写接受方法，断开信号连接"""
+        event_bus.translate_update_signal.disconnect(self.on_translate_update)
+        super().accept()

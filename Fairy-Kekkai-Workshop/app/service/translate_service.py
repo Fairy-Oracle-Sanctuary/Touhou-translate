@@ -4,7 +4,6 @@ from zai import ZhipuAiClient
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from .srt_service import Srt
 
 
 class TranslateTask:
@@ -33,9 +32,9 @@ class TranslateThread(QThread):
     """OCR处理线程"""
 
     finished_signal = Signal(bool, str)  # 成功/失败, 消息
-    cancelled_signal = Signal()  # 新增：取消完成信号
+    cancelled_signal = Signal()  # 取消完成信号
 
-    def __init__(self, task):
+    def __init__(self, task: TranslateTask):
         super().__init__()
         self.task = task
         self.is_cancelled = False
@@ -50,26 +49,26 @@ class TranslateThread(QThread):
                 resp_content += f"{content}\n\n"
                 num += 1
                 if num % 100 == 0 or num == len(content_all):
-                    # deepseek
-                    if self.task.AI == "deepseek":
-                        final_content = DeepseekTranslateService.translate(
-                            self.task.origin_lang,
-                            self.task.target_lang,
-                            resp_content,
-                            self.task.temperature,
-                        )
+                    with open(self.task.output_file, "w", encoding="utf-8") as f:
+                        # deepseek
+                        if self.task.AI == "deepseek":
+                            for chunk in DeepseekTranslateService.translate(
+                                self.task.origin_lang,
+                                self.task.target_lang,
+                                resp_content,
+                                self.task.temperature,
+                            ):
+                                self.write_srt(chunk, f)
 
-                    # glm4.5flash
-                    elif self.task.AI == "glm-4.5-flash":
-                        final_content = GLMTranslateService.translate(
-                            self.task.origin_lang,
-                            self.task.target_lang,
-                            resp_content,
-                            self.task.temperature,
-                        )
-
-                    # 写入文件
-                    Srt.write_raw_content(final_content, self.task.output_file)
+                        # glm4.5flash
+                        elif self.task.AI == "glm-4.5-flash":
+                            for chunk in GLMTranslateService.translate(
+                                self.task.origin_lang,
+                                self.task.target_lang,
+                                resp_content,
+                                self.task.temperature,
+                            ):
+                                self.write_srt(chunk, f)
 
             # 最终输出
             if content_all and not self.is_cancelled:
@@ -82,6 +81,13 @@ class TranslateThread(QThread):
             error_message = self._handle_error(e)
             self.finished_signal.emit(False, f"翻译失败: {error_message}")
             event_bus.translate_finished_signal.emit(False, [error_message])
+
+    def write_srt(self, chunk, f):
+        """写入SRT文件"""
+        print(chunk, end="", flush=True)
+        f.write(chunk)
+        f.flush()
+        event_bus.translate_update_signal.emit(str(self.task.id), chunk)
 
     def cancel(self):
         """取消翻译处理 - 异步非阻塞版本"""
@@ -134,9 +140,8 @@ class DeepseekTranslateService:
     @staticmethod
     def translate(
         origin_lang: str, target_lang: str, resp_content: str, temperature: float
-    ) -> str:
+    ):
         """翻译字幕"""
-        final_content = ""
 
         client = OpenAI(
             api_key=cfg.get(cfg.deepseekApiKey), base_url="https://api.deepseek.com"
@@ -149,16 +154,13 @@ class DeepseekTranslateService:
                     "content": f"请将以下{origin_lang}srt文件翻译成{target_lang},人名优先匹配《东方Project》,保留原本srt格式,你只需要输出结果\n{resp_content}",
                 },
             ],
-            stream=False,
+            stream=True,
             temperature=temperature,
         )
-        resp_content = ""
 
-        # 处理成功的情况
-        resp = response.choices[0].message.content.replace("```srt\n", "")
-        final_content += resp.replace("```", "\n")
-
-        return final_content
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
 
     @staticmethod
     def analysis_error(error_str):
@@ -209,10 +211,8 @@ class GLMTranslateService:
     @staticmethod
     def translate(
         origin_lang: str, target_lang: str, resp_content: str, temperature: float
-    ) -> str:
+    ):
         """翻译字幕"""
-        final_content = ""
-
         client = ZhipuAiClient(api_key=cfg.get(cfg.glmApiKey))
 
         response = client.chat.completions.create(
@@ -223,13 +223,13 @@ class GLMTranslateService:
                     "content": f"请将以下{origin_lang}srt文件翻译成{target_lang},人名优先匹配《东方Project》,保留原本srt格式,你只需要输出结果\n{resp_content}",
                 },
             ],
-            stream=False,
+            stream=True,
             temperature=temperature,
         )
-        resp = response.choices[0].message.content.replace("```srt\n", "")
-        final_content += resp.replace("```", "\n")
 
-        return final_content
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
 
     @staticmethod
     def analysis_error(error_str):
