@@ -15,6 +15,7 @@ class BaseTaskInterface(ScrollArea):
         object_name="BaseTaskInterface",
         processing_text="处理中",
         task_type="任务",
+        max_concurrent_tasks=1,
         parent=None,
     ):
         super().__init__(parent)
@@ -29,7 +30,7 @@ class BaseTaskInterface(ScrollArea):
         self.tasks = []  # 所有任务
         self.task_paths = []  # 所有任务文件路径
         self.active_threads = []  # 活跃的线程
-        self.max_concurrent_tasks = 1
+        self.max_concurrent_tasks = max_concurrent_tasks
 
         self._initWidget()
 

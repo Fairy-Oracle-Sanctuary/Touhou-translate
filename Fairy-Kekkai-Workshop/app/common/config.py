@@ -501,6 +501,11 @@ class Config(QConfig):
         "FFmpeg", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute())
     )
 
+    # 并发数量，同时压制多个视频时的最大并行数
+    concurrentEncodes = RangeConfigItem(
+        "FFmpeg", "ConcurrentEncodes", 2, RangeValidator(1, 5), restart=False
+    )
+
     # 视频编码器
     ffmpegVideoCodec = OptionsConfigItem(
         "FFmpeg",
