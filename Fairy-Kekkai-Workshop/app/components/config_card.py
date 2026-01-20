@@ -14,14 +14,18 @@ from qfluentwidgets import (
     ComboBoxSettingCard,
     Dialog,
     ExpandLayout,
+    Flyout,
+    FlyoutAnimationType,
     LineEdit,
     PasswordLineEdit,
+    PlainTextEdit,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
     SettingCard,
     SwitchSettingCard,
     TitleLabel,
+    ToolButton,
     setFont,
 )
 from qfluentwidgets import FluentIcon as FIF
@@ -58,6 +62,45 @@ class LineEditSettingCard(SettingCard):
     def _onTextChanged(self, text):
         """文本改变时的处理"""
         cfg.set(self.configItem, text)
+
+
+class PlainTextEditSettingCard(SettingCard):
+    """自定义文本输入设置卡片"""
+
+    def __init__(
+        self, configItem, icon, title, content=None, placeholderText="", parent=None
+    ):
+        super().__init__(icon, title, content, parent)
+        self.configItem = configItem
+
+        self.toolButton = ToolButton(FIF.TAG)
+        self.toolButton.clicked.connect(self.showFlyout)
+
+        self.lineEdit = PlainTextEdit(self)
+        self.lineEdit.setFixedWidth(400)
+        self.lineEdit.setFixedHeight(100)
+        self.lineEdit.setPlaceholderText(placeholderText)
+        self.lineEdit.setPlainText(str(self.configItem.value))
+        self.lineEdit.textChanged.connect(self._onTextChanged)
+
+        self.hBoxLayout.addWidget(self.toolButton)
+        self.hBoxLayout.addSpacing(5)
+        self.hBoxLayout.addWidget(self.lineEdit)
+        self.hBoxLayout.addSpacing(16)
+
+    def _onTextChanged(self):
+        """文本改变时的处理"""
+        cfg.set(self.configItem, self.lineEdit.toPlainText())
+
+    def showFlyout(self):
+        Flyout.create(
+            title="Prompt编写帮助",
+            content="{origin_lang}表示原语言\n{target_lang}表示翻译后的语言\n{content}表示待翻译的文本",
+            target=self.toolButton,
+            parent=self,
+            isClosable=True,
+            aniType=FlyoutAnimationType.PULL_UP,
+        )
 
 
 class PasswordLineEditSettingCard(SettingCard):
@@ -935,9 +978,22 @@ class TranslateSettingInterface(ScrollArea):
             validator=QDoubleValidator(0.1, 2.0, 1),
             parent=self.aiGroup,
         )
+        # prompt模板
+        self.promptTemplateCard = PlainTextEditSettingCard(
+            cfg.promptTemplate,
+            FIF.CODE,
+            self.tr("Prompt模板"),
+            self.tr("设置你的Prompt模板"),
+            placeholderText="",
+            parent=self.aiGroup,
+        )
+        self.promptTemplateCard.setFixedHeight(120)
 
         # Deepseek
-        self.deepseekGroup = SettingCardGroup(self.tr("Deepseek"), self.scrollWidget)
+        self.deepseekGroup = SettingCardGroup(
+            self.tr("Deepseek (api付费 网页端免费 速度A 质量A 纠错A)"),
+            self.scrollWidget,
+        )
         self.DeepseekApiKeyCard = PasswordLineEditSettingCard(
             cfg.deepseekApiKey,
             QIcon(":/app/images/icons/deepseek.svg"),
@@ -950,7 +1006,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # GLM-4.5-FLASH
         self.glmGroup = SettingCardGroup(
-            self.tr("智谱 GLM-4.5-FLASH"), self.scrollWidget
+            self.tr("智谱 GLM-4.5-FLASH (免费 速度C 质量A 纠错B)"), self.scrollWidget
         )
         self.GplApiKeyCard = PasswordLineEditSettingCard(
             cfg.glmApiKey,
@@ -961,6 +1017,38 @@ class TranslateSettingInterface(ScrollArea):
             parent=self.glmGroup,
         )
         self.GplApiKeyCard.lineEdit.setFixedWidth(350)
+
+        # Spark Lite
+        self.sparkGroup = SettingCardGroup(
+            self.tr("讯飞 Spark Lite (免费 速度A 质量C 纠错C)"), self.scrollWidget
+        )
+        self.SparkApiKeyCard = PasswordLineEditSettingCard(
+            cfg.sparkApiKey,
+            QIcon(":/app/images/icons/spark-lite.svg"),
+            self.tr("讯飞 Spark Lite Api Key"),
+            self.tr("设置你的讯飞 Spark Lite Api Key"),
+            placeholderText="",
+            parent=self.sparkGroup,
+        )
+        self.SparkApiKeyCard.lineEdit.setFixedWidth(350)
+        self.SparkAppIdCard = PasswordLineEditSettingCard(
+            cfg.sparkAppId,
+            QIcon(":/app/images/icons/spark-lite.svg"),
+            self.tr("讯飞 Spark Lite App ID"),
+            self.tr("设置你的讯飞 Spark Lite App ID"),
+            placeholderText="",
+            parent=self.sparkGroup,
+        )
+        self.SparkAppIdCard.lineEdit.setFixedWidth(350)
+        self.SparkApiSecretCard = PasswordLineEditSettingCard(
+            cfg.sparkApiSecret,
+            QIcon(":/app/images/icons/spark-lite.svg"),
+            self.tr("讯飞 Spark Lite API Secret"),
+            self.tr("设置你的讯飞 Spark Lite API Secret"),
+            placeholderText="",
+            parent=self.sparkGroup,
+        )
+        self.SparkApiSecretCard.lineEdit.setFixedWidth(350)
 
         self.__initWidget()
 
@@ -985,6 +1073,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # AI参数设置
         self.aiGroup.addSettingCard(self.aiTemperatureCard)
+        self.aiGroup.addSettingCard(self.promptTemplateCard)
 
         # Deepseek
         self.deepseekGroup.addSettingCard(self.DeepseekApiKeyCard)
@@ -992,11 +1081,17 @@ class TranslateSettingInterface(ScrollArea):
         # GLM-4.5-FLASH
         self.glmGroup.addSettingCard(self.GplApiKeyCard)
 
+        # Spark Lite
+        self.sparkGroup.addSettingCard(self.SparkApiKeyCard)
+        self.sparkGroup.addSettingCard(self.SparkAppIdCard)
+        self.sparkGroup.addSettingCard(self.SparkApiSecretCard)
+
         self.expandLayout.setSpacing(26)
-        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.setContentsMargins(36, 10, 36, 20)
         self.expandLayout.addWidget(self.aiGroup)
         self.expandLayout.addWidget(self.deepseekGroup)
         self.expandLayout.addWidget(self.glmGroup)
+        self.expandLayout.addWidget(self.sparkGroup)
 
 
 class FFmpegSettingInterface(ScrollArea):

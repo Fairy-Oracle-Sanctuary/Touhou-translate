@@ -165,7 +165,11 @@ translate_language_dict = {
 }
 
 # AI模型
-AI_model_dict = {"GLM-4.5-FLASH": "glm-4.5-flash", "Deepseek": "deepseek"}
+AI_model_dict = {
+    "GLM-4.5-FLASH": "glm-4.5-flash",
+    "Deepseek": "deepseek",
+    "Spark-Lite": "spark-lite",
+}
 AI_ERROR_MAP = {
     # --- 身份验证与权限 ---
     "invalid_api_key": "API密钥无效，请检查设置",

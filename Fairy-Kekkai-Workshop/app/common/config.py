@@ -463,6 +463,14 @@ class Config(QConfig):
         restart=False,
     )
 
+    # prompt模板
+    promptTemplate = ConfigItem(
+        "Translate",
+        "PromptTemplate",
+        "将以下{origin_lang}文本翻译成{target_lang},\n人名优先匹配《东方Project》,保留原本srt格式,你只需要输出翻译后的结果\n{content}",
+        restart=False,
+    )
+
     # AI模型选择
     ai_model = OptionsConfigItem(
         "Translate",
@@ -477,6 +485,13 @@ class Config(QConfig):
 
     # glm-4.5-flash API Key (免费)
     glmApiKey = ConfigItem("Translate", "GlmApiKey", "", restart=False)
+
+    # Spark Lite API Key (免费)
+    sparkApiKey = ConfigItem("Translate", "SparkApiKey", "", restart=False)
+    # Spark Lite App ID (免费)
+    sparkAppId = ConfigItem("Translate", "SparkAppId", "", restart=False)
+    # Spark Lite API Secret (免费)
+    sparkApiSecret = ConfigItem("Translate", "SparkApiSecret", "", restart=False)
 
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
