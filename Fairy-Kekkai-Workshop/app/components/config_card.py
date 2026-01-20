@@ -936,25 +936,29 @@ class TranslateSettingInterface(ScrollArea):
             parent=self.aiGroup,
         )
 
-        # Deepseek Api Key
-        self.keyGroup = SettingCardGroup(self.tr("Api Key"), self.scrollWidget)
+        # Deepseek
+        self.deepseekGroup = SettingCardGroup(self.tr("Deepseek"), self.scrollWidget)
         self.DeepseekApiKeyCard = PasswordLineEditSettingCard(
             cfg.deepseekApiKey,
             QIcon(":/app/images/icons/deepseek.svg"),
-            self.tr("Deepseek"),
+            self.tr("Deepseek Api Key"),
             self.tr("设置你的Deepseek Api Key"),
             placeholderText="",
-            parent=self.keyGroup,
+            parent=self.deepseekGroup,
         )
         self.DeepseekApiKeyCard.lineEdit.setFixedWidth(350)
 
+        # GLM-4.5-FLASH
+        self.glmGroup = SettingCardGroup(
+            self.tr("智谱 GLM-4.5-FLASH"), self.scrollWidget
+        )
         self.GplApiKeyCard = PasswordLineEditSettingCard(
             cfg.glmApiKey,
-            QIcon(":/app/images/icons/GLM.png"),
-            self.tr("智谱 GLM-4.5-FLASH"),
+            QIcon(":/app/images/icons/glm-4.5-flash.svg"),
+            self.tr("智谱 GLM-4.5-FLASH Api Key"),
             self.tr("设置你的GLM-4.5-FLASH Api Key"),
             placeholderText="",
-            parent=self.keyGroup,
+            parent=self.glmGroup,
         )
         self.GplApiKeyCard.lineEdit.setFixedWidth(350)
 
@@ -982,14 +986,17 @@ class TranslateSettingInterface(ScrollArea):
         # AI参数设置
         self.aiGroup.addSettingCard(self.aiTemperatureCard)
 
-        # Api Key设置
-        self.keyGroup.addSettingCard(self.DeepseekApiKeyCard)
-        self.keyGroup.addSettingCard(self.GplApiKeyCard)
+        # Deepseek
+        self.deepseekGroup.addSettingCard(self.DeepseekApiKeyCard)
+
+        # GLM-4.5-FLASH
+        self.glmGroup.addSettingCard(self.GplApiKeyCard)
 
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
         self.expandLayout.addWidget(self.aiGroup)
-        self.expandLayout.addWidget(self.keyGroup)
+        self.expandLayout.addWidget(self.deepseekGroup)
+        self.expandLayout.addWidget(self.glmGroup)
 
 
 class FFmpegSettingInterface(ScrollArea):

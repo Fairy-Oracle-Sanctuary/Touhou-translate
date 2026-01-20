@@ -103,6 +103,8 @@ class BaseItemWidget(CardWidget):
 
         self.infoLayout.addWidget(self.statusLabel)
 
+        self.setMinimumHeight(75)
+
     def updateStatusStyle(self, statusPill):
         """更新状态标签样式"""
         if self.task.status == "等待中":
