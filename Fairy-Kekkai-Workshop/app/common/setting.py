@@ -166,7 +166,46 @@ translate_language_dict = {
 
 # AI模型
 AI_model_dict = {"GLM-4.5-FLASH": "glm-4.5-flash", "Deepseek": "deepseek"}
-
+AI_ERROR_MAP = {
+    # --- 身份验证与权限 ---
+    "invalid_api_key": "API密钥无效，请检查设置",
+    "authentication": "认证失败，请检查API Key是否正确",
+    "unauthorized": "未授权访问，密钥可能已过期",
+    "permission": "账号权限不足，请确认模型访问权限",
+    # --- 余额与额度 ---
+    "insufficient_quota": "账户额度不足，请及时充值",
+    "quota": "额度已耗尽或账号已欠费",
+    "balance": "账户余额不足",
+    "credit_limit": "已达到信用额度限制",
+    # --- 请求频率与并发 ---
+    "rate_limit": "请求频率过快（RPM），请稍后重试",
+    "too_many_requests": "并发请求数过多（TPM），请稍后重试",
+    "concurrency": "已达到最大并行任务数限制",
+    "429": "请求过于频繁，触发流量控制",
+    # --- 内容审核 (安全限制) ---
+    "policy": "内容触发安全审核政策，无法处理",
+    "sensitive": "包含敏感词汇，请求被拦截",
+    "safety": "内容因安全风险被过滤器拦截",
+    "filtered": "输出内容因合规性被过滤",
+    # --- 服务器状态 ---
+    "overloaded": "服务器负载过高，请稍后重试",
+    "busy": "服务器繁忙，请稍后重试",
+    "internal": "服务器内部错误，请联系厂商支持",
+    "server": "后端服务异常",
+    "upstream": "上游服务报错",
+    "500": "服务器崩溃，请稍后再试",
+    "503": "服务暂时不可用，可能正在维护",
+    # --- 网络与超时 ---
+    "timeout": "请求超时，网络不稳定或响应过慢",
+    "connection": "网络连接失败，请检查代理或网络设置",
+    "connect": "无法连接到 API 服务器",
+    "proxy": "代理服务器配置错误或连接断开",
+    # --- 参数与模型 ---
+    "invalid_request": "请求参数有误，请检查设置",
+    "model_not_found": "指定的模型不存在或已被下线",
+    "context_length": "内容超出模型最大上下文长度限制",
+    "bad_request": "无效请求，请检查输入格式",
+}
 
 if sys.platform == "win32":
     EXE_SUFFIX = ".exe"
