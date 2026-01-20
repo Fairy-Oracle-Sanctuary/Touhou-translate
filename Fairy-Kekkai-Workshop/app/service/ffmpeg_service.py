@@ -268,6 +268,8 @@ class FFmpegProcess(QObject):
         data = (
             self.process.readAllStandardOutput().data().decode("utf-8", errors="ignore")
         )
+        # 这里把data合并为一行发送
+        event_bus.ffmpeg_update_signal.emit(str(self.task.id), data.replace("\n", "-"))
         lines = data.split("\n")
 
         for line in lines:

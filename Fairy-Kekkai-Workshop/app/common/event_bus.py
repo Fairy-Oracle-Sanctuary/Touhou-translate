@@ -44,6 +44,9 @@ class GlobalEventBus(QObject):
     # 压制相关事件
     ffmpeg_finished_signal = Signal(bool, str)
     ffmpeg_requested = Signal(str, str)
+    ffmpeg_update_signal = Signal(
+        str, str
+    )  # 实时ffmpeg输出更新信号 (task_id, output_chunk)
 
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
