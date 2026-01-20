@@ -540,6 +540,20 @@ class OCRSettingInterface(ScrollArea):
             cfg.get(cfg.supportFilesPath),
             self.paddleocrPathGroup,
         )
+        self.videocrCliPathCard = PushSettingCard(
+            self.tr("选择文件"),
+            ":/app/images/logo/Paddle.svg",
+            "请选择可执行文件videocr-cli.exe",
+            cfg.get(cfg.videocrCliPath),
+            self.paddleocrPathGroup,
+        )
+        self.tempDirCard = PushSettingCard(
+            self.tr("选择文件夹"),
+            ":/app/images/logo/Paddle.svg",
+            "请选择字幕提取临时文件夹temp",
+            cfg.get(cfg.tempDir),
+            self.paddleocrPathGroup,
+        )
 
         # 时间设置
         self.timeGroup = SettingCardGroup(self.tr("时间设置"), self.scrollWidget)
@@ -735,6 +749,8 @@ class OCRSettingInterface(ScrollArea):
         # 文件路径
         self.paddleocrPathGroup.addSettingCard(self.paddleocrPathCard)
         self.paddleocrPathGroup.addSettingCard(self.supportFilesPathCard)
+        self.paddleocrPathGroup.addSettingCard(self.videocrCliPathCard)
+        self.paddleocrPathGroup.addSettingCard(self.tempDirCard)
 
         # 时间设置
         self.timeGroup.addSettingCard(self.timeStartCard)
@@ -817,6 +833,52 @@ class OCRSettingInterface(ScrollArea):
         cfg.set(cfg.supportFilesPath, path)
         self.supportFilesPathCard.setContent(path)
 
+    def _onVideocrCliPathCardClicked(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, self.tr("请选择videocr-cli.exe"), filter="videocr-cli.exe (*.exe)"
+        )
+
+        if not path or cfg.get(cfg.videocrCliPath) == path:
+            return
+
+        # 检查路径中是否包含中文字符
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", path):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr("videocr-cli.exe 路径不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        cfg.set(cfg.videocrCliPath, path)
+        self.videocrCliPathCard.setContent(path)
+
+    def _onTempDirCardClicked(self):
+        path = QFileDialog.getExistingDirectory(
+            self, self.tr("请选择字幕提取临时文件夹temp")
+        )
+
+        if not path or cfg.get(cfg.tempDir) == path:
+            return
+
+        # 检查路径中是否包含中文字符
+        if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", path):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr("字幕提取临时文件夹temp 路径不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        cfg.set(cfg.tempDir, path)
+        self.tempDirCard.setContent(path)
+
     def _useDualZoneCardChangeSelection(self, isUseDualZone):
         """更改框选设置"""
         self.changeSelectionSignal.emit(isUseDualZone)
@@ -834,6 +896,9 @@ class OCRSettingInterface(ScrollArea):
         # self.useFullframeCard.checkedChanged.connect(lambda: self._changeSelection(0))
         self.paddleocrPathCard.clicked.connect(self._onPaddleocrPathCardClicked)
         self.supportFilesPathCard.clicked.connect(self._onSupportFilesPathCardClicked)
+        self.videocrCliPathCard.clicked.connect(self._onVideocrCliPathCardClicked)
+        self.tempDirCard.clicked.connect(self._onTempDirCardClicked)
+
         self.useDualZoneCard.checkedChanged.connect(
             lambda v: self._useDualZoneCardChangeSelection(v)
         )

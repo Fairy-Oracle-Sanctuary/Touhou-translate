@@ -20,6 +20,7 @@ class OCRTask:
         self.error_message = ""
         self.input_file = args.get("video_path")
         self.output_file = args.get("file_path")
+        self.temp_dir = args.get("temp_dir")
 
         OCRTask._id_counter += 1
         self.id = OCRTask._id_counter
@@ -34,9 +35,9 @@ class OCRProcess(QObject):
     print_signal = Signal(str)  # 捕获print输出
     cancelled_signal = Signal()  # 取消完成信号
 
-    def __init__(self, task):
+    def __init__(self, task: OCRTask):
         super().__init__()
-        self.task: OCRTask = task
+        self.task = task
         self.is_cancelled = False
         self.process = None
         self.output_lines = []  # 存储输出用于错误诊断
@@ -54,6 +55,7 @@ class OCRProcess(QObject):
         # 添加参数
         cmd_args.extend(["--video_path", args["video_path"]])
         cmd_args.extend(["--output", args["file_path"]])
+        cmd_args.extend(["--temp_dir", args["temp_dir"]])
         cmd_args.extend(["--lang", args["lang"]])
         cmd_args.extend(["--time_start", args["time_start"]])
         if args["time_end"]:

@@ -304,15 +304,13 @@ class VideocrInterface(BaseFunctionInterface):
             self.show_error_message("请设置输出文件路径")
             return
 
-        # 检查是否需要框选区域
-        if self.position_combo.currentText() == "自定义区域":
-            selection_rect = self.video_preview.get_selection_rect()
-            if not selection_rect:
-                self.show_error_message("请先框选字幕区域")
-                return
-            self._log_message(
-                f"使用自定义区域: {selection_rect.x()}, {selection_rect.y()}, {selection_rect.width()}x{selection_rect.height()}"
-            )
+        selection_rect = self.video_preview.get_selection_rect()
+        if not selection_rect:
+            self.show_error_message("请先框选字幕区域")
+            return
+        self._log_message(
+            f"使用自定义区域: {selection_rect.x()}, {selection_rect.y()}, {selection_rect.width()}x{selection_rect.height()}"
+        )
 
         # 组合参数发送信号
         args = self._get_args()
@@ -323,6 +321,7 @@ class VideocrInterface(BaseFunctionInterface):
         args = {}
         args["video_path"] = self.file_path
         args["file_path"] = self.output_path_edit.text()
+        args["temp_dir"] = cfg.get(cfg.tempDir)
         args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
         args["time_start"] = "0:00"
         args["time_end"] = ""

@@ -291,7 +291,7 @@ class Config(QConfig):
     videocrCliPath = ConfigItem(
         "OCR",
         "VideocrCliPath",
-        str(Path(f"tools/videocr_cli.exe{EXE_SUFFIX}").absolute()),
+        str(Path(f"tools/videocr_cli{EXE_SUFFIX}").absolute()),
     )
 
     # paddleocr exe路径
@@ -313,6 +313,12 @@ class Config(QConfig):
         "OCR",
         "supportFilesPath",
         str(Path("tools/PaddleOCR.PP-OCRv5.support.files/").absolute()),
+    )
+
+    tempDir = ConfigItem(
+        "OCR",
+        "TempDir",
+        str(Path("temp/").absolute()),
     )
 
     # 开始时间（例如：0:00 或 1:23:45）

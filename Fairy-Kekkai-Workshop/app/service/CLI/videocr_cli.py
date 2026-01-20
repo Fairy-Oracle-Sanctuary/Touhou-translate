@@ -34,6 +34,13 @@ def main():
         help="Output SRT file path (default: subtitle.srt)",
     )
     parser.add_argument(
+        "--temp_dir",
+        type=str,
+        default="temp",
+        help="Temporary directory (default: C:\\Users\\%USERNAME%\\AppData\\Local\\Temp)",
+    )
+
+    parser.add_argument(
         "--lang", type=str, default="ch", help="OCR language (default: ch)"
     )
     parser.add_argument(
@@ -202,6 +209,7 @@ def main():
     save_subtitles_to_file(
         video_path=args.video_path,
         file_path=args.output,
+        temp_dir=args.temp_dir,
         lang=args.lang,
         time_start=args.time_start,
         time_end=args.time_end,
