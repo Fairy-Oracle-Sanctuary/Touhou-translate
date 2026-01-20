@@ -4,6 +4,7 @@ from typing import Generator
 
 from openai import OpenAI
 from PySide6.QtCore import QThread, Signal
+from sparkai.llm.llm import ChatSparkLLM, ChunkPrintHandler
 from zai import ZhipuAiClient
 
 from ..common.config import cfg
@@ -45,23 +46,37 @@ class BaseTranslateService(ABC):
     def translate(
         self, origin_lang: str, target_lang: str, content: str, temperature: float
     ) -> Generator[str, None, None]:
-        prompt = (
-            f"请将以下{origin_lang}srt文件翻译成{target_lang}，"
-            f"人名优先匹配《东方Project》，保留原本srt格式，你只需要输出结果\n{content}"
+        prompt = cfg.get(cfg.promptTemplate).format(
+            origin_lang=origin_lang,
+            target_lang=target_lang,
+            content=content,
         )
-
-        try:
-            response = self.get_client().chat.completions.create(
-                model=self.get_model_name(),
-                messages=[{"role": "user", "content": prompt}],
-                stream=True,
-                temperature=temperature,
-            )
-            for chunk in response:
-                if content_piece := chunk.choices[0].delta.content:
-                    yield content_piece
-        except Exception as e:
-            raise e
+        print(prompt)
+        model = self.get_model_name()
+        if model == "spark-lite":
+            try:
+                response = self.get_client()
+                messages = [{"role": "user", "content": prompt}]
+                handler = ChunkPrintHandler()
+                a = response.stream(messages, callbacks=[handler])
+                for chunk in a:
+                    yield chunk.content
+            except Exception as e:
+                print(e)
+                raise e
+        else:
+            try:
+                response = self.get_client().chat.completions.create(
+                    model=self.get_model_name(),
+                    messages=[{"role": "user", "content": prompt}],
+                    stream=True,
+                    temperature=temperature,
+                )
+                for chunk in response:
+                    if content_piece := chunk.choices[0].delta.content:
+                        yield content_piece
+            except Exception as e:
+                raise e
 
     @classmethod
     def analysis_error(cls, error_str: str) -> str:
@@ -90,11 +105,30 @@ class GLMService(BaseTranslateService):
         return "glm-4.5-flash"
 
 
+class SparkLiteService(BaseTranslateService):
+    def get_client(self):
+        return ChatSparkLLM(
+            spark_api_url="wss://spark-api.xf-yun.com/v1.1/chat",
+            spark_app_id=cfg.get(cfg.sparkAppId),
+            spark_api_key=cfg.get(cfg.sparkApiKey),
+            spark_api_secret=cfg.get(cfg.sparkApiSecret),
+            spark_llm_domain="lite",
+            streaming=True,
+        )
+
+    def get_model_name(self):
+        return "spark-lite"
+
+
 class TranslateThread(QThread):
     finished_signal = Signal(bool, str)
     cancelled_signal = Signal()
 
-    SERVICES = {"deepseek": DeepseekService, "glm-4.5-flash": GLMService}
+    SERVICES = {
+        "deepseek": DeepseekService,
+        "glm-4.5-flash": GLMService,
+        "spark-lite": SparkLiteService,
+    }
 
     def __init__(self, task: TranslateTask):
         super().__init__()
