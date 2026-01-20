@@ -1278,6 +1278,13 @@ class FFmpegSettingInterface(ScrollArea):
         self.videoProcessingGroup = SettingCardGroup(
             self.tr("视频处理"), self.scrollWidget
         )
+        self.concurrentEncodesCard = RangeSettingCard(
+            cfg.concurrentEncodes,
+            FIF.SPEED_HIGH,
+            title=self.tr("并发压制数量"),
+            content=self.tr("同时压制多个视频时的最大并行数"),
+            parent=self.videoProcessingGroup,
+        )
         self.scaleCard = ComboBoxSettingCard(
             cfg.ffmpegScale,
             FIF.ZOOM,
@@ -1408,6 +1415,7 @@ class FFmpegSettingInterface(ScrollArea):
         self.outputGroup.addSettingCard(self.overwriteOutputCard)
 
         # 视频处理
+        self.videoProcessingGroup.addSettingCard(self.concurrentEncodesCard)
         self.videoProcessingGroup.addSettingCard(self.scaleCard)
         self.videoProcessingGroup.addSettingCard(self.customScaleCard)
         self.videoProcessingGroup.addSettingCard(self.fpsCard)
