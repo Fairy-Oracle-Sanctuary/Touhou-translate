@@ -62,3 +62,26 @@ if __name__ == "__main__":
     sys.exit(main())
 
 # Fairy-Kekkai-Workshop
+
+"""
+- 更新了主页面
+- 新增了对PaddleOCR自定义temp文件夹的支持
+- 新增了输出更多PaddleOCR运行时的细节
+- 新增点击项目卡片查看项目进度
+- 新增压制视频时点击任务卡片查看压制进度
+- 新增AI翻译时点击任务卡片查看翻译进度
+- 新增了AI的设置:
+    - temperature(温度)
+    - prompt(提示词模板)
+- 新增了ai接口:
+    - 腾讯混元
+    - Gemini 3 Flash
+    - 书生
+    - GLM-4.5-FLASH
+    - Spark-Lite
+    - 百度ERNIE-Speed-128K
+- 优化了项目打开时的性能
+- 优化了提取字幕、翻译、压制界面的布局
+- 修复了主页面更新按钮点击时会检查两次更新的BUG
+- 修复了一些小BUG
+"""

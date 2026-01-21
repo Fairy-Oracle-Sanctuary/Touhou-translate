@@ -291,7 +291,7 @@ class Config(QConfig):
     videocrCliPath = ConfigItem(
         "OCR",
         "VideocrCliPath",
-        str(Path(f"tools/videocr_cli{EXE_SUFFIX}").absolute()),
+        str(Path(f"tools/videocr-cli{EXE_SUFFIX}").absolute()),
     )
 
     # paddleocr exe路径
