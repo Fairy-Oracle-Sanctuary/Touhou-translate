@@ -328,7 +328,7 @@ class VideocrInterface(BaseFunctionInterface):
     def _get_args(self):
         """获取OCR参数"""
         args = {}
-        args["video_path"] = self.file_path
+        args["video_path"] = self.input_path_edit.text()
         args["file_path"] = self.output_path_edit.text()
         args["temp_dir"] = cfg.get(cfg.tempDir)
         args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
