@@ -44,8 +44,6 @@ class HomeInterface(ScrollArea):
         self.setObjectName("HomeInterface")
         self.enableTransparentBackground()
 
-        self._connectSignalToSlot()
-
     def loadSamples(self):
         """load samples"""
         # basic input samples
@@ -100,7 +98,6 @@ class HomeInterface(ScrollArea):
             title="FFmpeg (已内置)",
             content="FFmpeg下载地址，下载后可在设置里设定路径",
             url="https://ffmpeg.org/download.html",
-            info=self.tr("FREE"),
         )
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/ytdlp.svg"),
