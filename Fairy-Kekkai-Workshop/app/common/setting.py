@@ -22,7 +22,7 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 PIC_SUFFIX = ".jpg"
 
 with open("PADDLEOCR_VERSION", "r") as f:
-    text = f.read().strip()
+    text = f.readline().strip()
     if (
         text == "CPU-v1.3.2"
         or text == "GPU-v1.3.2-CUDA-11.8"
