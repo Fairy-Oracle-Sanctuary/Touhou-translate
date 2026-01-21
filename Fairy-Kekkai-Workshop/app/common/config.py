@@ -467,7 +467,7 @@ class Config(QConfig):
     promptTemplate = ConfigItem(
         "Translate",
         "PromptTemplate",
-        "将以下{origin_lang}文本翻译成{target_lang},\n人名优先匹配《东方Project》,保留原本srt格式,你只需要输出翻译后的结果\n{content}",
+        "将以下{origin_lang}文本翻译成{target_lang},\n人名优先匹配《东方Project》,保留原本srt格式,你只需要输出翻译后的结果，不需要输出多余内容\n{content}",
         restart=False,
     )
 
@@ -475,7 +475,7 @@ class Config(QConfig):
     ai_model = OptionsConfigItem(
         "Translate",
         "AiModel",
-        "GLM-4.5-FLASH",
+        "腾讯混元",
         OptionsValidator(list(AI_model_dict.keys())),
         restart=False,
     )
@@ -494,6 +494,10 @@ class Config(QConfig):
     sparkApiSecret = ConfigItem("Translate", "SparkApiSecret", "", restart=False)
     # 腾讯混元 API Key (免费)
     hunyuanApiKey = ConfigItem("Translate", "HunyuanApiKey", "", restart=False)
+    # 书生 API Key (免费)
+    internApiKey = ConfigItem("Translate", "InternApiKey", "", restart=False)
+    # 百度ERNIE-Speed-128K API Key (免费)
+    ernieSpeedApiKey = ConfigItem("Translate", "ErnieSpeedApiKey", "", restart=False)
 
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)

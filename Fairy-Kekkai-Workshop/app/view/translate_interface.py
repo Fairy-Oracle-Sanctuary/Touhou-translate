@@ -139,6 +139,32 @@ class TranslationInterface(BaseFunctionInterface):
             self.show_error_message("请先填写您的GLM-4.5-FLASH API Key")
             return
 
+        elif cfg.get(cfg.ai_model) == "Spark-Lite" and not cfg.get(cfg.sparkApiKey):
+            self.show_error_message("请先填写您的Spark-Lite API Key")
+            return
+
+        elif cfg.get(cfg.ai_model) == "Spark-Lite" and not cfg.get(cfg.sparkAppId):
+            self.show_error_message("请先填写您的Spark-Lite App ID")
+            return
+
+        elif cfg.get(cfg.ai_model) == "Spark-Lite" and not cfg.get(cfg.sparkApiSecret):
+            self.show_error_message("请先填写您的Spark-Lite API Secret")
+            return
+
+        elif cfg.get(cfg.ai_model) == "腾讯混元" and not cfg.get(cfg.hunyuanApiKey):
+            self.show_error_message("请先填写您的腾讯混元 API Key")
+            return
+
+        elif cfg.get(cfg.ai_model) == "书生" and not cfg.get(cfg.internApiKey):
+            self.show_error_message("请先填写您的书生 API Key")
+            return
+
+        elif cfg.get(cfg.ai_model) == "百度ERNIE-Speed-128K" and not cfg.get(
+            cfg.ernieSpeedApiKey
+        ):
+            self.show_error_message("请先填写您的百度ERNIE-Speed-128K API Key")
+            return
+
         if cfg.get(cfg.origin_lang) == cfg.get(cfg.target_lang):
             self.show_error_message("原语言和目标语言相同")
             return

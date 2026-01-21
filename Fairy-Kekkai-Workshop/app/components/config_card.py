@@ -991,7 +991,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # Deepseek
         self.deepseekGroup = SettingCardGroup(
-            self.tr("Deepseek (api付费 网页端免费 速度A 质量A 纠错A)"),
+            self.tr("Deepseek (api付费 网页端免费 速度A 质量A 纠错A 稳定A)"),
             self.scrollWidget,
         )
         self.DeepseekApiKeyCard = PasswordLineEditSettingCard(
@@ -1006,7 +1006,8 @@ class TranslateSettingInterface(ScrollArea):
 
         # GLM-4.5-FLASH
         self.glmGroup = SettingCardGroup(
-            self.tr("智谱 GLM-4.5-FLASH (免费 速度C 质量A 纠错B)"), self.scrollWidget
+            self.tr("智谱 GLM-4.5-FLASH (免费 速度C 质量A 纠错B 稳定A)"),
+            self.scrollWidget,
         )
         self.GplApiKeyCard = PasswordLineEditSettingCard(
             cfg.glmApiKey,
@@ -1020,7 +1021,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # Spark Lite
         self.sparkGroup = SettingCardGroup(
-            self.tr("讯飞 Spark Lite (免费 速度A 质量C 纠错C)"), self.scrollWidget
+            self.tr("讯飞 Spark Lite (免费 速度A 质量C 纠错C 稳定C)"), self.scrollWidget
         )
         self.SparkApiKeyCard = PasswordLineEditSettingCard(
             cfg.sparkApiKey,
@@ -1052,7 +1053,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # 腾讯混元
         self.hunyuanGroup = SettingCardGroup(
-            self.tr("腾讯混元 (免费 速度A 质量A 纠错A)"), self.scrollWidget
+            self.tr("腾讯混元 (免费 速度A 质量A 纠错A 稳定A)"), self.scrollWidget
         )
         self.HunyuanApiKeyCard = PasswordLineEditSettingCard(
             cfg.hunyuanApiKey,
@@ -1063,6 +1064,35 @@ class TranslateSettingInterface(ScrollArea):
             parent=self.hunyuanGroup,
         )
         self.HunyuanApiKeyCard.lineEdit.setFixedWidth(350)
+
+        # 书生
+        self.internGroup = SettingCardGroup(
+            self.tr("书生 (免费 速度B 质量A 纠错A 稳定A)"), self.scrollWidget
+        )
+        self.InternApiKeyCard = PasswordLineEditSettingCard(
+            cfg.internApiKey,
+            QIcon(":/app/images/icons/intern-latest.svg"),
+            self.tr("书生 Api Key"),
+            self.tr("设置你的书生 Api Key"),
+            placeholderText="",
+            parent=self.internGroup,
+        )
+        self.InternApiKeyCard.lineEdit.setFixedWidth(350)
+
+        # 百度ERNIE-Speed-128K
+        self.ernieSpeedGroup = SettingCardGroup(
+            self.tr("百度ERNIE-Speed-128K (免费 速度A 质量B 纠错A 稳定E 不推荐使用)"),
+            self.scrollWidget,
+        )
+        self.ErnieSpeedApiKeyCard = PasswordLineEditSettingCard(
+            cfg.ernieSpeedApiKey,
+            QIcon(":/app/images/icons/ernie-speed-128k.svg"),
+            self.tr("百度ERNIE-Speed-128K Api Key"),
+            self.tr("设置你的百度ERNIE-Speed-128K Api Key"),
+            placeholderText="",
+            parent=self.ernieSpeedGroup,
+        )
+        self.ErnieSpeedApiKeyCard.lineEdit.setFixedWidth(350)
 
         self.__initWidget()
 
@@ -1103,6 +1133,12 @@ class TranslateSettingInterface(ScrollArea):
         # 腾讯混元
         self.hunyuanGroup.addSettingCard(self.HunyuanApiKeyCard)
 
+        # 书生
+        self.internGroup.addSettingCard(self.InternApiKeyCard)
+
+        # 百度ERNIE-Speed-128K
+        self.ernieSpeedGroup.addSettingCard(self.ErnieSpeedApiKeyCard)
+
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 20)
         self.expandLayout.addWidget(self.aiGroup)
@@ -1110,6 +1146,8 @@ class TranslateSettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.glmGroup)
         self.expandLayout.addWidget(self.sparkGroup)
         self.expandLayout.addWidget(self.hunyuanGroup)
+        self.expandLayout.addWidget(self.internGroup)
+        self.expandLayout.addWidget(self.ernieSpeedGroup)
 
 
 class FFmpegSettingInterface(ScrollArea):
