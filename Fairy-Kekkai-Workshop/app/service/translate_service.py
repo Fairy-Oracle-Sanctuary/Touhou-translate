@@ -120,6 +120,17 @@ class SparkLiteService(BaseTranslateService):
         return "spark-lite"
 
 
+class HunyuanService(BaseTranslateService):
+    def get_client(self):
+        return OpenAI(
+            api_key=cfg.get(cfg.hunyuanApiKey),
+            base_url="https://api.hunyuan.cloud.tencent.com/v1",
+        )
+
+    def get_model_name(self):
+        return "hunyuan-turbos-latest"
+
+
 class TranslateThread(QThread):
     finished_signal = Signal(bool, str)
     cancelled_signal = Signal()
@@ -128,6 +139,7 @@ class TranslateThread(QThread):
         "deepseek": DeepseekService,
         "glm-4.5-flash": GLMService,
         "spark-lite": SparkLiteService,
+        "hunyuan-turbos-latest": HunyuanService,
     }
 
     def __init__(self, task: TranslateTask):

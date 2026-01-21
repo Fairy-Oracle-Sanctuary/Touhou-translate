@@ -1050,6 +1050,20 @@ class TranslateSettingInterface(ScrollArea):
         )
         self.SparkApiSecretCard.lineEdit.setFixedWidth(350)
 
+        # 腾讯混元
+        self.hunyuanGroup = SettingCardGroup(
+            self.tr("腾讯混元 (免费 速度A 质量A 纠错A)"), self.scrollWidget
+        )
+        self.HunyuanApiKeyCard = PasswordLineEditSettingCard(
+            cfg.hunyuanApiKey,
+            QIcon(":/app/images/icons/hunyuan-turbos-latest.svg"),
+            self.tr("腾讯混元 Api Key"),
+            self.tr("设置你的腾讯混元 Api Key"),
+            placeholderText="",
+            parent=self.hunyuanGroup,
+        )
+        self.HunyuanApiKeyCard.lineEdit.setFixedWidth(350)
+
         self.__initWidget()
 
     def __initWidget(self):
@@ -1086,12 +1100,16 @@ class TranslateSettingInterface(ScrollArea):
         self.sparkGroup.addSettingCard(self.SparkAppIdCard)
         self.sparkGroup.addSettingCard(self.SparkApiSecretCard)
 
+        # 腾讯混元
+        self.hunyuanGroup.addSettingCard(self.HunyuanApiKeyCard)
+
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 20)
         self.expandLayout.addWidget(self.aiGroup)
         self.expandLayout.addWidget(self.deepseekGroup)
         self.expandLayout.addWidget(self.glmGroup)
         self.expandLayout.addWidget(self.sparkGroup)
+        self.expandLayout.addWidget(self.hunyuanGroup)
 
 
 class FFmpegSettingInterface(ScrollArea):

@@ -492,6 +492,8 @@ class Config(QConfig):
     sparkAppId = ConfigItem("Translate", "SparkAppId", "", restart=False)
     # Spark Lite API Secret (免费)
     sparkApiSecret = ConfigItem("Translate", "SparkApiSecret", "", restart=False)
+    # 腾讯混元 API Key (免费)
+    hunyuanApiKey = ConfigItem("Translate", "HunyuanApiKey", "", restart=False)
 
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
