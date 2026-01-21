@@ -131,6 +131,28 @@ class HunyuanService(BaseTranslateService):
         return "hunyuan-turbos-latest"
 
 
+class InternService(BaseTranslateService):
+    def get_client(self):
+        return OpenAI(
+            api_key=cfg.get(cfg.internApiKey),
+            base_url="https://chat.intern-ai.org.cn/api/v1",
+        )
+
+    def get_model_name(self):
+        return "intern-latest"
+
+
+class ErnieSpeedService(BaseTranslateService):
+    def get_client(self):
+        return OpenAI(
+            api_key=cfg.get(cfg.ernieSpeedApiKey),
+            base_url="https://qianfan.baidubce.com/v2/",
+        )
+
+    def get_model_name(self):
+        return "ernie-speed-128k"
+
+
 class TranslateThread(QThread):
     finished_signal = Signal(bool, str)
     cancelled_signal = Signal()
@@ -140,6 +162,8 @@ class TranslateThread(QThread):
         "glm-4.5-flash": GLMService,
         "spark-lite": SparkLiteService,
         "hunyuan-turbos-latest": HunyuanService,
+        "intern-latest": InternService,
+        "ernie-speed-128k": ErnieSpeedService,
     }
 
     def __init__(self, task: TranslateTask):

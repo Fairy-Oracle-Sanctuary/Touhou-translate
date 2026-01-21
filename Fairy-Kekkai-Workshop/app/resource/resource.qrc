@@ -19,5 +19,7 @@
     <file>images/icons/glm-4.5-flash.svg</file>
     <file>images/icons/spark-lite.svg</file>
     <file>images/icons/hunyuan-turbos-latest.svg</file>
+    <file>images/icons/intern-latest.svg</file>
+    <file>images/icons/ernie-speed-128k.svg</file>
   </qresource>
 </RCC>

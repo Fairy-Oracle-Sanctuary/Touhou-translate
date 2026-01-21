@@ -170,6 +170,8 @@ AI_model_dict = {
     "Deepseek": "deepseek",
     "Spark-Lite": "spark-lite",
     "腾讯混元": "hunyuan-turbos-latest",
+    "书生": "intern-latest",
+    "百度ERNIE-Speed-128K": "ernie-speed-128k",
 }
 AI_ERROR_MAP = {
     # --- 身份验证与权限 ---
