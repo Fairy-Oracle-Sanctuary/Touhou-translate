@@ -165,6 +165,12 @@ class TranslationInterface(BaseFunctionInterface):
             self.show_error_message("请先填写您的百度ERNIE-Speed-128K API Key")
             return
 
+        elif cfg.get(cfg.ai_model) == "Gemini 3 Flash" and not cfg.get(
+            cfg.geminiApiKey
+        ):
+            self.show_error_message("请先填写您的Gemini 3 Flash API Key")
+            return
+
         if cfg.get(cfg.origin_lang) == cfg.get(cfg.target_lang):
             self.show_error_message("原语言和目标语言相同")
             return

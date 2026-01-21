@@ -482,10 +482,8 @@ class Config(QConfig):
 
     # Deepseek API Key (付费)
     deepseekApiKey = ConfigItem("Translate", "DeepseekApiKey", "", restart=False)
-
     # glm-4.5-flash API Key (免费)
     glmApiKey = ConfigItem("Translate", "GlmApiKey", "", restart=False)
-
     # Spark Lite API Key (免费)
     sparkApiKey = ConfigItem("Translate", "SparkApiKey", "", restart=False)
     # Spark Lite App ID (免费)
@@ -498,6 +496,8 @@ class Config(QConfig):
     internApiKey = ConfigItem("Translate", "InternApiKey", "", restart=False)
     # 百度ERNIE-Speed-128K API Key (免费)
     ernieSpeedApiKey = ConfigItem("Translate", "ErnieSpeedApiKey", "", restart=False)
+    # Gemini 3 Flash API Key (免费)
+    geminiApiKey = ConfigItem("Translate", "GeminiApiKey", "", restart=False)
 
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)

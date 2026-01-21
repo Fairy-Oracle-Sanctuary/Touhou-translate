@@ -21,5 +21,6 @@
     <file>images/icons/hunyuan-turbos-latest.svg</file>
     <file>images/icons/intern-latest.svg</file>
     <file>images/icons/ernie-speed-128k.svg</file>
+    <file>images/icons/gemini-3-flash-preview.svg</file>
   </qresource>
 </RCC>
