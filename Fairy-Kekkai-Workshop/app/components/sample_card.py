@@ -1,7 +1,12 @@
 # coding:utf-8
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from qfluentwidgets import CardWidget, FlowLayout, IconWidget, TextWrap
+from qfluentwidgets import (
+    CardWidget,
+    FlowLayout,
+    IconWidget,
+    TextWrap,
+)
 
 from ..common.event_bus import event_bus
 from ..common.style_sheet import StyleSheet
