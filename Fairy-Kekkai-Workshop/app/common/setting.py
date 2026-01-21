@@ -6,7 +6,7 @@ AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
 VERSION = "1.14.0"
 YEAR = "2025"
-UPDATE_TIME = "2026-2-16"
+UPDATE_TIME = "2026-1-22"
 
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
@@ -22,7 +22,16 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 PIC_SUFFIX = ".jpg"
 
 with open("PADDLEOCR_VERSION", "r") as f:
-    PADDLEOCR_VERSION = f.read().strip()
+    text = f.read().strip()
+    if (
+        text == "CPU-v1.3.2"
+        or text == "GPU-v1.3.2-CUDA-11.8"
+        or text == "GPU-v1.3.2-CUDA-12.9"
+    ):
+        PADDLEOCR_VERSION = text
+    else:
+        PADDLEOCR_VERSION = "None"
+
 # CPU-v1.3.2
 # GPU-v1.3.2-CUDA-11.8
 # GPU-v1.3.2-CUDA-12.9

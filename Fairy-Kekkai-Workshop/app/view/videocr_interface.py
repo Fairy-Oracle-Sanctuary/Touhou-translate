@@ -26,7 +26,11 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import subtitle_positions_list, videocr_languages_dict
+from ..common.setting import (
+    PADDLEOCR_VERSION,
+    subtitle_positions_list,
+    videocr_languages_dict,
+)
 from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
 from ..components.config_card import OCRSettingInterface
@@ -245,6 +249,11 @@ class VideocrInterface(BaseFunctionInterface):
 
     def _start_processing(self):
         """开始OCR处理"""
+        # 检测paddleocr版本是否配置
+        if PADDLEOCR_VERSION == "None":
+            self.show_error_message("请先修改PADDLEOCR_VERSION文件")
+            return
+
         # 检测paddleocr路径内是否有中文
         if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", cfg.get(cfg.paddleocrPath)):
             dialog = Dialog(

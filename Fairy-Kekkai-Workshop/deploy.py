@@ -25,6 +25,7 @@ if sys.platform == "win32":
         # tools/
         "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
         "--include-data-files=Fairy-Kekkai-Workshop/tools/ffmpeg.exe=tools/ffmpeg.exe",
+        "--include-data-files=Fairy-Kekkai-Workshop/tools/videocr-cli.exe=tools/videocr-cli.exe",
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]
 
