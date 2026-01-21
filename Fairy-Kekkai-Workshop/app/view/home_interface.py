@@ -100,6 +100,7 @@ class HomeInterface(ScrollArea):
             title="FFmpeg (已内置)",
             content="FFmpeg下载地址，下载后可在设置里设定路径",
             url="https://ffmpeg.org/download.html",
+            info=self.tr("FREE"),
         )
         urlSamepleView.addOpenUrlCard(
             icon=QIcon(":/app/images/logo/ytdlp.svg"),
@@ -119,6 +120,60 @@ class HomeInterface(ScrollArea):
             title="PaddleOCRv5.support.files (已内置)",
             content="PaddleOCR支持文件下载地址\n下载后设置其路径",
             url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.3.2/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
+        )
+
+        """
+        AI_model_dict = {
+        "腾讯混元": "hunyuan-turbos-latest",
+        "Deepseek": "deepseek",
+        "Gemini 3 Flash": "gemini-3-flash-preview",
+        "书生": "intern-latest",
+        "GLM-4.5-FLASH": "glm-4.5-flash",
+        "Spark-Lite": "spark-lite",
+        "百度ERNIE-Speed-128K": "ernie-speed-128k",}
+        """
+        apiSamepleView = SampleCardView(self.tr("API平台"), self.view)
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/hunyuan-turbos-latest.svg"),
+            title="腾讯混元",
+            content="腾讯混元(hunyuan-lite)API服务\n⭐⭐⭐⭐⭐",
+            url="https://console.cloud.tencent.com/hunyuan-turbos",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/deepseek.svg"),
+            title="Deepseek",
+            content="深度求索API服务\n⭐⭐⭐⭐⭐",
+            url="https://platform.deepseek.com/",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/gemini-3-flash-preview.svg"),
+            title="Google Gemini",
+            content="Gemini 3 Flash API服务\n⭐⭐⭐⭐⭐⭐",
+            url="https://aistudio.google.com/app/api-keys",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/intern-latest.svg"),
+            title="书生",
+            content="书生API服务\n⭐⭐⭐⭐",
+            url="https://internlm.intern-ai.org.cn/api",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/glm-4.5-flash.svg"),
+            title="智谱 AI",
+            content="GLM-4.5-FLASH API服务\n⭐⭐⭐",
+            url="https://www.bigmodel.cn/",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/spark-lite.svg"),
+            title="讯飞星火",
+            content="Spark-Lite API服务\n⭐⭐",
+            url="https://www.xfyun.cn/",
+        )
+        apiSamepleView.addOpenUrlCard(
+            icon=QIcon(":/app/images/icons/ernie-speed-128k.svg"),
+            title="百度千帆",
+            content="ERNIE-Speed-128K API服务\n⭐",
+            url="https://cloud.baidu.com/",
         )
 
         webSampleView = SampleCardView(self.tr("常用网站"), self.view)
@@ -149,6 +204,7 @@ class HomeInterface(ScrollArea):
 
         self.vBoxLayout.addWidget(basicInputView)
         self.vBoxLayout.addWidget(urlSamepleView)
+        self.vBoxLayout.addWidget(apiSamepleView)
         self.vBoxLayout.addWidget(webSampleView)
 
     def _connectSignalToSlot(self):

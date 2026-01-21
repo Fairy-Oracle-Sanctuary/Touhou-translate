@@ -22,10 +22,11 @@ https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V
 『好き』という気持ちが行き着く場所
 https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8
 
----
 色付く恋は、貴方から
 https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0
 (完结)
+
+---
 
 【ゆっくり茶番劇】魔法みたいな恋をした。
 https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U
@@ -39,5 +40,3 @@ https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj
 https://youtube.com/playlist?list=PLwsFUfY3oQWI8gZk654zY575JeUtQl7cE
 (更新中)
 
-
-D:/Touhou-project/projects/Fairy-Kekkai-Workshop/tools/ffmpeg.exe -hwaccel cuda -i "D:/Touhou-project/mmd/particle/McCree/mccree-texie01.avi" -c:v libx264 -crf 24 -preset faster -an -y -progress pipe:1 -stats_period 0.5 "D:\Touhou-project\mmd\particle\McCree\mccree-texie01_.mp4"
