@@ -43,7 +43,7 @@ This project plans to translate and repost the following works:
 | 7 | ヴォルガが幻想入り | 《幻想入沃尔加》 | [YouTube Link](https://youtube.com/playlist?list=PLn5zMpk5-YR-Qzz5RcosD3oA5MbuMk23V) | [BiliBili Link](https://space.bilibili.com/499929312/lists/6525221) |
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTube Link](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `Paused` |
 | 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTube Link](https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U) | [BiliBili Link](https://space.bilibili.com/499929312/lists/6702992) |
-| 10 | 色付く恋は、貴方から | 《染上色彩的恋爱始于你第一季》 | [YouTube Link](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `In Progress` |
+| 10 | 色付く恋は、貴方から | 《染上色彩的恋爱始于你第一季》 | [YouTube Link](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | [BiliBili Link](https://space.bilibili.com/499929312/lists/7221002) |
 | 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTube Link](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `Pending` |
 | 12 | 東方MMD（初心者動画） | 《東方MMD（初心者動画）》 | [YouTube链接](https://www.youtube.com/playlist?list=PLAj9cJ2slYo_AJjUvKGFmG-j0lzySK_e8) | [BiliBili Link](https://space.bilibili.com/499929312/lists/7120067) |
 

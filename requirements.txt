@@ -1,11 +1,18 @@
-cpuid==0.1.1
-openai==2.14.0
-pillow==12.0.0
-pyperclip==1.11.0
-pyqt5_frameless_window==0.7.4
-pyqt_fluent_widgets==1.10.5
-pyside6_fluent_widgets==1.10.5
-pysidesix_frameless_window==0.7.4
-Requests==2.32.5
-srt==3.5.3
-thefuzz==0.22.1
+# Project Python dependencies for Fairy-Kekkai-Workshop
+# Note: PaddleOCR in this project is expected as a standalone executable
+# (see app/view/home_interface.py). If you prefer the Python package,
+# install `paddleocr` and its backend `paddlepaddle` separately.
+
+PySide6>=6.5
+qfluentwidgets
+opencv-python
+openai
+sparkai
+zai
+numpy
+Pillow
+requests
+
+# Optional / likely useful tools
+# paddleocr
+# paddlepaddle
