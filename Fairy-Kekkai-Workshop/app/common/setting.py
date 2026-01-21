@@ -166,11 +166,12 @@ translate_language_dict = {
 
 # AI模型
 AI_model_dict = {
-    "GLM-4.5-FLASH": "glm-4.5-flash",
-    "Deepseek": "deepseek",
-    "Spark-Lite": "spark-lite",
     "腾讯混元": "hunyuan-turbos-latest",
+    "Deepseek": "deepseek",
+    "Gemini 3 Flash": "gemini-3-flash-preview",
     "书生": "intern-latest",
+    "GLM-4.5-FLASH": "glm-4.5-flash",
+    "Spark-Lite": "spark-lite",
     "百度ERNIE-Speed-128K": "ernie-speed-128k",
 }
 AI_ERROR_MAP = {

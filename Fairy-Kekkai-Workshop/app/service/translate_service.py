@@ -153,6 +153,17 @@ class ErnieSpeedService(BaseTranslateService):
         return "ernie-speed-128k"
 
 
+class GeminiService(BaseTranslateService):
+    def get_client(self):
+        return OpenAI(
+            api_key=cfg.get(cfg.geminiApiKey),
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
+
+    def get_model_name(self):
+        return "gemini-3-flash-preview"
+
+
 class TranslateThread(QThread):
     finished_signal = Signal(bool, str)
     cancelled_signal = Signal()
@@ -164,6 +175,7 @@ class TranslateThread(QThread):
         "hunyuan-turbos-latest": HunyuanService,
         "intern-latest": InternService,
         "ernie-speed-128k": ErnieSpeedService,
+        "gemini-3-flash-preview": GeminiService,
     }
 
     def __init__(self, task: TranslateTask):

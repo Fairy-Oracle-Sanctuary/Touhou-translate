@@ -1094,6 +1094,21 @@ class TranslateSettingInterface(ScrollArea):
         )
         self.ErnieSpeedApiKeyCard.lineEdit.setFixedWidth(350)
 
+        # Gemini 3 Flash
+        self.geminiGroup = SettingCardGroup(
+            self.tr("Gemini 3 Flash (免费 速度S 质量A 纠错A 稳定S 需要挂梯子 最推荐)"),
+            self.scrollWidget,
+        )
+        self.GeminiApiKeyCard = PasswordLineEditSettingCard(
+            cfg.geminiApiKey,
+            QIcon(":/app/images/icons/gemini-3-flash-preview.svg"),
+            self.tr("Gemini 3 Flash Api Key"),
+            self.tr("设置你的Gemini 3 Flash Api Key"),
+            placeholderText="",
+            parent=self.geminiGroup,
+        )
+        self.GeminiApiKeyCard.lineEdit.setFixedWidth(350)
+
         self.__initWidget()
 
     def __initWidget(self):
@@ -1139,14 +1154,18 @@ class TranslateSettingInterface(ScrollArea):
         # 百度ERNIE-Speed-128K
         self.ernieSpeedGroup.addSettingCard(self.ErnieSpeedApiKeyCard)
 
+        # Gemini 3 Flash
+        self.geminiGroup.addSettingCard(self.GeminiApiKeyCard)
+
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 20)
         self.expandLayout.addWidget(self.aiGroup)
-        self.expandLayout.addWidget(self.deepseekGroup)
-        self.expandLayout.addWidget(self.glmGroup)
-        self.expandLayout.addWidget(self.sparkGroup)
         self.expandLayout.addWidget(self.hunyuanGroup)
+        self.expandLayout.addWidget(self.deepseekGroup)
+        self.expandLayout.addWidget(self.geminiGroup)
+        self.expandLayout.addWidget(self.glmGroup)
         self.expandLayout.addWidget(self.internGroup)
+        self.expandLayout.addWidget(self.sparkGroup)
         self.expandLayout.addWidget(self.ernieSpeedGroup)
 
 
