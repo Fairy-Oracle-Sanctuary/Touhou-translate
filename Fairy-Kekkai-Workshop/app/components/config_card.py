@@ -928,7 +928,7 @@ class OCRSettingInterface(ScrollArea):
 
     def _gpuEnvCardChangeSelection(self, gpu_env):
         """更改框选设置"""
-        if gpu_env == "CPU-v1.3.2":
+        if gpu_env == "CPU-v1.3.2" or gpu_env == "None":
             self.useGpuCard.switchButton.setChecked(False)
             self.useGpuCard.switchButton.setEnabled(False)
         else:
@@ -954,6 +954,10 @@ class OCRSettingInterface(ScrollArea):
         self._gpuEnvCardChangeSelection(PADDLEOCR_VERSION)
         self.gpuEnvCard.comboBox.setCurrentText(PADDLEOCR_VERSION)
         self.gpuEnvCard.comboBox.setEnabled(False)
+        if PADDLEOCR_VERSION == "None":
+            self.gpuEnvCard.comboBox.setVisible(False)
+        else:
+            self.gpuEnvCard.comboBox.setVisible(True)
 
 
 class TranslateSettingInterface(ScrollArea):
