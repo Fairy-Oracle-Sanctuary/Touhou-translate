@@ -44,7 +44,7 @@
 | 8 | 『好き』という気持ちが行き着く場所 | 《名为喜欢的这份心情终将抵达之所》 | [YouTubeリンク](https://youtube.com/playlist?list=PLkONYltbNkGeSqD-pDcXaWsj7dgJSejz8) | `一時停止中` |
 | 9 | 魔法みたいな恋をした | 《谈了一场如魔法般的恋爱》 | [YouTubeリンク](https://youtube.com/playlist?list=PLwnprYHAfPHZ0bKlsSRE1CQYkWNYw5L6U) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/6702992) |
 | 10 | 色付く恋は、貴方から | 《染上色彩的恋爱始于你第一季》 | [YouTubeリンク](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | `進行中` |
-| 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTubeリンク](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `未開始` |
+| 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTubeリンク](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/7221002) |
 | 12 | 東方MMD（初心者動画） | 《東方MMD（初心者動画）》 | [YouTube链接](https://www.youtube.com/playlist?list=PLAj9cJ2slYo_AJjUvKGFmG-j0lzySK_e8) | [BiliBiliリンク](https://space.bilibili.com/499929312/lists/7120067) |
 
 **ステータス説明:**
