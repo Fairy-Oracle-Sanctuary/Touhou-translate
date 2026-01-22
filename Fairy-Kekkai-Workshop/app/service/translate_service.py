@@ -20,7 +20,11 @@ class TranslateTask:
     progress: int = 0
     error_message: str = ""
 
+    _id_counter = 0
+
     def __post_init__(self):
+        TranslateTask._id_counter += 1
+        self.id = TranslateTask._id_counter
         self.input_file = self.args.get("srt_path")
         self.output_file = self.args.get("output_path")
         self.origin_lang = self.args.get("origin_lang")

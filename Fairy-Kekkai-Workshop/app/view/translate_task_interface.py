@@ -50,8 +50,8 @@ class TranslateTaskInterface(BaseTaskInterface):
     def getTaskPath(self, task: TranslateTask):
         return task.input_file
 
-    def onTranslateFinished(self, task_id, success, message):
-        """提取完成"""
+    def onTaskFinished(self, task_id, success, message):
+        """任务完成"""
         for task in self.tasks:
             if task.id == task_id:
                 if success:
