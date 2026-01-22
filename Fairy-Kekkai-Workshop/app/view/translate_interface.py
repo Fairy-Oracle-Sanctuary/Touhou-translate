@@ -187,7 +187,7 @@ class TranslationInterface(BaseFunctionInterface):
         args["target_lang"] = cfg.get(cfg.target_lang)
         args["raw_content"] = self.file_srt.raw_content
         args["AI"] = AI_model_dict.get(cfg.get(cfg.ai_model), "glm-4.5-flash")
-        args["temperature"] = cfg.get(cfg.aiTemperature)
+        args["temperature"] = float(cfg.get(cfg.aiTemperature))
 
         return args
 
