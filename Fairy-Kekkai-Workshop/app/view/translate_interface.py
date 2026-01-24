@@ -13,6 +13,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..common.setting import AI_model_dict, translate_language_dict
 from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
@@ -49,6 +50,8 @@ class TranslationInterface(BaseFunctionInterface):
         self.file_extension = "*.srt"
         self.default_output_suffix = "_translated.srt"
         self.special_filename_mapping = {"原文.srt": "译文.srt"}
+
+        self.logger = Logger("TranslateInterface")
 
     def get_input_icon(self):
         return FIF.CALENDAR
@@ -177,6 +180,7 @@ class TranslationInterface(BaseFunctionInterface):
 
         args = self._get_args()
         self.addTask.emit(args)
+        self.logger.info(f"开始翻译字幕: -{self.input_path_edit.text()}- 参数: {args}")
 
     def _get_args(self):
         """获取翻译参数"""

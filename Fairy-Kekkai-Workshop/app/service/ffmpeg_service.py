@@ -7,6 +7,7 @@ from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 
 
 class FFmpegTask:
@@ -37,6 +38,7 @@ class FFmpegProcess(QObject):
 
     def __init__(self, task):
         super().__init__()
+        self.logger = Logger("FFmpegProcess")
         self.task = task
         self.is_cancelled = False
         self.process = None
@@ -369,10 +371,12 @@ class FFmpegProcess(QObject):
             self.task.status = "已取消"
             self.finished_signal.emit(False, "压制已取消")
             self.cancelled_signal.emit()
+            self.logger.info(f"压制已取消 -{self.task.input_file}-")
         elif exit_code == 0:
             self.task.status = "已完成"
             self.task.progress = 100
             self.task.end_time = datetime.now()
+            self.logger.info(f"压制完成 -{self.task.input_file}-")
 
             # 检查输出文件是否存在
             if os.path.exists(self.task.output_file):

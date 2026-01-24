@@ -26,6 +26,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..common.setting import (
     PADDLEOCR_VERSION,
     subtitle_positions_list,
@@ -83,6 +84,8 @@ class VideocrInterface(BaseFunctionInterface):
         self.file_extension = "*.mp4"
         self.default_output_suffix = ".srt"
         self.special_filename_mapping = {"生肉.mp4": "原文.srt"}
+
+        self.logger = Logger("VideocrInterface")
 
     def get_input_icon(self):
         return FIF.VIDEO
@@ -324,6 +327,7 @@ class VideocrInterface(BaseFunctionInterface):
         # 组合参数发送信号
         args = self._get_args()
         self.addTask.emit(args)
+        self.logger.info(f"开始OCR处理: -{self.input_path_edit.text()}- 参数: {args}")
 
     def _get_args(self):
         """获取OCR参数"""
