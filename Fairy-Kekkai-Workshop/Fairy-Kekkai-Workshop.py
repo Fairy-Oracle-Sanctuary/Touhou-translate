@@ -3,6 +3,7 @@
 Fairy-Kekkai-Workshop/app/view/setting_interface.py
 Fairy-Kekkai-Workshop/app/service/version_service.py
 Fairy-Kekkai-Workshop/app/common/setting.py
+Fairy-Kekkai-Workshop/app/common/logger.py
 Fairy-Kekkai-Workshop/app/components/sample_card.py
 Fairy-Kekkai-Workshop/deploy.py
 """

@@ -4,7 +4,7 @@ from pathlib import Path
 
 AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
-VERSION = "1.14.1"
+VERSION = "1.15.0"
 YEAR = "2025"
 UPDATE_TIME = "2026-1-22"
 

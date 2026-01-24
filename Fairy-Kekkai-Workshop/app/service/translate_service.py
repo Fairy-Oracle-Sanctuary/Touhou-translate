@@ -9,6 +9,7 @@ from zai import ZhipuAiClient
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..common.setting import AI_ERROR_MAP
 
 
@@ -184,6 +185,7 @@ class TranslateThread(QThread):
 
     def __init__(self, task: TranslateTask):
         super().__init__()
+        self.logger = Logger("TranslateProcess")
         self.task = task
         self._is_running = True
 
@@ -191,7 +193,11 @@ class TranslateThread(QThread):
         try:
             service_cls = self.SERVICES.get(self.task.AI)
             if not service_cls:
-                raise ValueError(f"不支持的AI模型: {self.task.AI}")
+                event_bus.translate_finished_signal.emit(
+                    False, f"不支持的AI模型: {self.task.AI}"
+                )
+                self.logger.error(f"不支持的AI模型: {self.task.AI}")
+                return
 
             service = service_cls()
             chunks_to_translate = self.task.raw_content.split("\n\n")
@@ -222,17 +228,20 @@ class TranslateThread(QThread):
             if not self._is_running:
                 # 如果是因为取消而停止，发送取消信号
                 self.cancelled_signal.emit()
+                self.logger.info(f"翻译任务已取消: {self.task.input_file}")
             else:
                 self.finished_signal.emit(True, "翻译完成")
                 event_bus.translate_finished_signal.emit(
                     True, ["", self.task.output_file]
                 )
+                self.logger.info(f"翻译任务已完成: {self.task.input_file}")
 
         except Exception as e:
             # 如果是报错导致的线程停止，不再发取消信号，只发错误信号
             error_msg = BaseTranslateService.analysis_error(str(e))
             self.finished_signal.emit(False, f"翻译失败: {error_msg}")
             event_bus.translate_finished_signal.emit(False, [error_msg])
+            self.logger.error(f"翻译任务失败: {self.task.input_file} - {error_msg}")
 
     def _write_and_notify(self, chunk: str, file_handle):
         file_handle.write(chunk)

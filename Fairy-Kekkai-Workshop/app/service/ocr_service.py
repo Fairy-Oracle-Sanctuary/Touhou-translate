@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 
 
 class OCRTask:
@@ -37,6 +38,7 @@ class OCRProcess(QObject):
 
     def __init__(self, task: OCRTask):
         super().__init__()
+        self.logger = Logger("OCRProcess")
         self.task = task
         self.is_cancelled = False
         self.process = None
@@ -137,6 +139,9 @@ class OCRProcess(QObject):
                 self.task.error_message = error_msg
                 self.finished_signal.emit(False, error_msg)
                 event_bus.ocr_finished_signal.emit(False, error_msg)
+                self.logger.error(
+                    f"OCR处理失败: -{self.task.input_file}- 错误信息: {str(e)}"
+                )
 
     def handle_stdout(self):
         """处理标准输出"""
@@ -184,6 +189,7 @@ class OCRProcess(QObject):
             self.task.status = "已取消"
             self.finished_signal.emit(False, "OCR处理已取消")
             self.cancelled_signal.emit()
+            self.logger.info(f"OCR处理已取消: -{self.task.input_file}-")
         elif exit_code == 0:
             self.task.status = "已完成"
             self.task.progress = 100
@@ -198,6 +204,9 @@ class OCRProcess(QObject):
             self.finished_signal.emit(True, success_msg)
             self.log_signal.emit("OCR处理完成\n", False, False)
             event_bus.ocr_finished_signal.emit(True, str(self.task.output_file))
+            self.logger.info(
+                f"OCR处理完成: -{self.task.input_file}- 输出文件: {self.task.output_file}"
+            )
         else:
             error_message = f"OCR处理失败，错误码: {exit_code}"
 
@@ -211,6 +220,9 @@ class OCRProcess(QObject):
             self.finished_signal.emit(False, error_message)
             self.log_signal.emit(f"OCR处理失败:\n{error_message}\n", False, False)
             event_bus.ocr_finished_signal.emit(False, error_message)
+            self.logger.error(
+                f"OCR处理失败: -{self.task.input_file}- 错误信息: {error_message}"
+            )
 
     def handle_error(self, error):
         """处理进程错误"""

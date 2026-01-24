@@ -20,6 +20,7 @@ from qfluentwidgets import (
 )
 
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..components.config_card import YTDLPSettingInterface
 from ..components.dialog import CustomMessageBox
 from ..components.download_card import DownloadItemWidget
@@ -82,6 +83,8 @@ class DownloadInterface(ScrollArea):
         self.download_tasks = []  # 所有下载任务
         self.active_downloads = []  # 活跃的下载线程
         self.max_concurrent_downloads = cfg.concurrentDownloads.value  # 最大同时下载数
+
+        self.logger = Logger("DownloadInterface")
 
         self._initWidget()
 
@@ -203,6 +206,7 @@ class DownloadInterface(ScrollArea):
 
     def addDownloadTask(self, task):
         """添加下载任务"""
+        self.logger.info(f"添加下载任务: {task.url} -> {task.download_path}")
         self.download_tasks.append(task)
 
         # 创建任务项
@@ -296,10 +300,16 @@ class DownloadInterface(ScrollArea):
                     event_bus.notification_service.show_success(
                         "下载完成", f"-{task.filename}- 下载完成"
                     )
+                    self.logger.info(
+                        f"下载完成: -{task.filename}- 路径: {task.download_path}"
+                    )
                 else:
                     task.status = "失败"
                     event_bus.notification_service.show_error(
                         "下载失败", message.strip()
+                    )
+                    self.logger.error(
+                        f"下载失败: -{task.filename}- 路径: {task.download_path} 错误信息: {message.strip()}"
                     )
 
                 # 移除活跃下载

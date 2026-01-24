@@ -1,6 +1,7 @@
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..components.base_function_interface import BaseFunctionInterface
 from ..components.base_stacked_interface import BaseStackedInterfaces
 from ..components.config_card import FFmpegSettingInterface
@@ -36,6 +37,8 @@ class FFmpegInterface(BaseFunctionInterface):
         self.default_output_suffix = "_compressed.mp4"
         self.special_filename_mapping = {"熟肉.mp4": "熟肉_compressed.mp4"}
 
+        self.logger = Logger("FFmpegInterface")
+
         self.settingsGroup.setVisible(False)
 
     def get_input_icon(self):
@@ -54,9 +57,10 @@ class FFmpegInterface(BaseFunctionInterface):
         """开始压制"""
         args = self._get_args()
         self.addTask.emit(args)
+        self.logger.info(f"开始压制视频: -{self.input_path_edit.text()}- 参数: {args}")
 
     def _get_args(self):
-        """获取翻译参数"""
+        """获取压制参数"""
         args = {}
         args["video_path"] = self.input_path_edit.text()
         args["output_path"] = self.output_path_edit.text()

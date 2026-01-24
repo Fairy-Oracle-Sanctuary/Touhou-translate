@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 
 
 class DownloadTask:
@@ -51,6 +52,7 @@ class DownloadProcess(QObject):
 
     def __init__(self, task: DownloadTask):
         super().__init__()
+        self.logger = Logger("DownloadProcess")
         self.task = task
         self.is_cancelled = False
         self.process = None
@@ -215,6 +217,7 @@ class DownloadProcess(QObject):
                 self.task.end_time = datetime.now()
                 self.finished_signal.emit(False, error_msg)
                 event_bus.download_finished_signal.emit(False, error_msg)
+                self.logger.error(f"下载任务失败: {self.task.url} - {error_msg}")
 
     def handle_stdout(self):
         """处理标准输出"""
@@ -287,12 +290,16 @@ class DownloadProcess(QObject):
             self.task.status = "已取消"
             self.finished_signal.emit(False, "下载已取消")
             self.cancelled_signal.emit()  # 发送取消完成信号
+            self.logger.info(f"下载任务已取消: {self.task.url}")
         elif exit_code == 0:
             self.task.status = "已完成"
             self.task.progress = 100
             self.task.end_time = datetime.now()
             self.finished_signal.emit(True, "下载完成")
             event_bus.download_finished_signal.emit(True, self.task.download_path)
+            self.logger.info(
+                f"下载任务已完成: {self.task.url} - {self.task.download_path}"
+            )
         else:
             # 获取详细的错误信息
             error_detail = self.get_error_detail(exit_code)
@@ -307,6 +314,7 @@ class DownloadProcess(QObject):
             self.task.error_message = error_message
             self.task.end_time = datetime.now()
             self.finished_signal.emit(False, error_message)
+            self.logger.error(f"下载任务失败: {self.task.url} - {error_message}")
 
     def handle_error(self, error):
         """处理进程错误"""
