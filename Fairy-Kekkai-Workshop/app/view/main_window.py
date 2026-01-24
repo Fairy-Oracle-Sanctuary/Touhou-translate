@@ -272,11 +272,14 @@ class MainWindow(MSFluentWindow):
     def closeEvent(self, event):
         """重写关闭事件"""
         # 检查是否真的需要退出（例如通过托盘菜单的退出选项）
-        if hasattr(self, "_really_quit") and self._really_quit:
+        if (hasattr(self, "_really_quit") and self._really_quit) or cfg.get(
+            cfg.closeDirectly
+        ):
             # 保存窗口状态
             self.save_window_state()
             # 执行真正的退出
             super().closeEvent(event)
+            QApplication.instance().exit(0)
         else:
             # 最小化到托盘
             event.ignore()

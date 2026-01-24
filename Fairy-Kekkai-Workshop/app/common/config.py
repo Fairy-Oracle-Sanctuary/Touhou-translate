@@ -91,6 +91,9 @@ class Config(QConfig):
     accentColor = OptionsConfigItem(
         "MainWindow", "AccentColor", "#009faa", OptionsValidator(["#009faa", "Auto"])
     )
+    closeDirectly = ConfigItem(
+        "MainWindow", "CloseDirectly", False, BoolValidator(), restart=False
+    )
     showBackground = ConfigItem(
         "MainWindow", "ShowBackground", False, BoolValidator(), restart=True
     )

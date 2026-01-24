@@ -123,6 +123,13 @@ class SettingInterface(ScrollArea):
             texts=["100%", "125%", "150%", "175%", "200%", self.tr("跟随系统设置")],
             parent=self.personalGroup,
         )
+        self.closeDirectlyCard = SwitchSettingCard(
+            FIF.CLOSE,
+            self.tr("直接关闭"),
+            self.tr("启用或禁用直接关闭应用"),
+            configItem=cfg.closeDirectly,
+            parent=self.personalGroup,
+        )
         self.showBackgroundCard = SwitchSettingCard(
             FIF.BACKGROUND_FILL,
             self.tr("背景图片"),
@@ -213,6 +220,7 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.themeCard)
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.accentColorCard)
+        self.personalGroup.addSettingCard(self.closeDirectlyCard)
         self.personalGroup.addSettingCard(self.showBackgroundCard)
         self.personalGroup.addSettingCard(self.backgroundPathCard)
         self.personalGroup.addSettingCard(self.backgroundRectCard)
