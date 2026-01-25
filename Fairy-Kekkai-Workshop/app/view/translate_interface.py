@@ -51,7 +51,7 @@ class TranslationInterface(BaseFunctionInterface):
         self.default_output_suffix = "_translated.srt"
         self.special_filename_mapping = {"原文.srt": "译文.srt"}
 
-        self.logger = Logger("TranslateInterface")
+        self.logger = Logger("TranslateInterface", "translate")
 
     def get_input_icon(self):
         return FIF.CALENDAR

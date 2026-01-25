@@ -37,7 +37,7 @@ class FFmpegInterface(BaseFunctionInterface):
         self.default_output_suffix = "_compressed.mp4"
         self.special_filename_mapping = {"熟肉.mp4": "熟肉_compressed.mp4"}
 
-        self.logger = Logger("FFmpegInterface")
+        self.logger = Logger("FFmpegInterface", "ffmpeg")
 
         self.settingsGroup.setVisible(False)
 

@@ -1,8 +1,10 @@
 # coding:utf-8
 import logging
 import re
+import time
 import weakref
 
+from ..common.event_bus import event_bus
 from .setting import CONFIG_FOLDER
 
 LOG_FOLDER = CONFIG_FOLDER / "Log"
@@ -19,9 +21,9 @@ class NoColorFormatter(logging.Formatter):
 def loggerCache(cls):
     """decorator for caching logger"""
 
-    def wrapper(name, *args, **kwargs):
+    def wrapper(name, log_name, *args, **kwargs):
         if name not in _loggers:
-            instance = cls(name, *args, **kwargs)
+            instance = cls(name, log_name, *args, **kwargs)
             _loggers[name] = instance
         else:
             instance = _loggers[name]
@@ -35,7 +37,7 @@ def loggerCache(cls):
 class Logger:
     """Logger class"""
 
-    def __init__(self, fileName: str, printConsole=True):
+    def __init__(self, fileName: str, log_name: str, printConsole=True):
         """
         Parameters
         ----------
@@ -74,17 +76,31 @@ class Logger:
 
             self.__logger.addHandler(self.__fileHandler)
 
+        self.log_name = log_name
+
     def info(self, msg):
         self.__logger.info(msg)
+        self.send_log("info", msg)
 
     def error(self, msg, exc_info=False):
         self.__logger.error(msg, exc_info=exc_info)
+        self.send_log("error", msg)
 
     def debug(self, msg):
         self.__logger.debug(msg)
+        self.send_log("debug", msg)
 
     def warning(self, msg):
         self.__logger.warning(msg)
+        self.send_log("warning", msg)
 
     def critical(self, msg):
         self.__logger.critical(msg)
+        self.send_log("critical", msg)
+
+    def send_log(self, level, msg):
+        """时间 - 日志等级 - 日志内容"""
+        event_bus.log_message.emit(
+            self.log_name,
+            f"{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} - {level.upper()} - {msg}\n",
+        )

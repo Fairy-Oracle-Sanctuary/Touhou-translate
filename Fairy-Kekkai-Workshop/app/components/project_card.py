@@ -29,6 +29,7 @@ from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..common.logger import Logger
 from ..components.dialog import (
     AddProject,
     AddProjectFromPlaylist,
@@ -46,6 +47,7 @@ class ProjectInterface(ScrollArea):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.logger = Logger("ProjectInterface", "project")
         self.view = QWidget(self)
         self._initWidgets()
 
@@ -132,6 +134,7 @@ class ProjectInterface(ScrollArea):
         else:
             pass
         self.refreshProjectList(isMessage=False)
+        self.logger.info(f"添加新项目: {dialog.nameInput.text().strip()}")
 
     def importProjectCard(self):
         """导入新项目"""
@@ -167,14 +170,17 @@ class ProjectInterface(ScrollArea):
                     event_bus.notification_service.show_success(
                         "成功", f"已添加 {path}"
                     )
+                    self.logger.info(f"导入新项目: {path}")
                 except Exception as e:
                     event_bus.notification_service.show_error("错误", f"{e}")
+                    self.logger.error(f"导入新项目失败: {e}")
             else:
                 project_path = cfg.linkProject.get("project_link")
                 if folder_path in project_path or folder_path in project.project_path:
                     event_bus.notification_service.show_error(
                         "错误", f"已导入此路径 {folder_path}"
                     )
+                    self.logger.error(f"导入新项目失败: {folder_path} 已导入此路径")
                 else:
                     project_path.append(str(folder_path))
                     cfg.linkProject.set("project_link", project_path)
@@ -182,6 +188,7 @@ class ProjectInterface(ScrollArea):
                     event_bus.notification_service.show_success(
                         "成功", f"已添加 {folder_path}"
                     )
+                    self.logger.info(f"导入新项目: {folder_path} 已连接路径")
 
     def addProjectFromPlaylist(self):
         """根据播放列表新建项目"""
@@ -213,16 +220,20 @@ class ProjectInterface(ScrollArea):
             if isSuccess:
                 event_bus.notification_service.show_success("成功", "项目创建完毕")
                 event_bus.download_list_finished_signal.emit(True, message)
+                self.logger.info(f"根据播放列表新建项目: {message}")
             else:
                 event_bus.notification_service.show_success("失败", message)
+                self.logger.error(f"根据播放列表新建项目失败: {message}")
             self.topButtonCard.newFromPlaylistButton.setEnabled(True)
         else:
             if isSuccess:
                 if message == "已创建项目文件夹,正在下载封面":
                     self.refreshProjectList(isMessage=False)
                 event_bus.notification_service.show_success("成功", message)
+                self.logger.info(f"根据播放列表新建项目: {message}")
             else:
                 event_bus.notification_service.show_error("错误", message)
+                self.logger.error(f"根据播放列表新建项目失败: {message}")
 
     def refreshProjectList(self, isMessage):
         """刷新项目列表"""
@@ -273,10 +284,12 @@ class ProjectInterface(ScrollArea):
             event_bus.notification_service.show_success(
                 "成功", f"项目 {project_path} 已删除"
             )
+            self.logger.info(f"删除项目: {project_path} 已删除")
         else:
             event_bus.notification_service.show_error(
                 "错误", f"删除项目失败: {isSuccess[-1]}"
             )
+            self.logger.error(f"删除项目失败: {project_path} {isSuccess[-1]}")
         self.refreshProjectList(isMessage=False)
 
     def cancelLinkProject(self, project_path):
@@ -287,6 +300,7 @@ class ProjectInterface(ScrollArea):
         event_bus.notification_service.show_success(
             "成功", f"已解除项目 {project_path} 的连接"
         )
+        self.logger.info(f"解除项目连接: {project_path} 已解除连接")
 
     def showProjectList(self):
         """显示项目列表页面"""

@@ -38,7 +38,7 @@ class FFmpegProcess(QObject):
 
     def __init__(self, task):
         super().__init__()
-        self.logger = Logger("FFmpegProcess")
+        self.logger = Logger("FFmpegProcess", "ffmpeg")
         self.task = task
         self.is_cancelled = False
         self.process = None

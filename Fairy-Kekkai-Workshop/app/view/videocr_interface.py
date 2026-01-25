@@ -85,7 +85,7 @@ class VideocrInterface(BaseFunctionInterface):
         self.default_output_suffix = ".srt"
         self.special_filename_mapping = {"生肉.mp4": "原文.srt"}
 
-        self.logger = Logger("VideocrInterface")
+        self.logger = Logger("VideocrInterface", "videocr")
 
     def get_input_icon(self):
         return FIF.VIDEO

@@ -62,6 +62,10 @@ class GlobalEventBus(QObject):
     # 界面导航事件
     navigation_requested = Signal(dict)  # {"target": "download", "data": {...}}
 
+    # 日志窗口事件
+    log_window_closed = Signal()
+    log_message = Signal(str, str)  # (log_name, message)
+
     # 错误和消息事件
     notification = Signal(dict)  # {"type": "success", "title": "...", "message": "..."}
 
