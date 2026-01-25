@@ -59,26 +59,7 @@ class MainWindow(MSFluentWindow):
                     "背景图片错误", "请检查图片是否存在"
                 )
 
-        # 创建页面
-        self.homeInterface = HomeInterface(self)
-        self.projectInterface = ProjectStackedInterface(self)
-        self.downloadInterface = DownloadStackedInterface(self)
-        self.videoCRInterface = VideocrStackedInterfaces(self)
-        self.translateInterface = TranslateStackedInterfaces(self)
-        self.ffmpegInterface = FFmpegStackedInterfaces(self)
-        self.settingInterface = SettingInterface(self)
-
-        self.interface = [
-            self.homeInterface,
-            self.projectInterface,
-            self.downloadInterface,
-            self.videoCRInterface,
-            self.translateInterface,
-            self.ffmpegInterface,
-            self.settingInterface,
-        ]
-
-        self.initNavigation()
+        self._initNavigation()
 
         # 初始化系统托盘
         self.system_tray = SystemTray(self)
@@ -86,26 +67,7 @@ class MainWindow(MSFluentWindow):
         # 设置应用程序不在最后一个窗口关闭时退出
         QApplication.setQuitOnLastWindowClosed(False)
 
-        # 连接信号
-        self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
-        event_bus.checkUpdateSig.connect(self.checkUpdate)
-        event_bus.switchToSampleCard.connect(self.switchToSample)
-        event_bus.openUrl.connect(self.openUrl)
-        event_bus.download_finished_signal.connect(
-            self.show_system_tray_message_download_finished
-        )
-        event_bus.ocr_finished_signal.connect(
-            self.show_system_tray_message_videocr_finished
-        )
-        event_bus.translate_finished_signal.connect(
-            self.show_system_tray_message_translate_finished
-        )
-        event_bus.download_list_finished_signal.connect(
-            self.show_system_tray_message_download_list_finished
-        )
-        event_bus.ffmpeg_finished_signal.connect(
-            self.show_system_tray_message_ffmpeg_finished
-        )
+        self._connectSignalToSlot()
 
         # 恢复窗口状态
         self.restore_window_state()
@@ -196,7 +158,36 @@ class MainWindow(MSFluentWindow):
         self.backgroundPixmap = QPixmap(imagePath)
         self.update()  # 触发重绘
 
-    def initNavigation(self):
+    def _initWindow(self):
+        self.resize(960, 754 if sys.platform == "win32" else 773)
+        self.setMinimumWidth(760)
+        self.setWindowIcon(QIcon(":/app/images/logo.png"))
+        self.setWindowTitle("Fairy Kekkai Workshop")
+
+        desktop = QApplication.primaryScreen().availableGeometry()
+        w, h = desktop.width(), desktop.height()
+        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+
+    def _initNavigation(self):
+        """创建页面"""
+        self.homeInterface = HomeInterface(self)
+        self.projectInterface = ProjectStackedInterface(self)
+        self.downloadInterface = DownloadStackedInterface(self)
+        self.videoCRInterface = VideocrStackedInterfaces(self)
+        self.translateInterface = TranslateStackedInterfaces(self)
+        self.ffmpegInterface = FFmpegStackedInterfaces(self)
+        self.settingInterface = SettingInterface(self)
+
+        self.interface = [
+            self.homeInterface,
+            self.projectInterface,
+            self.downloadInterface,
+            self.videoCRInterface,
+            self.translateInterface,
+            self.ffmpegInterface,
+            self.settingInterface,
+        ]
+
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.projectInterface, FIF.FOLDER, "项目")
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
@@ -221,15 +212,27 @@ class MainWindow(MSFluentWindow):
             NavigationItemPosition.BOTTOM,
         )
 
-    def _initWindow(self):
-        self.resize(960, 754 if sys.platform == "win32" else 773)
-        self.setMinimumWidth(760)
-        self.setWindowIcon(QIcon(":/app/images/logo.png"))
-        self.setWindowTitle("Fairy Kekkai Workshop")
-
-        desktop = QApplication.primaryScreen().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+    def _connectSignalToSlot(self):
+        """连接信号到槽"""
+        self.system_tray.messageClicked.connect(self.on_tray_message_clicked)
+        event_bus.checkUpdateSig.connect(self.checkUpdate)
+        event_bus.switchToSampleCard.connect(self.switchToSample)
+        event_bus.openUrl.connect(self.openUrl)
+        event_bus.download_finished_signal.connect(
+            self.show_system_tray_message_download_finished
+        )
+        event_bus.ocr_finished_signal.connect(
+            self.show_system_tray_message_videocr_finished
+        )
+        event_bus.translate_finished_signal.connect(
+            self.show_system_tray_message_translate_finished
+        )
+        event_bus.download_list_finished_signal.connect(
+            self.show_system_tray_message_download_list_finished
+        )
+        event_bus.ffmpeg_finished_signal.connect(
+            self.show_system_tray_message_ffmpeg_finished
+        )
 
     def showHelpBox(self):
         w = MessageBox(

@@ -507,8 +507,5 @@ class ffmpegProgressDialog(MessageBoxBase):
 
     def accept(self):
         """重写接受方法，断开信号连接"""
-        try:
-            event_bus.ffmpeg_update_signal.disconnect(self.on_ffmpeg_update)
-        except RuntimeError:
-            pass
+        event_bus.ffmpeg_update_signal.disconnect(self.on_ffmpeg_update)
         super().accept()

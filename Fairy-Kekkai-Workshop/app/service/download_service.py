@@ -52,7 +52,7 @@ class DownloadProcess(QObject):
 
     def __init__(self, task: DownloadTask):
         super().__init__()
-        self.logger = Logger("DownloadProcess")
+        self.logger = Logger("DownloadProcess", "download")
         self.task = task
         self.is_cancelled = False
         self.process = None

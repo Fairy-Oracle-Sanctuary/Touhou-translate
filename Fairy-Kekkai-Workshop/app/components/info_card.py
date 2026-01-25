@@ -12,10 +12,13 @@ from qfluentwidgets import (
     TitleLabel,
     TransparentToolButton,
     VerticalSeparator,
+    setFont,
 )
 
+from ..common.event_bus import event_bus
 from ..common.setting import GITHUB_URL, PADDLEOCR_VERSION, UPDATE_TIME, VERSION
 from ..resource import resource_rc  # noqa: F401
+from ..view.log_interface import LogWindow
 from .statistic_widget import StatisticsWidget
 
 
@@ -53,6 +56,8 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
             lambda: QDesktopServices.openUrl(QUrl(GITHUB_URL))
         )
 
+        self.logButton = PrimaryPushButton(FluentIcon.BOOK_SHELF, self.tr("Log"))
+
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
         self.topLayout = QHBoxLayout()
@@ -60,6 +65,8 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.buttonLayout = QHBoxLayout()
 
         self.__initWidgets()
+        self.__connectSignalToSlot()
+        self.__initLog()
 
     def __initWidgets(self):
         self.iconLabel.setBorderRadius(8, 8, 8, 8)
@@ -76,6 +83,9 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
 
         self.githubButton.setFixedSize(32, 32)
         self.githubButton.setIconSize(QSize(14, 14))
+
+        setFont(self.logButton, 12)
+        self.logButton.setFixedSize(80, 32)
 
         self.nameLabel.setObjectName("nameLabel")
         self.descriptionLabel.setObjectName("descriptionLabel")
@@ -120,8 +130,60 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.vBoxLayout.addSpacing(12)
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.addLayout(self.buttonLayout)
-        # self.buttonLayout.addWidget(self.tagButton, 0, Qt.AlignLeft)
+        self.buttonLayout.addWidget(self.logButton, 0, Qt.AlignLeft)
         self.buttonLayout.addWidget(self.githubButton, 0, Qt.AlignRight)
+
+    def __connectSignalToSlot(self):
+        self.logButton.clicked.connect(self.__onLogButtonClicked)
+        event_bus.log_window_closed.connect(lambda: self.logButton.setEnabled(True))
+        event_bus.log_message.connect(self.appendLog)
+
+    def __initLog(self):
+        self.allLogs = ""
+        self.projectLogs = ""
+        self.downloadLogs = ""
+        self.videoLogs = ""
+        self.aiLogs = ""
+        self.ffmpegLogs = ""
+
+    def __onLogButtonClicked(self):
+        self.logButton.setEnabled(False)
+        self.logWindow = LogWindow()
+        self.logWindow.show()
+        self.logWindow.setLog(
+            self.allLogs,
+            self.projectLogs,
+            self.downloadLogs,
+            self.videoLogs,
+            self.aiLogs,
+            self.ffmpegLogs,
+        )
+
+    def appendLog(self, log_name, message):
+        """追加日志到日志窗口"""
+        self.allLogs += message
+        if log_name == "project":
+            self.projectLogs += message
+        elif log_name == "download":
+            self.downloadLogs += message
+        elif log_name == "videocr":
+            self.videoLogs += message
+        elif log_name == "ai":
+            self.aiLogs += message
+        elif log_name == "ffmpeg":
+            self.ffmpegLogs += message
+
+        try:
+            self.logWindow.setLog(
+                self.allLogs,
+                self.projectLogs,
+                self.downloadLogs,
+                self.videoLogs,
+                self.aiLogs,
+                self.ffmpegLogs,
+            )
+        except Exception:
+            pass
 
     def setVersion(self, version: str):
         text = version or "1.0.0"

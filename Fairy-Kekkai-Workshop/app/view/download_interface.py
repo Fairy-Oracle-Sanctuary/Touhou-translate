@@ -84,7 +84,7 @@ class DownloadInterface(ScrollArea):
         self.active_downloads = []  # 活跃的下载线程
         self.max_concurrent_downloads = cfg.concurrentDownloads.value  # 最大同时下载数
 
-        self.logger = Logger("DownloadInterface")
+        self.logger = Logger("DownloadInterface", "download")
 
         self._initWidget()
 

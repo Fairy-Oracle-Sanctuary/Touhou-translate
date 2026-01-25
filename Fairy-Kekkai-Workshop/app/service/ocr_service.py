@@ -38,7 +38,7 @@ class OCRProcess(QObject):
 
     def __init__(self, task: OCRTask):
         super().__init__()
-        self.logger = Logger("OCRProcess")
+        self.logger = Logger("OCRProcess", "videocr")
         self.task = task
         self.is_cancelled = False
         self.process = None

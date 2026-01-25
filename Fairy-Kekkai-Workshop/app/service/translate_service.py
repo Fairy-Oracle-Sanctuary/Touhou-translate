@@ -185,7 +185,7 @@ class TranslateThread(QThread):
 
     def __init__(self, task: TranslateTask):
         super().__init__()
-        self.logger = Logger("TranslateProcess")
+        self.logger = Logger("TranslateProcess", "translate")
         self.task = task
         self._is_running = True
 
