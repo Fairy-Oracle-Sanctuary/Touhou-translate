@@ -22,5 +22,9 @@
     <file>images/icons/intern-latest.svg</file>
     <file>images/icons/ernie-speed-128k.svg</file>
     <file>images/icons/gemini-3-flash-preview.svg</file>
+    <file>images/controls/SkipEndFill_white.svg</file>
+    <file>images/controls/SkipStartFill_black.svg</file>
+    <file>images/controls/SkipStartFill_white.svg</file>
+    <file>images/controls/SkipEndFill_black.svg</file>
   </qresource>
 </RCC>
