@@ -42,6 +42,7 @@ from ..components.dialog import (
     CustomMessageBox,
     CustomTripleMessageBox,
 )
+from ..components.pager import Pager
 from ..service.project_service import project
 
 
@@ -264,19 +265,10 @@ class ProjectDetailInterface(ScrollArea):
 
         # 创建底部PipsPager分页控件
         if self.total_episodes > self.items_per_page:
-            self.bottomPipsPager = PipsPager(self)
-            self.bottomPipsPager.setPageNumber(total_pages)
-            self.bottomPipsPager.setCurrentIndex(self.current_page - 1)
-            self.bottomPipsPager.setVisibleNumber(
-                total_pages if total_pages <= 5 else 5
-            )
-            self.bottomPipsPager.setNextButtonDisplayMode(
-                PipsScrollButtonDisplayMode.ALWAYS
-            )
-            self.bottomPipsPager.setPreviousButtonDisplayMode(
-                PipsScrollButtonDisplayMode.ALWAYS
-            )
-            self.bottomPipsPager.currentIndexChanged.connect(self.on_pips_page_changed)
+            max_visible = total_pages if total_pages <= 5 else 5
+            self.bottomPipsPager = Pager(total_pages, max_visible, self)
+            self.bottomPipsPager.setCurrentPage(self.current_page)
+            self.bottomPipsPager.currentPageChanged.connect(self.on_page_changed)
 
         # 底部增加集数按钮
         hBoxLayout = QHBoxLayout()
@@ -419,6 +411,11 @@ class ProjectDetailInterface(ScrollArea):
     def on_pips_page_changed(self, index):
         """PipsPager分页改变时的处理"""
         self.current_page = index + 1  # PipsPager索引从0开始，我们内部从1开始
+        self.loadProject(self.current_project_path, self.card_id, isMessage=False)
+
+    def on_page_changed(self, index):
+        """Pager分页改变时的处理"""
+        self.current_page = index  # Pager索引从1开始
         self.loadProject(self.current_project_path, self.card_id, isMessage=False)
 
     def delayedRefreshProject(self):
