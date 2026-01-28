@@ -174,6 +174,20 @@ class TranslationInterface(BaseFunctionInterface):
             self.show_error_message("请先填写您的Gemini 3 Flash API Key")
             return
 
+        elif cfg.get(cfg.ai_model) == "自定义模型":
+            if not cfg.get(cfg.customModelEnabled):
+                self.show_error_message("请先在设置中启用自定义模型")
+                return
+            if not cfg.get(cfg.customModelApiKey):
+                self.show_error_message("请先填写您的自定义模型API密钥")
+                return
+            if not cfg.get(cfg.customModelBaseUrl):
+                self.show_error_message("请先填写您的自定义模型API基础URL")
+                return
+            if not cfg.get(cfg.customModelName):
+                self.show_error_message("请先填写您的自定义模型名称")
+                return
+
         if cfg.get(cfg.origin_lang) == cfg.get(cfg.target_lang):
             self.show_error_message("原语言和目标语言相同")
             return

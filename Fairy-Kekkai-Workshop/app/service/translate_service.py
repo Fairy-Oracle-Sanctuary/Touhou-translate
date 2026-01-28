@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generator
@@ -11,6 +12,15 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.logger import Logger
 from ..common.setting import AI_ERROR_MAP
+
+
+def remove_thinking_content(text: str) -> str:
+    # 匹配<think>和</think>
+    thinking_pattern = r"<think>.*?</think>"
+
+    cleaned_text = re.sub(thinking_pattern, "", text, flags=re.DOTALL).strip()
+
+    return cleaned_text
 
 
 @dataclass
@@ -169,6 +179,43 @@ class GeminiService(BaseTranslateService):
         return "gemini-3-flash-preview"
 
 
+class CustomModelService(BaseTranslateService):
+    """自定义模型服务类"""
+
+    def get_client(self):
+        if not cfg.get(cfg.customModelEnabled):
+            raise Exception("自定义模型未启用")
+
+        api_key = cfg.get(cfg.customModelApiKey)
+        base_url = cfg.get(cfg.customModelBaseUrl)
+
+        if not api_key:
+            raise Exception("请填写自定义模型的API密钥")
+
+        if not base_url:
+            raise Exception("请填写自定义模型的API基础URL")
+
+        return OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+        )
+
+    def get_model_name(self):
+        if not cfg.get(cfg.customModelEnabled):
+            return "custom-model"
+
+        model_name = cfg.get(cfg.customModelName)
+        if not model_name:
+            raise Exception("请填写自定义模型名称")
+
+        # 如果有自定义端点，优先使用端点
+        endpoint = cfg.get(cfg.customModelEndpoint)
+        if endpoint:
+            return endpoint
+
+        return model_name
+
+
 class TranslateThread(QThread):
     finished_signal = Signal(bool, str)
     cancelled_signal = Signal()
@@ -181,6 +228,7 @@ class TranslateThread(QThread):
         "intern-latest": InternService,
         "ernie-speed-128k": ErnieSpeedService,
         "gemini-3-flash-preview": GeminiService,
+        "custom-model": CustomModelService,
     }
 
     def __init__(self, task: TranslateTask):
@@ -230,11 +278,21 @@ class TranslateThread(QThread):
                 self.cancelled_signal.emit()
                 self.logger.info(f"翻译任务已取消: {self.task.input_file}")
             else:
-                self.finished_signal.emit(True, "翻译完成")
-                event_bus.translate_finished_signal.emit(
-                    True, ["", self.task.output_file]
-                )
-                self.logger.info(f"翻译任务已完成: {self.task.input_file}")
+                # 翻译完成后进行后处理：去除思考内容
+                try:
+                    self._post_process_translation()
+                    self.finished_signal.emit(True, "翻译完成")
+                    event_bus.translate_finished_signal.emit(
+                        True, ["", self.task.output_file]
+                    )
+                    self.logger.info(f"翻译任务已完成: {self.task.input_file}")
+                except Exception as e:
+                    error_msg = f"后处理失败: {str(e)}"
+                    self.finished_signal.emit(False, error_msg)
+                    event_bus.translate_finished_signal.emit(False, [error_msg])
+                    self.logger.error(
+                        f"翻译后处理失败: {self.task.input_file} - {error_msg}"
+                    )
 
         except Exception as e:
             # 如果是报错导致的线程停止，不再发取消信号，只发错误信号
@@ -242,6 +300,23 @@ class TranslateThread(QThread):
             self.finished_signal.emit(False, f"翻译失败: {error_msg}")
             event_bus.translate_finished_signal.emit(False, [error_msg])
             self.logger.error(f"翻译任务失败: {self.task.input_file} - {error_msg}")
+
+    def _post_process_translation(self):
+        """翻译后处理：去除思考内容"""
+        # 读取翻译后的文件内容
+        with open(self.task.output_file, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # 去除思考内容
+        cleaned_content = remove_thinking_content(content)
+
+        # 如果内容有变化，重新写入文件
+        if cleaned_content != content:
+            with open(self.task.output_file, "w", encoding="utf-8") as f:
+                f.write(cleaned_content)
+            self.logger.info(f"已去除思考内容，文件已更新: {self.task.output_file}")
+        else:
+            self.logger.info(f"未检测到思考内容，文件保持不变: {self.task.output_file}")
 
     def _write_and_notify(self, chunk: str, file_handle):
         file_handle.write(chunk)

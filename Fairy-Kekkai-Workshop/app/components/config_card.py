@@ -1113,6 +1113,55 @@ class TranslateSettingInterface(ScrollArea):
         )
         self.GeminiApiKeyCard.lineEdit.setFixedWidth(350)
 
+        # 自定义模型
+        self.customModelGroup = SettingCardGroup(
+            self.tr("自定义模型 (支持OpenAI兼容API)"),
+            self.scrollWidget,
+        )
+        self.customModelEnabledCard = SwitchSettingCard(
+            FIF.SETTING,
+            self.tr("启用自定义模型"),
+            self.tr("启用自定义模型支持"),
+            cfg.customModelEnabled,
+            parent=self.customModelGroup,
+        )
+        self.customModelNameCard = LineEditSettingCard(
+            cfg.customModelName,
+            FIF.TAG,
+            self.tr("模型名称"),
+            self.tr("设置自定义模型名称"),
+            placeholderText="例如: gpt-4o-mini",
+            parent=self.customModelGroup,
+        )
+        self.customModelNameCard.lineEdit.setFixedWidth(350)
+        self.customModelApiKeyCard = PasswordLineEditSettingCard(
+            cfg.customModelApiKey,
+            FIF.INFO,
+            self.tr("API密钥"),
+            self.tr("设置自定义模型的API密钥"),
+            placeholderText="",
+            parent=self.customModelGroup,
+        )
+        self.customModelApiKeyCard.lineEdit.setFixedWidth(350)
+        self.customModelBaseUrlCard = LineEditSettingCard(
+            cfg.customModelBaseUrl,
+            FIF.LINK,
+            self.tr("API基础URL"),
+            self.tr("设置自定义模型的API基础URL"),
+            placeholderText="例如: https://api.openai.com/v1",
+            parent=self.customModelGroup,
+        )
+        self.customModelBaseUrlCard.lineEdit.setFixedWidth(350)
+        self.customModelEndpointCard = LineEditSettingCard(
+            cfg.customModelEndpoint,
+            FIF.CODE,
+            self.tr("模型端点"),
+            self.tr("设置模型端点(可选，默认使用模型名称)"),
+            placeholderText="",
+            parent=self.customModelGroup,
+        )
+        self.customModelEndpointCard.lineEdit.setFixedWidth(350)
+
         self.__initWidget()
 
     def __initWidget(self):
@@ -1161,6 +1210,13 @@ class TranslateSettingInterface(ScrollArea):
         # Gemini 3 Flash
         self.geminiGroup.addSettingCard(self.GeminiApiKeyCard)
 
+        # 自定义模型
+        self.customModelGroup.addSettingCard(self.customModelEnabledCard)
+        self.customModelGroup.addSettingCard(self.customModelNameCard)
+        self.customModelGroup.addSettingCard(self.customModelApiKeyCard)
+        self.customModelGroup.addSettingCard(self.customModelBaseUrlCard)
+        self.customModelGroup.addSettingCard(self.customModelEndpointCard)
+
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 20)
         self.expandLayout.addWidget(self.aiGroup)
@@ -1171,6 +1227,7 @@ class TranslateSettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.internGroup)
         self.expandLayout.addWidget(self.sparkGroup)
         self.expandLayout.addWidget(self.ernieSpeedGroup)
+        self.expandLayout.addWidget(self.customModelGroup)
 
 
 class FFmpegSettingInterface(ScrollArea):

@@ -182,6 +182,7 @@ AI_model_dict = {
     "GLM-4.5-FLASH": "glm-4.5-flash",
     "Spark-Lite": "spark-lite",
     "百度ERNIE-Speed-128K": "ernie-speed-128k",
+    "自定义模型": "custom-model",
 }
 AI_ERROR_MAP = {
     # --- 身份验证与权限 ---
