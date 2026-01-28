@@ -315,6 +315,7 @@ class TranslateThread(QThread):
             with open(self.task.output_file, "w", encoding="utf-8") as f:
                 f.write(cleaned_content)
             self.logger.info(f"已去除思考内容，文件已更新: {self.task.output_file}")
+            event_bus.translate_update_signal.emit(str(self.task.id), cleaned_content)
         else:
             self.logger.info(f"未检测到思考内容，文件保持不变: {self.task.output_file}")
 
