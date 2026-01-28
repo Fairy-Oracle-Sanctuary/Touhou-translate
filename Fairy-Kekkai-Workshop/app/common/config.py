@@ -502,6 +502,19 @@ class Config(QConfig):
     # Gemini 3 Flash API Key (免费)
     geminiApiKey = ConfigItem("Translate", "GeminiApiKey", "", restart=False)
 
+    # 自定义模型配置
+    customModelEnabled = ConfigItem(
+        "Translate", "CustomModelEnabled", False, BoolValidator(), restart=False
+    )
+    customModelName = ConfigItem("Translate", "CustomModelName", "", restart=False)
+    customModelApiKey = ConfigItem("Translate", "CustomModelApiKey", "", restart=False)
+    customModelBaseUrl = ConfigItem(
+        "Translate", "CustomModelBaseUrl", "", restart=False
+    )
+    customModelEndpoint = ConfigItem(
+        "Translate", "CustomModelEndpoint", "", restart=False
+    )
+
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
 
