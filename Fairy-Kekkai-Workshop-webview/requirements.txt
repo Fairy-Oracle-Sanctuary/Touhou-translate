@@ -1,1 +1,0 @@
-pywebview>=4.0
