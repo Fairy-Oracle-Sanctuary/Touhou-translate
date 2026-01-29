@@ -12,6 +12,7 @@ zai
 numpy
 Pillow
 requests
+bilibili-api-python
 
 # Optional / likely useful tools
 # paddleocr

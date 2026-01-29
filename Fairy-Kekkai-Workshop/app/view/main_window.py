@@ -23,6 +23,7 @@ from .download_interface import DownloadStackedInterface
 from .ffmpeg_interface import FFmpegStackedInterfaces
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
+from .release_interface import ReleaseStackedInterfaces
 from .setting_interface import SettingInterface
 from .translate_interface import TranslateStackedInterfaces
 from .videocr_interface import VideocrStackedInterfaces
@@ -176,6 +177,7 @@ class MainWindow(MSFluentWindow):
         self.videoCRInterface = VideocrStackedInterfaces(self)
         self.translateInterface = TranslateStackedInterfaces(self)
         self.ffmpegInterface = FFmpegStackedInterfaces(self)
+        self.releaseInterface = ReleaseStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
         self.interface = [
@@ -185,6 +187,7 @@ class MainWindow(MSFluentWindow):
             self.videoCRInterface,
             self.translateInterface,
             self.ffmpegInterface,
+            self.releaseInterface,
             self.settingInterface,
         ]
 
@@ -194,6 +197,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
         self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
+        self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "上传")
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(
@@ -232,6 +236,9 @@ class MainWindow(MSFluentWindow):
         )
         event_bus.ffmpeg_finished_signal.connect(
             self.show_system_tray_message_ffmpeg_finished
+        )
+        event_bus.release_finished_signal.connect(
+            self.show_system_tray_message_release_finished
         )
 
     def showHelpBox(self):
@@ -433,5 +440,22 @@ class MainWindow(MSFluentWindow):
                 "Fairy-Kekkai-Workshop",
                 f"压制失败 -{message}-",
                 QIcon(":/app/images/logo.png"),
+                3000,
+            )
+
+    def show_system_tray_message_release_finished(self, success, message):
+        """通过系统托盘显示B站上传完成消息"""
+        if success:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"上传完成 -{message}-",
+                QIcon(":/app/images/logo/bilibili.svg"),
+                3000,
+            )
+        else:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"上传失败 -{message}-",
+                QIcon(":/app/images/logo/bilibili.svg"),
                 3000,
             )

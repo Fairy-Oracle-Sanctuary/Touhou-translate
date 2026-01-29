@@ -19,6 +19,7 @@ from qfluentwidgets import (
     LineEdit,
     PasswordLineEdit,
     PlainTextEdit,
+    PushButton,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
@@ -170,6 +171,32 @@ class NumberLineEditSettingCard(SettingCard):
                     value = float(text)
                 cfg.set(self.configItem, value)
             # 如果输入无效，不更新配置
+
+
+class ChooseFileSettingCard(SettingCard):
+    """自定义选择文件设置卡片"""
+
+    def __init__(
+        self,
+        icon,
+        title,
+        content=None,
+        placeholderText="",
+        parent=None,
+    ):
+        super().__init__(icon, title, content, parent)
+
+        self.lineEdit = LineEdit(self)
+        self.lineEdit.setMaximumWidth(1000)
+        self.lineEdit.setPlaceholderText(placeholderText)
+        self.lineEdit.setReadOnly(True)
+
+        self.browseBtn = PushButton("浏览文件")
+
+        self.hBoxLayout.addWidget(self.lineEdit, 1)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.browseBtn)
+        self.hBoxLayout.addSpacing(16)
 
 
 class YTDLPSettingInterface(ScrollArea):
@@ -1575,3 +1602,79 @@ class FFmpegSettingInterface(ScrollArea):
     def _connectSignalToSlot(self):
         """绑定信号"""
         self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)
+
+
+class ReleaseSettingInterface(ScrollArea):
+    """上传设置界面"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.scrollWidget = QWidget()
+        self.expandLayout = ExpandLayout(self.scrollWidget)
+
+        # setting label
+        self.settingLabel = TitleLabel(self.tr("上传设置"), self)
+
+        # Cookie: SESSDATA BILI_JCT BUVID3
+        self.cookieGroup = SettingCardGroup(
+            self.tr("Cookie (必填 否则无法上传)"),
+            self.scrollWidget,
+        )
+        self.cookieSessCard = PasswordLineEditSettingCard(
+            cfg.bilibiliSessdata,
+            FIF.SEARCH_MIRROR,
+            self.tr("SESSDATA"),
+            self.tr("设置你的SESSDATA"),
+            placeholderText="",
+            parent=self.cookieGroup,
+        )
+        self.cookieJctCard = PasswordLineEditSettingCard(
+            cfg.bilibiliBiliJct,
+            FIF.SEARCH_MIRROR,
+            self.tr("BILI_JCT"),
+            self.tr("设置你的BILI_JCT"),
+            placeholderText="",
+            parent=self.cookieGroup,
+        )
+        self.cookieBuvid3Card = PasswordLineEditSettingCard(
+            cfg.bilibiliBuvid3,
+            FIF.SEARCH_MIRROR,
+            self.tr("BUVID3"),
+            self.tr("设置你的BUVID3"),
+            placeholderText="",
+            parent=self.cookieGroup,
+        )
+
+        self.cookieSessCard.lineEdit.setFixedWidth(350)
+        self.cookieJctCard.lineEdit.setFixedWidth(350)
+        self.cookieBuvid3Card.lineEdit.setFixedWidth(350)
+
+        self.__initWidget()
+
+    def __initWidget(self):
+        self.resize(1000, 800)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setViewportMargins(0, 90, 0, 20)
+        self.setWidget(self.scrollWidget)
+        self.setWidgetResizable(True)
+        self.setObjectName("releaseSettingInterface")
+
+        # initialize style sheet
+        setFont(self.settingLabel, 23, QFont.Weight.DemiBold)
+        self.enableTransparentBackground()
+
+        # initialize layout
+        self.__initLayout()
+
+    def __initLayout(self):
+        self.settingLabel.move(36, 40)
+
+        # ffmpeg路径
+        self.cookieGroup.addSettingCard(self.cookieSessCard)
+        self.cookieGroup.addSettingCard(self.cookieJctCard)
+        self.cookieGroup.addSettingCard(self.cookieBuvid3Card)
+
+        # add setting card group to layout
+        self.expandLayout.setSpacing(26)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.cookieGroup)
