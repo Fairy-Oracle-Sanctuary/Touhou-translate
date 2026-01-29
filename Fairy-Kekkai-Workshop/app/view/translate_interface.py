@@ -200,7 +200,7 @@ class TranslationInterface(BaseFunctionInterface):
         """获取翻译参数"""
         args = {}
         args["srt_path"] = str(self.file_srt.file_path)
-        args["output_path"] = self.output_path_edit.text()
+        args["output_path"] = self.outputFileCard.lineEdit.text()
         args["origin_lang"] = cfg.get(cfg.origin_lang)
         args["target_lang"] = cfg.get(cfg.target_lang)
         args["raw_content"] = self.file_srt.raw_content

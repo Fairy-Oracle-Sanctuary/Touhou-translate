@@ -312,7 +312,7 @@ class VideocrInterface(BaseFunctionInterface):
             self.show_error_message("请先选择视频文件")
             return
 
-        if not self.output_path_edit.text():
+        if not self.outputFileCard.lineEdit.text():
             self.show_error_message("请设置输出文件路径")
             return
 
@@ -327,13 +327,15 @@ class VideocrInterface(BaseFunctionInterface):
         # 组合参数发送信号
         args = self._get_args()
         self.addTask.emit(args)
-        self.logger.info(f"开始OCR处理: -{self.input_path_edit.text()}- 参数: {args}")
+        self.logger.info(
+            f"开始OCR处理: -{self.inputFileCard.lineEdit.text()}- 参数: {args}"
+        )
 
     def _get_args(self):
         """获取OCR参数"""
         args = {}
-        args["video_path"] = self.input_path_edit.text()
-        args["file_path"] = self.output_path_edit.text()
+        args["video_path"] = self.inputFileCard.lineEdit.text()
+        args["file_path"] = self.outputFileCard.lineEdit.text()
         args["temp_dir"] = cfg.get(cfg.tempDir)
         args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
         args["time_start"] = "0:00"
@@ -407,9 +409,9 @@ class VideocrInterface(BaseFunctionInterface):
         """从项目加载视频"""
         if video_path:
             self.file_path = video_path
-            self.input_path_edit.setText(video_path)
+            self.inputFileCard.lineEdit.setText(video_path)
             output_path = self._generate_output_path(video_path)
-            self.output_path_edit.setText(str(output_path))
+            self.outputFileCard.lineEdit.setText(str(output_path))
             self.load_file_content(video_path)
             self.video_preview.select_btn.setEnabled(True)
             self.video_preview.refresh_select_btn()

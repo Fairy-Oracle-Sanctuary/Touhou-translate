@@ -62,8 +62,8 @@ class FFmpegInterface(BaseFunctionInterface):
     def _get_args(self):
         """获取压制参数"""
         args = {}
-        args["video_path"] = self.input_path_edit.text()
-        args["output_path"] = self.output_path_edit.text()
+        args["video_path"] = self.inputFileCard.lineEdit.text()
+        args["output_path"] = self.outputFileCard.lineEdit.text()
         return args
 
     def addFFmpegTaskFromProject(self, file_path, output_path):

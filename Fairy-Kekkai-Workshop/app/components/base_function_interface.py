@@ -4,18 +4,17 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
-    ExpandSettingCard,
-    LineEdit,
     PrimaryPushButton,
     PushButton,
     ScrollArea,
     SettingCardGroup,
 )
-from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
+from ..components.config_card import ChooseFileSettingCard
 from ..service.project_service import Project
 
 
@@ -49,65 +48,47 @@ class BaseFunctionInterface(ScrollArea):
         self.enableTransparentBackground()
 
         # 主布局
-        main_layout = QVBoxLayout(self.view)
+        self.main_layout = QVBoxLayout(self.view)
 
         # 文件选择卡片组
         self.fileSelectionGroup = SettingCardGroup("文件选择", self.view)
         self._create_file_selection_cards()
-        main_layout.addWidget(self.fileSelectionGroup)
+        self.main_layout.addWidget(self.fileSelectionGroup)
 
         # 设置卡片组
         self.settingsGroup = SettingCardGroup(f"{self.function_type}设置", self.view)
         self._create_settings_cards()
-        main_layout.addWidget(self.settingsGroup)
+        self.main_layout.addWidget(self.settingsGroup)
 
         # 内容预览卡片
         self.preview_card = self.create_preview_card()
         if self.preview_card:
-            main_layout.addWidget(self.preview_card)
+            self.main_layout.addWidget(self.preview_card)
 
         # 操作按钮
-        self._create_button_layout(main_layout)
-        main_layout.addStretch(1)
+        self._create_button_layout(self.main_layout)
+        self.main_layout.addStretch(1)
 
     def _create_file_selection_cards(self):
         """创建文件选择卡片"""
         # 输入文件卡片
-        self.inputFileCard = ExpandSettingCard(
+        self.inputFileCard = ChooseFileSettingCard(
             self.get_input_icon(),
             f"{self.function_type}文件",
             f"选择要{self.function_type}的文件",
+            "选择文件...",
             self.fileSelectionGroup,
         )
-
-        input_layout = QHBoxLayout()
-        self.input_path_edit = LineEdit()
-        self.input_path_edit.setPlaceholderText(f"选择{self.file_extension}文件...")
-        self.input_path_edit.setReadOnly(True)
-        self.browse_input_btn = PushButton("浏览文件")
-        input_layout.addWidget(self.input_path_edit, 1)
-        input_layout.addWidget(self.browse_input_btn)
-
-        self.inputFileCard.viewLayout.addLayout(input_layout)
         self.fileSelectionGroup.addSettingCard(self.inputFileCard)
 
         # 输出文件选择卡片
-        self.outputFileCard = ExpandSettingCard(
+        self.outputFileCard = ChooseFileSettingCard(
             FIF.SAVE,
             "输出文件",
             f"设置{self.function_type}后的文件保存路径",
+            "输出文件路径...",
             self.fileSelectionGroup,
         )
-
-        output_layout = QHBoxLayout()
-        self.output_path_edit = LineEdit()
-        self.output_path_edit.setPlaceholderText("输出文件路径...")
-        self.output_path_edit.setReadOnly(True)
-        self.browse_output_btn = PushButton("浏览文件")
-        output_layout.addWidget(self.output_path_edit, 1)
-        output_layout.addWidget(self.browse_output_btn)
-
-        self.outputFileCard.viewLayout.addLayout(output_layout)
         self.fileSelectionGroup.addSettingCard(self.outputFileCard)
 
     def _create_settings_cards(self):
@@ -140,8 +121,8 @@ class BaseFunctionInterface(ScrollArea):
 
     def _connect_signals(self):
         """连接信号槽"""
-        self.browse_input_btn.clicked.connect(self._browse_input_file)
-        self.browse_output_btn.clicked.connect(self._browse_output_file)
+        self.inputFileCard.browseBtn.clicked.connect(self._browse_input_file)
+        self.outputFileCard.browseBtn.clicked.connect(self._browse_output_file)
         self.start_btn.clicked.connect(self._start_processing)
         self.previous_btn.clicked.connect(self.switch_previous_file)
         self.next_btn.clicked.connect(self.switch_next_file)
@@ -216,12 +197,12 @@ class BaseFunctionInterface(ScrollArea):
 
         if file_path:
             self.file_path = file_path
-            self.input_path_edit.setText(file_path)
+            self.inputFileCard.lineEdit.setText(file_path)
             cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
 
             # 自动生成输出文件路径
             output_path = self._generate_output_path(file_path)
-            self.output_path_edit.setText(str(output_path))
+            self.outputFileCard.lineEdit.setText(str(output_path))
 
             # 启用按钮
             self.start_btn.setEnabled(True)
@@ -253,12 +234,12 @@ class BaseFunctionInterface(ScrollArea):
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "保存文件",
-            self.output_path_edit.text(),
+            self.outputFileCard.lineEdit.text(),
             f"文件 ({self.file_extension});;所有文件 (*.*)",
         )
 
         if file_path:
-            self.output_path_edit.setText(file_path)
+            self.outputFileCard.lineEdit.setText(file_path)
 
     def _start_processing(self):
         """开始处理 - 子类实现"""

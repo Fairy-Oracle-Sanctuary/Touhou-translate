@@ -48,6 +48,10 @@ class GlobalEventBus(QObject):
         str, str
     )  # 实时ffmpeg输出更新信号 (task_id, output_chunk)
 
+    # B站上传相关事件
+    release_finished_signal = Signal(bool, str)
+    release_requested = Signal(str)
+
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
     project_deleted = Signal(dict)  # {"path": "..."}

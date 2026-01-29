@@ -690,6 +690,11 @@ class Config(QConfig):
         restart=False,
     )
 
+    # B站上传配置
+    bilibiliSessdata = ConfigItem("Bilibili", "Sessdata", "", restart=False)
+    bilibiliBiliJct = ConfigItem("Bilibili", "BiliJct", "", restart=False)
+    bilibiliBuvid3 = ConfigItem("Bilibili", "Buvid3", "", restart=False)
+
 
 cfg = Config()
 cfg.themeMode.value = Theme.DARK
