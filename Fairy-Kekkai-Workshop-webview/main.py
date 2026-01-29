@@ -131,7 +131,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # React 构建后的 HTML 文件路径
-    html_path = os.path.join(script_dir, "dist", "index.html")
+    html_path = os.path.join(script_dir, "frontend", "index.html")
 
     # 如果构建文件不存在，尝试使用开发服务器
     if not os.path.exists(html_path):
