@@ -197,7 +197,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
         self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
-        self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "上传")
+        self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "发布")
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(

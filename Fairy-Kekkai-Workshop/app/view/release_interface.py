@@ -1,7 +1,8 @@
 # coding:utf-8
 
-
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtGui import QColor, QPainter
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, FluentStyleSheet, LineEdit, isDarkTheme, setFont
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.event_bus import event_bus  # noqa
@@ -68,10 +69,55 @@ class ReleaseInterface(BaseFunctionInterface):
 
     def _create_settings_cards(self):
         """创建基础设置卡片"""
-        pass
+        titleLabel = QLabel("基本设置", self)
+        self.main_layout.addWidget(titleLabel)
+        setFont(titleLabel, 20)
+        titleLabel.adjustSize()
+        self.main_layout.addSpacing(12)
+
+        self.main_layout.addWidget(ReleaseBaseSettingInterface(self))
 
     def _init_tid_combo(self):
         """初始化分区选择下拉框"""
         for category, subcategories in tid_data.items():
             for subcategory, tid in subcategories.items():
                 self.tid_combo.addItem(f"{category} - {subcategory}", tid)
+
+
+class ReleaseBaseSettingInterface(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.view = QWidget(self)
+        self._initWidget()
+
+    def _initWidget(self):
+        FluentStyleSheet.SETTING_CARD.apply(self)
+        self.setFixedHeight(500)
+
+        # 主布局
+        self.main_layout = QVBoxLayout(self.view)
+
+        # 标题
+        self.main_layout.addSpacing(12)
+        titleLayout = QHBoxLayout()
+        titleLabel = BodyLabel("*标题", self)
+        titleEdit = LineEdit(self)
+        titleEdit.setPlaceholderText("请输入稿件标题")
+
+        titleLayout.addSpacing(12)
+        titleLayout.addWidget(titleLabel)
+        titleLayout.addWidget(titleEdit)
+        self.main_layout.addLayout(titleLayout)
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing)
+
+        if isDarkTheme():
+            painter.setBrush(QColor(255, 255, 255, 13))
+            painter.setPen(QColor(0, 0, 0, 50))
+        else:
+            painter.setBrush(QColor(255, 255, 255, 170))
+            painter.setPen(QColor(0, 0, 0, 19))
+
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
