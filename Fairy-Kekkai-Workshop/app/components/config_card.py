@@ -1626,6 +1626,18 @@ class ReleaseSettingInterface(ScrollArea):
         # setting label
         self.settingLabel = TitleLabel(self.tr("上传设置"), self)
 
+        # uoload-video路径
+        self.apiPathGroup = SettingCardGroup(
+            self.tr("upload-video 路径"), self.scrollWidget
+        )
+        self.apiPathCard = PushSettingCard(
+            self.tr("选择文件"),
+            ":/app/images/logo/bilibili.svg",
+            "upload-video",
+            cfg.get(cfg.apiPath),
+            self.apiPathGroup,
+        )
+
         # Cookie: SESSDATA BILI_JCT BUVID3
         self.cookieGroup = SettingCardGroup(
             self.tr("Cookie (必填 否则无法上传)"),
@@ -1661,6 +1673,16 @@ class ReleaseSettingInterface(ScrollArea):
         self.cookieBuvid3Card.lineEdit.setFixedWidth(350)
 
         self.__initWidget()
+        self._connectSignalToSlot()
+
+    def _onApiPathCardClicked(self):
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("选择upload-video文件"))
+
+        if not path or cfg.get(cfg.apiPath) == path:
+            return
+
+        cfg.set(cfg.apiPath, path)
+        self.apiPathCard.setContent(path)
 
     def __initWidget(self):
         self.resize(1000, 800)
@@ -1680,6 +1702,9 @@ class ReleaseSettingInterface(ScrollArea):
     def __initLayout(self):
         self.settingLabel.move(36, 40)
 
+        # upload-video路径
+        self.apiPathGroup.addSettingCard(self.apiPathCard)
+
         # ffmpeg路径
         self.cookieGroup.addSettingCard(self.cookieSessCard)
         self.cookieGroup.addSettingCard(self.cookieJctCard)
@@ -1688,4 +1713,9 @@ class ReleaseSettingInterface(ScrollArea):
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.apiPathGroup)
         self.expandLayout.addWidget(self.cookieGroup)
+
+    def _connectSignalToSlot(self):
+        """绑定信号"""
+        self.apiPathCard.clicked.connect(self._onApiPathCardClicked)

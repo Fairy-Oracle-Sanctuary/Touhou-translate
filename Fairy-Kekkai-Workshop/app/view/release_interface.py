@@ -306,6 +306,10 @@ class ReleaseBaseSettingInterface(QWidget):
         self.repostLayout.addWidget(self.repostLength)
         self.repostLayout.addSpacing(12)
 
+        self.repostEdit.textChanged.connect(
+            lambda: self.repostLength.setText(f"{len(self.repostEdit.text())}/200")
+        )
+
         self.view.addLayout(self.repostLayout)
 
         # 分区

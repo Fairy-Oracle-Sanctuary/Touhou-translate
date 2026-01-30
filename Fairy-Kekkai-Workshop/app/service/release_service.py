@@ -1,11 +1,11 @@
 # coding:utf-8
-from datetime import datetime
 
-from bilibili_api import Credential, sync, video_uploader
-from PySide6.QtCore import QObject, Signal
+import os
 
-from ..common.config import cfg
-from ..common.event_bus import event_bus
+from PySide6.QtCore import QObject, QProcess, Signal
+
+from ..common.config import cfg  # noqa
+from ..common.event_bus import event_bus  # noqa
 from ..common.logger import Logger
 
 
@@ -48,103 +48,78 @@ class ReleaseProcess(QObject):
         self.task: ReleaseTask = task
         self.is_cancelled = False
 
-    async def upload_video(self):
-        """异步上传视频"""
-        try:
-            # 获取 B 站cookie
-            sessdata = cfg.get(cfg.bilibiliSessdata)
-            bili_jct = cfg.get(cfg.bilibiliBiliJct)
-            buvid3 = cfg.get(cfg.bilibiliBuvid3)
+    def build_api_command(self):
+        """构建命令"""
+        cmd = [cfg.get(cfg.apiPath)]
 
-            if not all([sessdata, bili_jct, buvid3]):
-                error_msg = "B站cookie未配置，请在设置中填写"
-                self.finished_signal.emit(False, error_msg)
-                return
+        # 视频路径
+        cmd.extend(["--video_path", self.task.video_path])
 
-            credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
+        # 封面路径
+        cmd.extend(["--cover", self.task.cover])
 
-            # 创建视频元数据
-            vu_meta = video_uploader.VideoMeta(
-                tid=self.task.tid,
-                title=self.task.title,
-                tags=self.task.tags,
-                desc=self.task.desc,
-                cover=self.task.cover if self.task.cover else None,
-                original=self.task.original,
-                source=self.task.source if not self.task.original else None,
-                recreate=self.task.recreate,
-                delay_time=self.task.delay_time,
-            )
+        # Cookie
+        cmd.extend(["--SESSDATA", cfg.get(cfg.bilibiliBuvid3)])
+        cmd.extend(["--BILI_JCT", cfg.get(cfg.bilibiliBiliJct)])
+        cmd.extend(["--BUVID3", cfg.get(cfg.bilibiliBuvid3)])
 
-            # 创建视频页面
-            page = video_uploader.VideoUploaderPage(
-                path=self.task.video_path, title=self.task.title
-            )
+        # 其他参数
+        cmd.extend(["--tid", self.task.tid])
+        cmd.extend(["--title", self.task.title])
+        cmd.extend(["--desc", self.task.desc])
+        cmd.extend(["--tags", self.task.tags])
+        cmd.extend(["--original", str(self.task.original)])
+        cmd.extend(["--source", self.task.source])
+        cmd.extend(["--recreate", str(self.task.recreate)])
+        cmd.extend(["--delay_time", str(self.task.delay_time)])
 
-            # 创建上传器
-            uploader = video_uploader.VideoUploader([page], vu_meta, credential)
-
-            # 注册事件回调
-            @uploader.on("__ALL__")
-            async def ev(data):
-                if self.is_cancelled:
-                    return
-
-                # 解析事件数据
-                if isinstance(data, dict):
-                    event = data.get("event")
-                    progress = data.get("progress", 0)
-                    message = data.get("message", "")
-
-                    # 更新任务状态
-                    if event == "UPLOAD_INIT":
-                        self.task.status = "上传中"
-                        self.task.progress = 0
-                        self.progress_signal.emit(0, "", "初始化上传...")
-                    elif event == "UPLOAD_PROGRESS":
-                        self.task.progress = progress
-                        self.progress_signal.emit(progress, "", f"上传中: {progress}%")
-                    elif event == "UPLOAD_FINISH":
-                        self.task.progress = 100
-                        self.progress_signal.emit(100, "", "上传完成，处理中...")
-                    elif event == "SUBMITTING":
-                        self.task.status = "提交中"
-                        self.progress_signal.emit(100, "", "提交审核中...")
-                    elif event == "COMPLETED":
-                        self.task.status = "已完成"
-                        self.task.bvid = data.get("bvid", "")
-                        self.task.aid = data.get("aid", "")
-                        success_msg = f"上传成功！BVID: {self.task.bvid}"
-                        self.finished_signal.emit(True, success_msg)
-                        event_bus.release_finished_signal.emit(True, success_msg)
-                        return
-                    elif event == "FAILED":
-                        error_msg = f"上传失败: {message}"
-                        self.task.status = "失败"
-                        self.task.error_message = error_msg
-                        self.finished_signal.emit(False, error_msg)
-                        event_bus.release_finished_signal.emit(False, error_msg)
-                        return
-
-            # 开始上传
-            self.task.status = "上传中"
-            self.task.start_time = datetime.now()
-
-            await uploader.start()
-
-        except Exception as e:
-            if not self.is_cancelled:
-                error_msg = f"上传失败: {str(e)}"
-                self.task.status = "失败"
-                self.task.error_message = error_msg
-                self.task.end_time = datetime.now()
-                self.finished_signal.emit(False, error_msg)
-                event_bus.release_finished_signal.emit(False, error_msg)
-                print(error_msg)
+        return cmd
 
     def start(self):
         """开始上传"""
-        sync(self.upload_video())
+        self.task.status = "上传中"
+        try:
+            # 获取upload-video.exe路径
+            api_path = cfg.get(cfg.apiPath)
+            if not os.path.exists(api_path):
+                self.finished_signal.emit(False, f"upload-video.exe不存在: {api_path}")
+                return
+
+            # 构建命令
+            cmd = self.build_api_command()
+            print(f"执行上传命令: {' '.join(cmd)}")
+
+            # 创建QProcess
+            self.process = QProcess()
+
+            # 连接信号
+            self.process.readyReadStandardOutput.connect(self.handle_stdout)
+            self.process.readyReadStandardError.connect(self.handle_stderr)
+            self.process.finished.connect(self.handle_finished)
+            self.process.errorOccurred.connect(self.handle_error)
+
+            # 设置程序和工作目录
+            self.process.setProgram(api_path)
+            self.process.setArguments(cmd[1:])  # 去掉程序路径本身
+
+            # 启动进程
+            self.process.start()
+
+        except Exception as e:
+            print(e)
+
+    def handle_stdout(self):
+        """处理标准输出"""
+
+    def handle_stderr(self):
+        """处理标准错误输出"""
+        pass
+
+    def handle_finished(self, exit_code, exit_status):
+        """处理上传完成"""
+
+    def handle_error(self, error):
+        """处理错误"""
 
     def cancel(self):
         """取消上传"""
