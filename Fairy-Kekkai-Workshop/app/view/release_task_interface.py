@@ -3,7 +3,7 @@
 from PySide6.QtCore import Signal
 
 from ..components.base_task_interface import BaseTaskInterface
-from ..components.release_card import ReleaseItemWidget
+from ..components.task_card import ReleaseItemWidget
 from ..service.release_service import ReleaseProcess, ReleaseTask
 
 

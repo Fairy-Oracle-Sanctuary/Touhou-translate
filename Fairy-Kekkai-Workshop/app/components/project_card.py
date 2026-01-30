@@ -38,7 +38,7 @@ from ..components.dialog import (
 from ..resource import resource_rc  # noqa: F401
 from ..service.donwload_list_service import DownloadListThread
 from ..service.project_service import project
-from .dialog import projectProgressDialog
+from .dialog import ProjectProgressDialog
 
 
 class ProjectInterface(ScrollArea):
@@ -308,7 +308,7 @@ class ProjectInterface(ScrollArea):
 
     def showProjectProgress(self, id, title):
         """显示项目进度对话框"""
-        dialog = projectProgressDialog(
+        dialog = ProjectProgressDialog(
             progress=project.get_project_progress(id), title=title, parent=self
         )
         dialog.exec()

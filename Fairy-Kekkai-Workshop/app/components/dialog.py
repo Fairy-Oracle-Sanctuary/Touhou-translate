@@ -325,7 +325,7 @@ class CustomTripleMessageBox(BaseInputDialog):
         )
 
 
-class projectProgressDialog(MessageBoxBase):
+class ProjectProgressDialog(MessageBoxBase):
     """项目进度对话框"""
 
     def __init__(self, progress, title, parent=None):
@@ -411,7 +411,7 @@ class projectProgressDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.progress_bar)
 
 
-class translateProgressDialog(MessageBoxBase):
+class TranslateProgressDialog(MessageBoxBase):
     """翻译进度对话框"""
 
     def __init__(self, task=None, parent=None):
@@ -465,7 +465,7 @@ class translateProgressDialog(MessageBoxBase):
         super().accept()
 
 
-class ffmpegProgressDialog(MessageBoxBase):
+class FFmpegProgressDialog(MessageBoxBase):
     """FFmpeg压制视频进度对话框"""
 
     def __init__(self, task=None, parent=None):
@@ -508,4 +508,50 @@ class ffmpegProgressDialog(MessageBoxBase):
     def accept(self):
         """重写接受方法，断开信号连接"""
         event_bus.ffmpeg_update_signal.disconnect(self.on_ffmpeg_update)
+        super().accept()
+
+
+class ReleaseProgressDialog(MessageBoxBase):
+    """B站上传进度对话框"""
+
+    def __init__(self, task=None, parent=None):
+        super().__init__(parent)
+        self.task = task
+        self.current_content = ""  # 存储当前输出内容
+        self.setup_ui()
+        if task:
+            self.connect_signals()
+
+    def setup_ui(self):
+        self.titleLabel = SubtitleLabel("上传视频进度")
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.textEdit = PlainTextEdit(self)
+        self.textEdit.setReadOnly(True)
+        self.textEdit.setPlaceholderText("输出将在这里显示...")
+        self.viewLayout.addWidget(self.textEdit)
+
+        self.yesButton.setText("关闭")
+        self.cancelButton.setVisible(False)
+
+        # 设置对话框大小
+        self.widget.setMinimumWidth(600)
+        self.widget.setMinimumHeight(500)
+
+    def connect_signals(self):
+        """连接实时上传输出信号"""
+        event_bus.release_update_signal.connect(self.on_release_update)
+
+    def on_release_update(self, task_id, output_chunk):
+        """处理实时上传输出更新"""
+        # 只处理当前任务的更新
+        if self.task and str(self.task.id) == task_id:
+            self.current_content += output_chunk
+            self.textEdit.setPlainText(self.current_content)
+            scrollbar = self.textEdit.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+    def accept(self):
+        """重写接受方法，断开信号连接"""
+        event_bus.release_update_signal.disconnect(self.on_release_update)
         super().accept()

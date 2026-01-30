@@ -459,3 +459,4 @@ class MainWindow(MSFluentWindow):
                 QIcon(":/app/images/logo/bilibili.svg"),
                 3000,
             )
+            print(message)

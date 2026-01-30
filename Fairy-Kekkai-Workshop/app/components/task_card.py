@@ -1,7 +1,7 @@
 from PySide6.QtGui import QIcon
 
 from .base_task_card import BaseItemWidget
-from .dialog import ffmpegProgressDialog, translateProgressDialog
+from .dialog import FFmpegProgressDialog, ReleaseProgressDialog, TranslateProgressDialog
 
 
 class OcrItemWidget(BaseItemWidget):
@@ -35,7 +35,7 @@ class TranslateItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = translateProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = TranslateProgressDialog(task=self.task, parent=self.parent().parent())
         dialog.exec()
 
 
@@ -48,5 +48,23 @@ class FFmpegItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = ffmpegProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = FFmpegProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog.exec()
+
+
+class ReleaseItemWidget(BaseItemWidget):
+    """B站上传任务项组件"""
+
+    def __init__(self, task, progressBar_type="common", task_type="上传", parent=None):
+        super().__init__(task, progressBar_type, task_type, parent)
+        self.setImage()
+        self.clicked.connect(self.handleClick)
+
+    def setImage(self):
+        """设置图标"""
+        self.imageLabel.setImage(QIcon(":/app/images/logo/bilibili.svg").pixmap(32, 32))
+
+    def handleClick(self):
+        """处理点击事件"""
+        dialog = ReleaseProgressDialog(task=self.task, parent=self.parent().parent())
         dialog.exec()
