@@ -691,6 +691,9 @@ class Config(QConfig):
     )
 
     # B站上传配置
+    apiPath = ConfigItem(
+        "Bilibili", "ApiPath", str(Path(f"tools/upload-video{EXE_SUFFIX}").absolute())
+    )
     bilibiliSessdata = ConfigItem("Bilibili", "Sessdata", "", restart=False)
     bilibiliBiliJct = ConfigItem("Bilibili", "BiliJct", "", restart=False)
     bilibiliBuvid3 = ConfigItem("Bilibili", "Buvid3", "", restart=False)
