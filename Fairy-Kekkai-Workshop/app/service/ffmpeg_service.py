@@ -407,12 +407,12 @@ class FFmpegProcess(QObject):
             return
 
         error_map = {
-            QProcess.FailedToStart: "进程启动失败",
-            QProcess.Crashed: "进程崩溃",
-            QProcess.Timedout: "进程超时",
-            QProcess.WriteError: "写入错误",
-            QProcess.ReadError: "读取错误",
-            QProcess.UnknownError: "未知错误",
+            QProcess.ProcessError.FailedToStart: "进程启动失败",
+            QProcess.ProcessError.Crashed: "进程崩溃",
+            QProcess.ProcessError.Timedout: "进程超时",
+            QProcess.ProcessError.WriteError: "写入错误",
+            QProcess.ProcessError.ReadError: "读取错误",
+            QProcess.ProcessError.UnknownError: "未知错误",
         }
 
         error_msg = error_map.get(error, f"进程错误: {error}")

@@ -1,6 +1,83 @@
 import argparse
+import sys
 
 from bilibili_api import Credential, sync, video_uploader  # noqa
+
+
+def setup_bilibili_api_clients():
+    """手动设置 bilibili_api 的 HTTP 客户端"""
+
+    # 首先检查是否已经有选中的客户端
+    from bilibili_api.utils.network import get_selected_client, select_client
+
+    try:
+        # 尝试获取当前选中的客户端
+        current_client, _ = get_selected_client()
+        print(f"当前已选中客户端: {current_client}")
+        return  # 如果已经有选中的客户端，直接返回
+    except:
+        pass  # 如果没有选中的客户端，继续手动注册
+
+    # 尝试注册可用的 HTTP 客户端
+    clients_registered = False
+
+    # 尝试 httpx
+    if not clients_registered:
+        try:
+            import httpx
+            from bilibili_api.clients import HTTPXClient
+            from bilibili_api.utils.network import register_client
+
+            register_client("httpx", HTTPXClient, {"http2": False})
+            select_client("httpx")
+            print("[OK] 已注册 httpx 客户端")
+            clients_registered = True
+        except ImportError:
+            print("[ERROR] httpx 不可用")
+        except Exception as e:
+            print(f"[ERROR] 注册 httpx 失败: {e}")
+
+            # curl_cffi
+        try:
+            import curl_cffi
+            from bilibili_api.clients import CurlCFFIClient
+            from bilibili_api.utils.network import register_client
+
+            register_client(
+                "curl_cffi", CurlCFFIClient, {"impersonate": "", "http2": False}
+            )
+            select_client("curl_cffi")
+            print("[OK] 已注册 curl_cffi 客户端")
+            clients_registered = True
+        except ImportError:
+            print("[ERROR] curl_cffi 不可用")
+        except Exception as e:
+            print(f"[ERROR] 注册 curl_cffi 失败: {e}")
+
+    # 如果前两个都不可用，尝试 aiohttp
+    if not clients_registered:
+        try:
+            import aiohttp
+            from bilibili_api.clients import AioHTTPClient
+            from bilibili_api.utils.network import register_client
+
+            register_client("aiohttp", AioHTTPClient, {})
+            select_client("aiohttp")
+            print("[OK] 已注册 aiohttp 客户端")
+            clients_registered = True
+        except ImportError:
+            print("[ERROR] aiohttp 不可用")
+        except Exception as e:
+            print(f"[ERROR] 注册 aiohttp 失败: {e}")
+
+    # 如果所有客户端都不可用，报错退出
+    if not clients_registered:
+        print("错误: 未找到任何可用的 HTTP 客户端库")
+        print("请安装以下任一库:")
+        print("  pip install curl_cffi")
+        print("  pip install httpx")
+        print("  pip install aiohttp")
+        sys.exit(1)
 
 
 def main():
@@ -75,6 +152,8 @@ def main():
     )
 
     args = parser.parse_args()
+
+    setup_bilibili_api_clients()
 
     sync(upload_video(parser, args))
 

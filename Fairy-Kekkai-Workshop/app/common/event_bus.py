@@ -51,6 +51,9 @@ class GlobalEventBus(QObject):
     # B站上传相关事件
     release_finished_signal = Signal(bool, str)
     release_requested = Signal(str)
+    release_update_signal = Signal(
+        str, str
+    )  # 实时上传输出更新信号 (task_id, output_chunk)
 
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
