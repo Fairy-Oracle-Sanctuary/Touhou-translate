@@ -21,16 +21,22 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 
 PIC_SUFFIX = ".jpg"
 
-with open("PADDLEOCR_VERSION", "r") as f:
-    text = f.readline().strip()
-    if (
-        text == "CPU-v1.3.2"
-        or text == "GPU-v1.3.2-CUDA-11.8"
-        or text == "GPU-v1.3.2-CUDA-12.9"
-    ):
-        PADDLEOCR_VERSION = text
-    else:
-        PADDLEOCR_VERSION = "None"
+PADDLEOCR_VERSION = "None"
+try:
+    with open("PADDLEOCR_VERSION", "r", encoding="utf-8") as f:
+        text = f.readline().strip()
+        if text in {
+            "CPU-v1.3.2",
+            "GPU-v1.3.2-CUDA-11.8",
+            "GPU-v1.3.2-CUDA-12.9",
+        }:
+            PADDLEOCR_VERSION = text
+except FileNotFoundError:
+    # Missing file is acceptable; fallback to default "None"
+    pass
+except Exception:
+    # Any other error reading/parsing the file -> fallback
+    PADDLEOCR_VERSION = "None"
 
 # CPU-v1.3.2
 # GPU-v1.3.2-CUDA-11.8
