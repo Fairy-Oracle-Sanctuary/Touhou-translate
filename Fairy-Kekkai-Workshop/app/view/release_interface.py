@@ -1,8 +1,22 @@
 # coding:utf-8
 
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, FluentStyleSheet, LineEdit, isDarkTheme, setFont
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import (
+    BodyLabel,
+    FluentStyleSheet,
+    LineEdit,
+    RadioButton,
+    isDarkTheme,
+    setFont,
+)
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.event_bus import event_bus  # noqa
@@ -87,27 +101,59 @@ class ReleaseInterface(BaseFunctionInterface):
 class ReleaseBaseSettingInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.view = QWidget(self)
+        self.view = QVBoxLayout(self)
         self._initWidget()
 
     def _initWidget(self):
         FluentStyleSheet.SETTING_CARD.apply(self)
         self.setFixedHeight(500)
 
-        # 主布局
-        self.main_layout = QVBoxLayout(self.view)
-
         # 标题
-        self.main_layout.addSpacing(12)
+        self.view.addSpacing(12)
         titleLayout = QHBoxLayout()
-        titleLabel = BodyLabel("*标题", self)
+
+        titleLabel = BodyLabel("* 标题", self)
+
         titleEdit = LineEdit(self)
         titleEdit.setPlaceholderText("请输入稿件标题")
+        titleEdit.textChanged.connect(
+            lambda: titleLength.setText(f"{len(titleEdit.text())}/80")
+        )
+
+        titleLength = BodyLabel("0/80", self)
 
         titleLayout.addSpacing(12)
         titleLayout.addWidget(titleLabel)
+        titleLayout.addSpacing(12)
         titleLayout.addWidget(titleEdit)
-        self.main_layout.addLayout(titleLayout)
+        titleLayout.addWidget(titleLength)
+        titleLayout.addSpacing(12)
+        self.view.addLayout(titleLayout)
+
+        # 类型
+        self.view.addSpacing(12)
+        typeLayout = QHBoxLayout()
+
+        typeLabel = BodyLabel("  类型", self)
+
+        typeButton1 = RadioButton("自制")
+        typeButton2 = RadioButton("转载")
+        typeButtonGroup = QButtonGroup(self)
+        typeButtonGroup.addButton(typeButton1)
+        typeButtonGroup.addButton(typeButton2)
+        typeButton1.setChecked(True)
+
+        typeLayout.addSpacing(12)
+        typeLayout.addWidget(typeLabel)
+        typeLayout.addSpacing(12)
+        typeLayout.addWidget(typeButton1)
+        typeLayout.addSpacing(24)
+        typeLayout.addWidget(typeButton2)
+        typeLayout.addStretch(1)
+
+        self.view.addLayout(typeLayout)
+
+        self.view.addStretch(1)
 
     def paintEvent(self, e):
         painter = QPainter(self)
