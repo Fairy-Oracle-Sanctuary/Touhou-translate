@@ -1,9 +1,8 @@
 # coding:utf-8
 from datetime import datetime
 
-from PySide6.QtCore import QObject, Signal
-
 from bilibili_api import Credential, sync, video_uploader
+from PySide6.QtCore import QObject, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -17,17 +16,20 @@ class ReleaseTask:
 
     def __init__(self, args):
         self.args = args
-        self.video_path = args["video_path"]
-        self.cover_path = args.get("cover_path", "")
-        self.title = args["title"]
-        self.description = args["description"]
-        self.tags = args["tags"]
-        self.tid = args["tid"]
+        self.input_file = args.get("video_path")
+        self.video_path = args.get("video_path")
+        self.cover = args.get("cover")
+        self.tid = args.get("tid")
+        self.title = args.get("title")
+        self.desc = args.get("desc")
+        self.tags = args.get("tags")
+        self.original = args.get("original")
+        self.source = args.get("source")
+        self.recreate = args.get("recreate")
+        self.delay_time = args.get("delay_time")
         self.status = "等待中"  # 等待中, 上传中, 已完成, 失败
         self.progress = 0
         self.error_message = ""
-        self.bvid = ""
-        self.aid = ""
 
         ReleaseTask._id_counter += 1
         self.id = ReleaseTask._id_counter
@@ -43,57 +45,44 @@ class ReleaseProcess(QObject):
     def __init__(self, task):
         super().__init__()
         self.logger = Logger("ReleaseProcess", "release")
-        self.task = task
+        self.task: ReleaseTask = task
         self.is_cancelled = False
 
     async def upload_video(self):
         """异步上传视频"""
         try:
-            # 获取 B 站凭证
+            # 获取 B 站cookie
             sessdata = cfg.get(cfg.bilibiliSessdata)
             bili_jct = cfg.get(cfg.bilibiliBiliJct)
             buvid3 = cfg.get(cfg.bilibiliBuvid3)
 
             if not all([sessdata, bili_jct, buvid3]):
-                error_msg = "B站凭证未配置，请在设置中填写"
+                error_msg = "B站cookie未配置，请在设置中填写"
                 self.finished_signal.emit(False, error_msg)
                 return
 
-            credential = Credential(
-                sessdata=sessdata,
-                bili_jct=bili_jct,
-                buvid3=buvid3
-            )
+            credential = Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3)
 
             # 创建视频元数据
             vu_meta = video_uploader.VideoMeta(
                 tid=self.task.tid,
                 title=self.task.title,
-                tags=self.task.tags.split(","),
-                desc=self.task.description,
-                cover=self.task.cover_path if self.task.cover_path else None,
-                original=True,
-                no_reprint=True
+                tags=self.task.tags,
+                desc=self.task.desc,
+                cover=self.task.cover if self.task.cover else None,
+                original=self.task.original,
+                source=self.task.source if not self.task.original else None,
+                recreate=self.task.recreate,
+                delay_time=self.task.delay_time,
             )
-
-            # 验证元数据
-            try:
-                await vu_meta.verify(credential=credential)
-            except Exception as e:
-                error_msg = f"元数据验证失败: {str(e)}"
-                self.finished_signal.emit(False, error_msg)
-                return
 
             # 创建视频页面
             page = video_uploader.VideoUploaderPage(
-                path=self.task.video_path,
-                title=self.task.title
+                path=self.task.video_path, title=self.task.title
             )
 
             # 创建上传器
-            uploader = video_uploader.VideoUploader(
-                [page], vu_meta, credential
-            )
+            uploader = video_uploader.VideoUploader([page], vu_meta, credential)
 
             # 注册事件回调
             @uploader.on("__ALL__")
@@ -140,7 +129,6 @@ class ReleaseProcess(QObject):
             # 开始上传
             self.task.status = "上传中"
             self.task.start_time = datetime.now()
-            self.logger.info(f"开始上传视频: -{self.task.video_path}-")
 
             await uploader.start()
 
@@ -152,6 +140,7 @@ class ReleaseProcess(QObject):
                 self.task.end_time = datetime.now()
                 self.finished_signal.emit(False, error_msg)
                 event_bus.release_finished_signal.emit(False, error_msg)
+                print(error_msg)
 
     def start(self):
         """开始上传"""
