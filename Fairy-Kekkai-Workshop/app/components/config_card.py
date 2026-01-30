@@ -9,7 +9,7 @@ from PySide6.QtGui import (
     QIntValidator,
     QValidator,
 )
-from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtWidgets import QFileDialog, QSpacerItem, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard,
     Dialog,
@@ -187,16 +187,27 @@ class ChooseFileSettingCard(SettingCard):
         super().__init__(icon, title, content, parent)
 
         self.lineEdit = LineEdit(self)
-        self.lineEdit.setMaximumWidth(1000)
         self.lineEdit.setPlaceholderText(placeholderText)
         self.lineEdit.setReadOnly(True)
 
         self.browseBtn = PushButton("浏览文件")
 
-        self.hBoxLayout.addWidget(self.lineEdit, 1)
+        self.remove_stretch()
+        self.hBoxLayout.addSpacing(24)
+        self.hBoxLayout.addWidget(self.lineEdit)
         self.hBoxLayout.addSpacing(8)
         self.hBoxLayout.addWidget(self.browseBtn)
         self.hBoxLayout.addSpacing(16)
+
+    def remove_stretch(self):
+        """删除弹簧"""
+        last_index = self.hBoxLayout.count() - 1
+        if last_index >= 0:
+            item = self.hBoxLayout.itemAt(last_index)
+            # 检查是否为弹簧
+            if isinstance(item, QSpacerItem):
+                self.hBoxLayout.removeItem(item)
+                del item
 
 
 class YTDLPSettingInterface(ScrollArea):
