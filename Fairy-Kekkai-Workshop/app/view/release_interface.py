@@ -1,5 +1,8 @@
 # coding:utf-8
 
+import time
+
+from PySide6.QtCore import QDate, QTime
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -11,9 +14,17 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     BodyLabel,
+    ComboBox,
+    FastCalendarPicker,
+    FlowLayout,
     FluentStyleSheet,
     LineEdit,
+    PlainTextEdit,
+    PushButton,
     RadioButton,
+    SwitchButton,
+    TimePicker,
+    ToolButton,
     isDarkTheme,
     setFont,
 )
@@ -91,22 +102,20 @@ class ReleaseInterface(BaseFunctionInterface):
 
         self.main_layout.addWidget(ReleaseBaseSettingInterface(self))
 
-    def _init_tid_combo(self):
-        """初始化分区选择下拉框"""
-        for category, subcategories in tid_data.items():
-            for subcategory, tid in subcategories.items():
-                self.tid_combo.addItem(f"{category} - {subcategory}", tid)
-
 
 class ReleaseBaseSettingInterface(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.view = QVBoxLayout(self)
+
+        self.tags = []
+        self.maxTags = 10
+
         self._initWidget()
 
     def _initWidget(self):
         FluentStyleSheet.SETTING_CARD.apply(self)
-        self.setFixedHeight(500)
+        self.setFixedHeight(750)
 
         # 标题
         self.view.addSpacing(12)
@@ -124,10 +133,11 @@ class ReleaseBaseSettingInterface(QWidget):
 
         titleLayout.addSpacing(12)
         titleLayout.addWidget(titleLabel)
-        titleLayout.addSpacing(12)
+        titleLayout.addSpacing(42)
         titleLayout.addWidget(titleEdit)
         titleLayout.addWidget(titleLength)
         titleLayout.addSpacing(12)
+
         self.view.addLayout(titleLayout)
 
         # 类型
@@ -138,14 +148,14 @@ class ReleaseBaseSettingInterface(QWidget):
 
         typeButton1 = RadioButton("自制")
         typeButton2 = RadioButton("转载")
-        typeButtonGroup = QButtonGroup(self)
-        typeButtonGroup.addButton(typeButton1)
-        typeButtonGroup.addButton(typeButton2)
+        self.typeButtonGroup = QButtonGroup(self)
+        self.typeButtonGroup.addButton(typeButton1)
+        self.typeButtonGroup.addButton(typeButton2)
         typeButton1.setChecked(True)
 
         typeLayout.addSpacing(12)
         typeLayout.addWidget(typeLabel)
-        typeLayout.addSpacing(12)
+        typeLayout.addSpacing(42)
         typeLayout.addWidget(typeButton1)
         typeLayout.addSpacing(24)
         typeLayout.addWidget(typeButton2)
@@ -153,7 +163,252 @@ class ReleaseBaseSettingInterface(QWidget):
 
         self.view.addLayout(typeLayout)
 
+        # 转载链接
+        self.repostLayout = QHBoxLayout()
+
+        self.repostEdit = LineEdit(self)
+        self.repostEdit.setPlaceholderText(
+            "转载视频请注明来源、时间、地点(例：转自https://www.xxxx.com/yyyy)，注明来源会更快地通过审核哦"
+        )
+        self.repostEdit.setVisible(False)
+
+        self.repostLength = BodyLabel("0/200", self)
+        self.repostLength.setVisible(False)
+
+        self.repostLayout.addSpacing(98)
+        self.repostLayout.addWidget(self.repostEdit)
+        self.repostLayout.addWidget(self.repostLength)
+        self.repostLayout.addSpacing(12)
+
+        self.view.addLayout(self.repostLayout)
+
+        # 分区
+        self.view.addSpacing(12)
+        tidLayout = QHBoxLayout()
+
+        tidLabel = BodyLabel("* 分区", self)
+
+        tid_combo = ComboBox(self)
+        tid_combo.setMinimumWidth(200)
+        tid_combo.addItems(tid_data.keys())
+
+        tidLayout.addSpacing(12)
+        tidLayout.addWidget(tidLabel)
+        tidLayout.addSpacing(42)
+        tidLayout.addWidget(tid_combo)
+        tidLayout.addStretch(1)
+
+        self.view.addLayout(tidLayout)
+
+        # 标签
+        self.view.addSpacing(12)
+        self.tagLayout = QHBoxLayout()
+        self.tagInputLayout = QHBoxLayout()
+        self.tagContainLayout = QVBoxLayout()
+
+        tagLabel = BodyLabel("* 标签", self)
+
+        self.tagContainer = QWidget(self)
+        self.tagContainer.setObjectName("tagContainer")
+
+        self.tagsLayout = FlowLayout(needAni=False)
+        self.tagsLayout.setContentsMargins(0, 0, 0, 0)
+        self.tagsLayout.setSpacing(4)
+
+        self.tagInputHint = LineEdit(self.tagContainer)
+        self.tagInputHint.setPlaceholderText("按回车键Enter创建标签")
+        self.tagInputHint.setMinimumWidth(200)
+
+        self.tagCountLabel = BodyLabel("还可以添加10个标签", self.tagContainer)
+
+        self.tagLayout.addSpacing(12)
+        self.tagLayout.addWidget(tagLabel)
+        self.tagLayout.addSpacing(42)
+        self.tagInputLayout.addWidget(self.tagInputHint)
+        self.tagInputLayout.addWidget(self.tagCountLabel)
+        self.tagContainLayout.addLayout(self.tagInputLayout)
+        self.tagContainLayout.addLayout(self.tagsLayout)
+        self.tagLayout.addLayout(self.tagContainLayout)
+        self.tagLayout.addSpacing(12)
+
+        self.view.addLayout(self.tagLayout)
+
+        self.tagInputHint.returnPressed.connect(self._addTag)
+        self.tagInputHint.textChanged.connect(self._handleTagInputChange)
+
+        # 简介
+        self.view.addSpacing(12)
+        self.descLayout = QHBoxLayout()
+        self.descLabelLayout = QVBoxLayout()
+        self.descLengthLayout = QVBoxLayout()
+
+        descLabel = BodyLabel("  简介", self)
+
+        self.descEdit = PlainTextEdit(self)
+        self.descEdit.setPlaceholderText(
+            "填写更全面的相关信息，让更多的人能找到你的视频吧"
+        )
+        self.descEdit.setMinimumHeight(150)
+        self.descEdit.textChanged.connect(
+            lambda: descLength.setText(f"{len(self.descEdit.toPlainText())}/2000")
+        )
+
+        descLength = BodyLabel("0/2000", self)
+
+        self.descLayout.addSpacing(12)
+        self.descLabelLayout.addWidget(descLabel)
+        self.descLabelLayout.addStretch(1)
+        self.descLayout.addLayout(self.descLabelLayout)
+        self.descLayout.addSpacing(42)
+        self.descLayout.addWidget(self.descEdit)
+        self.descLengthLayout.addStretch(1)
+        self.descLengthLayout.addWidget(descLength)
+        self.descLayout.addLayout(self.descLengthLayout)
+        self.descLayout.addSpacing(12)
+
+        self.view.addLayout(self.descLayout)
+
+        # 定时发布
+        self.view.addSpacing(12)
+        self.scheduleLayout = QHBoxLayout()
+
+        scheduleLabel = BodyLabel("  定时发布", self)
+
+        self.scheduleBtn = SwitchButton(self)
+        self.scheduleBtn.setOnText("")
+        self.scheduleBtn.setOffText("")
+        self.scheduleBtn.setChecked(False)
+
+        self.scheduleLayout.addSpacing(12)
+        self.scheduleLayout.addWidget(scheduleLabel)
+        self.scheduleLayout.addSpacing(12)
+        self.scheduleLayout.addWidget(self.scheduleBtn)
+        self.scheduleLayout.addWidget(
+            BodyLabel(
+                "(可选择距离当前最早≥2小时/最晚≤15天的时间，花火稿件或距发布不足5分钟时不可修改/取消)"
+            )
+        )
+        self.scheduleLayout.addStretch(1)
+
+        self.view.addLayout(self.scheduleLayout)
+
+        # 日期时间选择
+        self.calendarLayout = QHBoxLayout()
+        self.calendarPicker = FastCalendarPicker()
+        self.calendarPicker.setDate(QDate.currentDate())
+        self.calendarPicker.setVisible(False)
+
+        self.timePicker = TimePicker(self)
+        self.timePicker.setTime(QTime.currentTime())
+        self.timePicker.setVisible(False)
+
+        self.dateLabel = QLabel(self)
+        self.dateLabel.setText(time.strftime("%Y-%m-%d %H:%M", time.localtime()))
+        self.dateLabel.setVisible(False)
+
+        self.calendarLayout.addSpacing(98)
+        self.calendarLayout.addWidget(self.calendarPicker)
+        self.calendarLayout.addWidget(self.timePicker)
+        self.calendarLayout.addWidget(self.dateLabel)
+        self.calendarLayout.addStretch(1)
+
+        self.view.addLayout(self.calendarLayout)
+
+        # 必要拉伸
         self.view.addStretch(1)
+
+        self._connect_signals()
+
+    def _connect_signals(self):
+        """连接信号槽"""
+        self.typeButtonGroup.buttonToggled.connect(
+            lambda button: self._handle_type_change(True)
+            if button.text() == "转载"
+            else self._handle_type_change(False)
+        )
+        self.scheduleBtn.checkedChanged.connect(
+            lambda checked: self._handle_schedule_change(checked)
+        )
+        self.calendarPicker.dateChanged.connect(self._handle_date_change)
+        self.timePicker.timeChanged.connect(self._handle_date_change)
+
+    def _handle_type_change(self, is_repost):
+        """处理类型改变"""
+        self.repostEdit.setVisible(is_repost)
+        self.repostLength.setVisible(is_repost)
+
+    def _handle_schedule_change(self, is_schedule):
+        """处理定时发布改变"""
+        self.calendarPicker.setVisible(is_schedule)
+        self.timePicker.setVisible(is_schedule)
+        self.dateLabel.setVisible(is_schedule)
+
+    def _handle_date_change(self, d):
+        """更新日期时间标签"""
+        date = self.calendarPicker.getDate()
+        time = self.timePicker.getTime()
+        # 选择的时间必须大于现在的时间
+        if date < QDate.currentDate() or (
+            date == QDate.currentDate() and time < QTime.currentTime()
+        ):
+            self.dateLabel.setText(
+                f"{date.toString('yyyy-MM-dd')} {time.toString('hh:mm')} 选择的时间必须大于现在的时间"
+            )
+            return
+
+        self.dateLabel.setText(
+            f"{date.toString('yyyy-MM-dd')} {time.toString('hh:mm')}"
+        )
+
+    def _addTag(self):
+        """添加标签"""
+        tag_text = self.tagInputHint.text().strip()
+        if tag_text and len(self.tags) < self.maxTags and tag_text not in self.tags:
+            tag_button = PushButton(tag_text)
+            tag_button.setObjectName("tagButton")
+
+            delete_button = ToolButton()
+            delete_button.setIcon(FIF.CLOSE)
+            delete_button.setObjectName("tagDeleteButton")
+
+            tag_container = QWidget()
+            tag_container_layout = QHBoxLayout(tag_container)
+            tag_container_layout.setContentsMargins(0, 0, 0, 0)
+            tag_container_layout.addWidget(tag_button)
+            tag_container_layout.addWidget(delete_button)
+
+            delete_button.clicked.connect(
+                lambda: self._removeTag(tag_text, tag_container)
+            )
+
+            self.tagsLayout.addWidget(tag_container)
+
+            self.tags.append(tag_text)
+
+            self.tagInputHint.clear()
+
+            self._updateTagCount()
+
+    def _removeTag(self, tag_text, tag_container):
+        """删除标签"""
+        if tag_text in self.tags:
+            self.tags.remove(tag_text)
+            tag_container.deleteLater()
+            self._updateTagCount()
+
+    def _updateTagCount(self):
+        """更新标签数量显示"""
+        remaining = self.maxTags - len(self.tags)
+        self.tagCountLabel.setText(f"还可以添加{remaining}个标签")
+
+    def _handleTagInputChange(self):
+        """处理标签输入变化"""
+        # 当标签数量达到上限时，禁用输入
+        if len(self.tags) >= self.maxTags:
+            self.tagInputHint.clear()
+            self.tagInputHint.setPlaceholderText("已达到标签上限")
+        else:
+            self.tagInputHint.setPlaceholderText("按回车键Enter创建标签")
 
     def paintEvent(self, e):
         painter = QPainter(self)
