@@ -1,6 +1,7 @@
 # coding:utf-8
 
 import time
+from pathlib import Path
 
 from PySide6.QtCore import QDate, QTime
 from PySide6.QtGui import QColor, QPainter
@@ -14,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     BodyLabel,
+    CheckBox,
     ComboBox,
     FastCalendarPicker,
     FlowLayout,
@@ -30,6 +32,7 @@ from qfluentwidgets import (
 )
 from qfluentwidgets import FluentIcon as FIF
 
+from ..common.config import cfg
 from ..common.event_bus import event_bus  # noqa
 from ..common.logger import Logger
 from ..common.setting import tid_data
@@ -66,6 +69,10 @@ class ReleaseInterface(BaseFunctionInterface):
         self.file_extension = "*.mp4;*.flv;*.avi;*.wmv;*.mov;*.webm;*.mpeg4;*.ts;*.mpg;*.rm;*.rmvb;*.mkv;*.m4v;*.vob;*.swf;*.3gp;*.mts;*.m2v;*.mts;*.f4v;*.mt;*.3g2;*.asf"
         self.cover_extension = "*.png;*.pjp;*.jfif;*.jpe;*.pjpeg;*.jpeg;*.jpg"
         self.default_output_suffix = ""
+        self.special_filename_mapping = {
+            "熟肉.mp4": "封面.jpg",
+            "熟肉_压制.mp4": "封面.jpg",
+        }
 
         self.logger = Logger("ReleaseInterface", "release")
 
@@ -74,15 +81,51 @@ class ReleaseInterface(BaseFunctionInterface):
         self.outputFileCard.titleLabel.setText("封面文件")
         self.outputFileCard.contentLabel.setText("请选择你的封面")
         self.outputFileCard.lineEdit.setPlaceholderText("选择文件...")
+
+        self.inputFileCard.browseBtn.clicked.disconnect(self._browse_input_file)
+        self.inputFileCard.browseBtn.clicked.connect(self._browse_video_file)
         self.outputFileCard.browseBtn.clicked.disconnect(self._browse_output_file)
         self.outputFileCard.browseBtn.clicked.connect(self._browse_cover_file)
 
+        self.start_btn.setEnabled(True)
+
+    def _browse_video_file(self):
+        """浏览输入文件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择视频文件",
+            cfg.get(cfg.lastOpenPath)
+            if Path(cfg.get(cfg.lastOpenPath)).exists()
+            else str(Path.home()),
+            f"文件 ({self.file_extension});;所有文件 (*.*)",
+        )
+
+        if file_path:
+            self.file_path = file_path
+            self.inputFileCard.lineEdit.setText(file_path)
+            cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
+
+            # 自动生成输出文件路径
+            output_path = self._generate_output_path(file_path)
+            if Path(output_path).exists():
+                self.outputFileCard.lineEdit.setText(str(output_path))
+            else:
+                return
+
+            # 更新上下按钮状态
+            self.update_adjacent_button()
+
+            # 加载文件内容预览
+            self.load_file_content(file_path)
+
     def _browse_cover_file(self):
-        """浏览输出文件"""
+        """浏览封面文件"""
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "保存文件",
-            self.outputFileCard.lineEdit.text(),
+            "选择封面文件",
+            cfg.get(cfg.lastOpenPath)
+            if Path(cfg.get(cfg.lastOpenPath)).exists()
+            else str(Path.home()),
             f"文件 ({self.cover_extension});;所有文件 (*.*)",
         )
 
@@ -100,7 +143,89 @@ class ReleaseInterface(BaseFunctionInterface):
         titleLabel.adjustSize()
         self.main_layout.addSpacing(12)
 
-        self.main_layout.addWidget(ReleaseBaseSettingInterface(self))
+        self.settingCard = ReleaseBaseSettingInterface(self)
+        self.main_layout.addWidget(self.settingCard)
+
+    def _start_processing(self):
+        """开始上传"""
+        if not cfg.get(cfg.bilibiliSessdata):
+            self.show_error_message("请先填写Cookie：Sessdata")
+            return
+
+        if not cfg.get(cfg.bilibiliBiliJct):
+            self.show_error_message("请先填写Cookie：BiliJct")
+            return
+
+        if not cfg.get(cfg.bilibiliBuvid3):
+            self.show_error_message("请先填写Cookie：Buvid3")
+            return
+
+        if not self.inputFileCard.lineEdit.text():
+            self.show_error_message("请选择视频文件")
+            return
+
+        if not self.outputFileCard.lineEdit.text():
+            self.show_error_message("请选择封面文件")
+            return
+
+        if not self.settingCard.titleEdit.text():
+            self.show_error_message("请输入稿件标题")
+            return
+
+        if (
+            self.settingCard.typeButtonGroup.checkedButton().text() == "转载"
+            and not self.settingCard.repostEdit.text()
+        ):
+            self.show_error_message("请输入转载链接")
+            return
+
+        if not self.settingCard.tags:
+            self.show_error_message("请输入标签")
+            return
+
+        # 检测时间
+        if self.settingCard.scheduleBtn.isChecked():
+            date = self.settingCard.calendarPicker.getDate()
+            time = self.settingCard.timePicker.getTime()
+            if date < QDate.currentDate() or (
+                date == QDate.currentDate() and time < QTime.currentTime()
+            ):
+                self.show_error_message("选择的时间必须大于现在的时间")
+                return
+
+        args = self._get_args()
+        self.logger.info(
+            f"开始上传视频: -{self.inputFileCard.lineEdit.text()}- 参数: {args}"
+        )
+        self.addTask.emit(args)
+
+    def _get_args(self):
+        """获取翻译参数"""
+        args = {}
+        args["video_path"] = self.inputFileCard.lineEdit.text()
+        args["cover"] = self.outputFileCard.lineEdit.text()
+        args["tid"] = tid_data.get(self.settingCard.tid_combo.currentText(), 160)
+        args["title"] = self.settingCard.titleEdit.text()
+        args["desc"] = self.settingCard.descEdit.toPlainText()
+        args["tags"] = self.settingCard.tags
+        is_original = self.settingCard.typeButtonGroup.checkedButton().text() == "自制"
+        args["original"] = is_original
+        args["source"] = self.settingCard.repostEdit.text() if not is_original else ""
+        args["recreate"] = self.settingCard.recreateCheckbox.isChecked()
+        date = self.settingCard.calendarPicker.getDate().toString("yyyy-MM-dd")
+        _time = self.settingCard.timePicker.getTime().toString("HH:mm")
+
+        # 计算定时发布时间戳（秒）
+        if self.settingCard.scheduleBtn.isChecked():
+            # 将日期和时间转换为时间戳
+            datetime_str = f"{date} {_time}"
+            datetime_obj = time.strptime(datetime_str, "%Y-%m-%d %H:%M")
+            delay_timestamp = int(time.mktime(datetime_obj))
+            args["delay_time"] = delay_timestamp
+        else:
+            args["delay_time"] = None
+
+        return args
 
 
 class ReleaseBaseSettingInterface(QWidget):
@@ -115,7 +240,8 @@ class ReleaseBaseSettingInterface(QWidget):
 
     def _initWidget(self):
         FluentStyleSheet.SETTING_CARD.apply(self)
-        self.setFixedHeight(750)
+        self.setMaximumHeight(750)
+        self.setMinimumHeight(650)
 
         # 标题
         self.view.addSpacing(12)
@@ -123,10 +249,10 @@ class ReleaseBaseSettingInterface(QWidget):
 
         titleLabel = BodyLabel("* 标题", self)
 
-        titleEdit = LineEdit(self)
-        titleEdit.setPlaceholderText("请输入稿件标题")
-        titleEdit.textChanged.connect(
-            lambda: titleLength.setText(f"{len(titleEdit.text())}/80")
+        self.titleEdit = LineEdit(self)
+        self.titleEdit.setPlaceholderText("请输入稿件标题")
+        self.titleEdit.textChanged.connect(
+            lambda: titleLength.setText(f"{len(self.titleEdit.text())}/80")
         )
 
         titleLength = BodyLabel("0/80", self)
@@ -134,7 +260,7 @@ class ReleaseBaseSettingInterface(QWidget):
         titleLayout.addSpacing(12)
         titleLayout.addWidget(titleLabel)
         titleLayout.addSpacing(42)
-        titleLayout.addWidget(titleEdit)
+        titleLayout.addWidget(self.titleEdit)
         titleLayout.addWidget(titleLength)
         titleLayout.addSpacing(12)
 
@@ -188,14 +314,14 @@ class ReleaseBaseSettingInterface(QWidget):
 
         tidLabel = BodyLabel("* 分区", self)
 
-        tid_combo = ComboBox(self)
-        tid_combo.setMinimumWidth(200)
-        tid_combo.addItems(tid_data.keys())
+        self.tid_combo = ComboBox(self)
+        self.tid_combo.setMinimumWidth(200)
+        self.tid_combo.addItems(tid_data.keys())
 
         tidLayout.addSpacing(12)
         tidLayout.addWidget(tidLabel)
         tidLayout.addSpacing(42)
-        tidLayout.addWidget(tid_combo)
+        tidLayout.addWidget(self.tid_combo)
         tidLayout.addStretch(1)
 
         self.view.addLayout(tidLayout)
@@ -306,7 +432,7 @@ class ReleaseBaseSettingInterface(QWidget):
         self.dateLabel.setText(time.strftime("%Y-%m-%d %H:%M", time.localtime()))
         self.dateLabel.setVisible(False)
 
-        self.calendarLayout.addSpacing(98)
+        self.calendarLayout.addSpacing(92)
         self.calendarLayout.addWidget(self.calendarPicker)
         self.calendarLayout.addWidget(self.timePicker)
         self.calendarLayout.addWidget(self.dateLabel)
@@ -314,8 +440,24 @@ class ReleaseBaseSettingInterface(QWidget):
 
         self.view.addLayout(self.calendarLayout)
 
+        # 二创设置
+        self.view.addSpacing(12)
+        self.recreateLayout = QHBoxLayout()
+        self.recreateLabel = BodyLabel("  二创设置", self)
+
+        self.recreateCheckbox = CheckBox(self)
+        self.recreateCheckbox.setText("允许二创")
+
+        self.recreateLayout.addSpacing(12)
+        self.recreateLayout.addWidget(self.recreateLabel)
+        self.recreateLayout.addSpacing(12)
+        self.recreateLayout.addWidget(self.recreateCheckbox)
+        self.recreateLayout.addStretch(1)
+
+        self.view.addLayout(self.recreateLayout)
+
         # 必要拉伸
-        self.view.addStretch(1)
+        self.view.addSpacing(24)
 
         self._connect_signals()
 
