@@ -2,7 +2,7 @@
 
 import os
 
-from PySide6.QtCore import QObject, QProcess, Signal
+from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 from ..common.config import cfg  # noqa
 from ..common.event_bus import event_bus  # noqa
@@ -92,6 +92,13 @@ class ReleaseProcess(QObject):
 
             # 创建QProcess
             self.process = QProcess()
+
+            env = QProcessEnvironment.systemEnvironment()
+
+            self.process.setProcessEnvironment(env)
+
+            working_dir = os.path.dirname(api_path)
+            self.process.setWorkingDirectory(working_dir)
 
             # 连接信号
             self.process.readyReadStandardOutput.connect(self.handle_stdout)

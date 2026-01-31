@@ -23,7 +23,8 @@ from .download_interface import DownloadStackedInterface
 from .ffmpeg_interface import FFmpegStackedInterfaces
 from .home_interface import HomeInterface
 from .project_interface import ProjectStackedInterface
-from .release_interface import ReleaseStackedInterfaces
+
+# from .release_interface import ReleaseStackedInterfaces
 from .setting_interface import SettingInterface
 from .translate_interface import TranslateStackedInterfaces
 from .videocr_interface import VideocrStackedInterfaces
@@ -177,7 +178,7 @@ class MainWindow(MSFluentWindow):
         self.videoCRInterface = VideocrStackedInterfaces(self)
         self.translateInterface = TranslateStackedInterfaces(self)
         self.ffmpegInterface = FFmpegStackedInterfaces(self)
-        self.releaseInterface = ReleaseStackedInterfaces(self)
+        # self.releaseInterface = ReleaseStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
         self.interface = [
@@ -187,7 +188,7 @@ class MainWindow(MSFluentWindow):
             self.videoCRInterface,
             self.translateInterface,
             self.ffmpegInterface,
-            self.releaseInterface,
+            # self.releaseInterface,
             self.settingInterface,
         ]
 
@@ -197,7 +198,7 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
         self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
-        self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "发布")
+        # self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "发布")
 
         # 添加自定义导航组件
         self.navigationInterface.addItem(
