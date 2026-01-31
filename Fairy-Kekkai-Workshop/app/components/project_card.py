@@ -151,7 +151,7 @@ class ProjectInterface(ScrollArea):
             title = "选择导入模式"
             content = "是否要把整个项目文件夹复制过来"
             folder_path = Path(folder_path)
-            path = f"{project.projects_location}\{folder_path.name}"
+            path = str(Path(project.projects_location) / folder_path.name)
             # 获取应用程序的顶级窗口
             main_window = None
             for widget in QApplication.topLevelWidgets():

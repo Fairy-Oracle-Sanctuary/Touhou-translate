@@ -55,11 +55,11 @@ class DownloadListThread(QThread):
         for i in name[:-1]:
             video = [
                 i[-1],
-                re.findall('\{"url":"(.*?)"', i[-2])[0].replace(
+                re.findall(r'\{"url":"(.*?)"', i[-2])[0].replace(
                     "hqdefault", "maxresdefault"
                 ),
                 "https://www.youtube.com/watch?v="
-                + re.findall("vi/(.*)/", re.findall('\{"url":"(.*?)"', i[-2])[0])[0],
+                + re.findall(r"vi/(.*)/", re.findall(r'\{"url":"(.*?)"', i[-2])[0])[0],
             ]
             for j in video:
                 print(j)
