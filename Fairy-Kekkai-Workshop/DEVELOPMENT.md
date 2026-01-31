@@ -9,7 +9,6 @@
 - 🔤 **字幕提取**：集成 PaddleOCR，支持自定义 OCR 参数
 - 🌐 **智能翻译**：支持多个 AI 模型（OpenAI、Deepseek、腾讯混元、ERNIE、Gemini、书生等）
 - 🎬 **视频压制**：基于 FFmpeg，支持自定义编码参数
-- 📤 **B 站上传**：直接上传处理后的视频到 Bilibili
 - 💾 **项目管理**：完整的项目文件系统管理，支持导入/链接外部项目
 
 ---
@@ -46,9 +45,7 @@ Fairy-Kekkai-Workshop/
 │   │   ├── ffmpeg_service.py      # 视频压制服务
 │   │   ├── ocr_service.py         # OCR 字幕提取服务
 │   │   ├── srt_service.py         # 字幕文件处理
-│   │   ├── release_service.py     # B 站上传服务
-│   │   ├── version_service.py     # 版本更新检查
-│   │   └── bilibili_api/          # B 站 API 模块
+│   │   └── version_service.py     # 版本更新检查
 │   │
 │   ├── view/                      # UI 视图层
 │   │   ├── main_window.py         # 主窗口
@@ -58,7 +55,6 @@ Fairy-Kekkai-Workshop/
 │   │   ├── translate_interface.py # 翻译页
 │   │   ├── ffmpeg_interface.py    # 压制页
 │   │   ├── videocr_interface.py   # OCR 页
-│   │   ├── release_interface.py   # 上传页
 │   │   ├── setting_interface.py   # 设置页
 │   │   └── *_task_interface.py    # 任务进度页
 │   │
@@ -125,7 +121,7 @@ Fairy-Kekkai-Workshop/
 | numpy | 最新 | 数值计算 |
 | Pillow | 最新 | 图像处理 |
 | requests | 最新 | HTTP 请求 |
-| bilibili-api-python | 最新 | B 站 API |
+
 
 **可选依赖**（需手动安装）：
 ```bash
@@ -241,8 +237,8 @@ thread.start()
 - ✅ 百度 ERNIE Speed 128K
 - ✅ 书生（InternLM）
 - ✅ Google Gemini 3 Flash
-- ❌ 讯飞 Spark Lite（SDK 不兼容）
-- ❌ GLM-4.5 Flash（SDK 不兼容）
+- ✅ 讯飞 Spark Lite（SDK 不兼容）
+- ✅ GLM-4.5 Flash（SDK 不兼容）
 - ✅ 自定义模型（兼容 OpenAI API 格式）
 
 ### 5. 日志系统（`app/common/logger.py`）
@@ -356,7 +352,6 @@ myNewModelApiKey = ConfigItem(
 | 字幕提取 | ✅ | PaddleOCR，需手动安装模型 |
 | 翻译 | ⚠️ | 部分 AI 模型 SDK 不兼容 |
 | 视频压制 | ✅ | 基于 FFmpeg，支持多种编码器 |
-| B 站上传 | ✅ | 需要有效的登录 Cookie |
 | 实时预览 | ❌ | 当前不支持 |
 | 批量处理 | ⚠️ | 需要后台优化 |
 
@@ -407,5 +402,5 @@ myNewModelApiKey = ConfigItem(
 
 ---
 
-**最后更新**：2026 年 1 月 30 日  
-**维护者**：Baby2016
+**最后更新**：2026 年 1 月 31 日  
+**维护者**：`Baby2016` `镀铬酸钾`
