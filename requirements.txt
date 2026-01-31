@@ -3,12 +3,9 @@
 # (see app/view/home_interface.py). If you prefer the Python package,
 # install `paddleocr` and its backend `paddlepaddle` separately.
 
-PySide6>=6.5
-qfluentwidgets
+PySide6-Fluent-Widgets[full]
 opencv-python
 openai
-sparkai
-zai
 numpy
 Pillow
 requests
