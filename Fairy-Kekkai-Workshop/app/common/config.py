@@ -700,5 +700,5 @@ class Config(QConfig):
 
 
 cfg = Config()
-cfg.themeMode.value = Theme.DARK
+cfg.themeMode.value = Theme.LIGHT
 qconfig.load(str(CONFIG_FILE.absolute()), cfg)
