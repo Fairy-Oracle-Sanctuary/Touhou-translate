@@ -5,8 +5,10 @@ from typing import Generator
 
 from openai import OpenAI
 from PySide6.QtCore import QThread, Signal
-# from sparkai.llm.llm import ChatSparkLLM, ChunkPrintHandler  # 讯飞 Spark 暂不可用，需要新的 SDK
-# from zai import ZhipuAiClient  # zai 包不包含此模块
+from sparkai.llm.llm import (
+    ChatSparkLLM,
+    ChunkPrintHandler,
+)
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -112,29 +114,31 @@ class DeepseekService(BaseTranslateService):
         return "deepseek-chat"
 
 
-# GLMService 暂不可用（zai 包不包含 ZhipuAiClient 模块）
-# class GLMService(BaseTranslateService):
-#     def get_client(self):
-#         return ZhipuAiClient(api_key=cfg.get(cfg.glmApiKey))
-#
-#     def get_model_name(self):
-#         return "glm-4.5-flash"
+class GLMService(BaseTranslateService):
+    def get_client(self):
+        return OpenAI(
+            api_key=cfg.get(cfg.glmApiKey),
+            base_url="https://open.bigmodel.cn/api/paas/v4/",
+        )
+        # return ZhipuAiClient(api_key=cfg.get(cfg.glmApiKey))
+
+    def get_model_name(self):
+        return "glm-4.5-flash"
 
 
-# 讯飞 Spark 暂不可用（sparkai 不包含 llm 子模块），需要新的 SDK
-# class SparkLiteService(BaseTranslateService):
-#     def get_client(self):
-#         return ChatSparkLLM(
-#             spark_api_url="wss://spark-api.xf-yun.com/v1.1/chat",
-#             spark_app_id=cfg.get(cfg.sparkAppId),
-#             spark_api_key=cfg.get(cfg.sparkApiKey),
-#             spark_api_secret=cfg.get(cfg.sparkApiSecret),
-#             spark_llm_domain="lite",
-#             streaming=True,
-#         )
-#
-#     def get_model_name(self):
-#         return "spark-lite"
+class SparkLiteService(BaseTranslateService):
+    def get_client(self):
+        return ChatSparkLLM(
+            spark_api_url="wss://spark-api.xf-yun.com/v1.1/chat",
+            spark_app_id=cfg.get(cfg.sparkAppId),
+            spark_api_key=cfg.get(cfg.sparkApiKey),
+            spark_api_secret=cfg.get(cfg.sparkApiSecret),
+            spark_llm_domain="lite",
+            streaming=True,
+        )
+
+    def get_model_name(self):
+        return "spark-lite"
 
 
 class HunyuanService(BaseTranslateService):
@@ -224,8 +228,8 @@ class TranslateThread(QThread):
 
     SERVICES = {
         "deepseek": DeepseekService,
-        # "glm-4.5-flash": GLMService,  # GLMService 暂不可用
-        # "spark-lite": SparkLiteService,  # 讯飞 Spark 暂不可用
+        "glm-4.5-flash": GLMService,
+        "spark-lite": SparkLiteService,
         "hunyuan-turbos-latest": HunyuanService,
         "intern-latest": InternService,
         "ernie-speed-128k": ErnieSpeedService,

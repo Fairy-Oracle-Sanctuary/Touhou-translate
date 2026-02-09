@@ -10,6 +10,7 @@ numpy
 Pillow
 requests
 bilibili-api-python
+spark_ai_python
 
 # Optional / likely useful tools
 # paddleocr

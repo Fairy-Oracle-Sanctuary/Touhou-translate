@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 
-from cpuid import cpuid
+from cpuid import cpuid, cpuid_count, xgetbv
 
 from .lang_dictionaries import (
     ARABIC_LANGS,
@@ -110,6 +110,7 @@ def extract_non_chinese_segments(text) -> list[tuple[str, str]]:
 
 # Converts sentences from the OCR's non-standard 'reversed visual' order to the correct 'logical' order.
 def convert_visual_to_logical(text: str) -> str:
+
     ARABIC_CHARS = re.compile(
         r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+"
     )
@@ -145,53 +146,29 @@ def convert_visual_to_logical(text: str) -> str:
 
 
 # finds the available PaddleOCR executable and returns its path
-def find_paddleocr(base_folder: str) -> str:
+def find_paddleocr() -> str:
     program_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-
-    # 定义搜索的目录范围
-    search_dirs = []
-
-    # 1. 添加当前目录
-    search_dirs.append(program_dir)
-
-    # 2. 添加上层目录（最多上溯3层）
-    current_dir = program_dir
-    for _ in range(3):  # 上溯3层
-        parent_dir = os.path.dirname(current_dir)
-        if parent_dir == current_dir:  # 已经到达根目录
-            break
-        search_dirs.append(parent_dir)
-        current_dir = parent_dir
-
-    # base_folders = [
-    #     "PaddleOCR-CPU-v1.3.2",
-    #     "PaddleOCR-GPU-v1.3.2-CUDA-11.8",
-    #     "PaddleOCR-GPU-v1.3.2-CUDA-12.9",
-    # ]
-    base_folders = [base_folder]
+    base_folders = [
+        "PaddleOCR-CPU-v1.3.2",
+        "PaddleOCR-GPU-v1.3.2-CUDA-11.8",
+        "PaddleOCR-GPU-v1.3.2-CUDA-12.9",
+    ]
     program_name = "paddleocr"
-    ext = ".exe"
+
+    ext = ".exe" if platform.system() == "Windows" else ".bin"
+
     executable_name = f"{program_name}{ext}"
 
-    # 搜索所有目录及其子目录（最多2层深度）
-    for search_dir in search_dirs:
-        for root, dirs, files in os.walk(search_dir):
-            # 计算当前深度（相对于搜索目录）
-            relative_depth = len(os.path.relpath(root, search_dir).split(os.sep))
-            if relative_depth > 2:  # 限制搜索深度为2层
-                continue
+    for entry in os.listdir(program_dir):
+        for base in base_folders:
+            if entry.startswith(base):
+                path = os.path.join(program_dir, entry, executable_name)
+                if os.path.isfile(path):
+                    return path
 
-            for dir_name in dirs:
-                for base in base_folders:
-                    if dir_name.startswith(base):
-                        path = os.path.join(root, dir_name, executable_name)
-                        if os.path.isfile(path):
-                            return path
-
-    return None
-    # raise FileNotFoundError(
-    #     f"Could not find {executable_name} in any folder matching: {base_folders}"
-    # )
+    raise FileNotFoundError(
+        f"Could not find {executable_name} in any folder matching: {base_folders}"
+    )
 
 
 # resolves the model directory for the specified language and mode
@@ -246,15 +223,33 @@ def perform_hardware_check(paddleocr_path: str, use_gpu: bool) -> None:
     error_prefix = "Unsupported Hardware Error:"
     warning_prefix = "Hardware Check Warning:"
 
-    def has_avx() -> bool:
+    def has_avx2_and_fma() -> bool:
+        # CPUID leaf 1: AVX, OSXSAVE, FMA
         _, _, ecx, _ = cpuid(1)
-        return bool(ecx & (1 << 28)) and bool(ecx & (1 << 27))  # AVX + OSXSAVE
+        osxsave = bool(ecx & (1 << 27))
+        avx = bool(ecx & (1 << 28))
+        fma = bool(ecx & (1 << 12))
+
+        # OS support check: XGETBV for YMM registers
+        ymm_supported = True
+        if osxsave:
+            try:
+                xcr0 = xgetbv(0)
+                ymm_supported = (xcr0 & 0b110) == 0b110
+            except Exception:
+                ymm_supported = False
+
+        # CPUID leaf 7: AVX2
+        _, ebx, _, _ = cpuid_count(7, 0)
+        avx2 = bool(ebx & (1 << 5))
+
+        return osxsave and avx and avx2 and fma and ymm_supported
 
     def check_cpu() -> None:
         try:
-            if not has_avx():
+            if not has_avx2_and_fma():
                 raise SystemExit(
-                    f"{error_prefix} CPU does not support the AVX instruction set, which is required."
+                    f"{error_prefix} CPU does not support AVX2 and/or FMA, which is required."
                 )
         except Exception as e:
             print(
@@ -339,6 +334,25 @@ def read_pipe(pipe, output_list: list[str]) -> None:
             output_list.append(line)
     finally:
         pipe.close()
+
+
+# Check if a process with given PID is still running (cross-platform)
+def is_process_running(pid: int) -> bool:
+    try:
+        if platform.system() == "Windows":
+            result = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            return str(pid) in result.stdout
+        else:
+            if os.path.exists(f"/proc/{pid}"):
+                return True
+    except (OSError, ProcessLookupError, subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+    return False
 
 
 # saves errors to log file

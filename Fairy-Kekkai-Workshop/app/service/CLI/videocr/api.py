@@ -1,6 +1,5 @@
+import os
 import sys
-import tempfile
-from pathlib import Path
 
 from . import utils
 from .video import Video
@@ -9,7 +8,7 @@ from .video import Video
 def save_subtitles_to_file(
     video_path: str,
     file_path="subtitle.srt",
-    temp_dir=tempfile.gettempdir(),
+    temp_dir=None,
     lang="ch",
     time_start="0:00",
     time_end="",
@@ -20,7 +19,7 @@ def save_subtitles_to_file(
     use_gpu=False,
     use_angle_cls=False,
     use_server_model=False,
-    # brightness_threshold=None,
+    brightness_threshold=None,
     ssim_threshold=92,
     subtitle_position="center",
     frames_to_skip=1,
@@ -28,13 +27,15 @@ def save_subtitles_to_file(
     ocr_image_max_width=1280,
     post_processing=False,
     min_subtitle_duration_sec=0.2,
+    normalize_to_simplified_chinese=True,
     paddleocr_path=None,
     supportFilesPath=None,
 ) -> None:
+
     if crop_zones is None:
         crop_zones = []
 
-    if Path(paddleocr_path).exists():
+    if os.path.exists(paddleocr_path):
         print(f"找到PaddleOCR路径: {paddleocr_path}")
     else:
         print(f"找不到PaddleOCR路径: {paddleocr_path}")
@@ -60,21 +61,26 @@ def save_subtitles_to_file(
         temp_dir,
         time_end,
     )
-    v.run_ocr(
-        use_gpu,
-        lang,
-        use_angle_cls,
-        time_start,
-        time_end,
-        conf_threshold,
-        use_fullframe,
-        # brightness_threshold,
-        ssim_threshold,
-        subtitle_position,
-        frames_to_skip,
-        crop_zones,
-        ocr_image_max_width,
-    )
+    try:
+        v.run_ocr(
+            use_gpu,
+            lang,
+            use_angle_cls,
+            time_start,
+            time_end,
+            conf_threshold,
+            use_fullframe,
+            brightness_threshold,
+            ssim_threshold,
+            subtitle_position,
+            frames_to_skip,
+            crop_zones,
+            ocr_image_max_width,
+            normalize_to_simplified_chinese,
+        )
+    except ValueError as e:
+        print(f"Error: {e}", flush=True)
+        sys.exit(1)
     subtitles = v.get_subtitles(
         sim_threshold,
         max_merge_gap_sec,

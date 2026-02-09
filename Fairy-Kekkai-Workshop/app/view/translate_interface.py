@@ -194,7 +194,9 @@ class TranslationInterface(BaseFunctionInterface):
 
         args = self._get_args()
         self.addTask.emit(args)
-        self.logger.info(f"开始翻译字幕: -{self.input_path_edit.text()}- 参数: {args}")
+        self.logger.info(
+            f"开始翻译字幕: -{self.inputFileCard.lineEdit.text()}- 参数: {args}"
+        )
 
     def _get_args(self):
         """获取翻译参数"""

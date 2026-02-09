@@ -1,21 +1,34 @@
 # coding:utf-8
 import re
+from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import (
+    QColor,
     QDoubleValidator,
     QFont,
     QIcon,
     QIntValidator,
+    QPainter,
     QValidator,
 )
-from PySide6.QtWidgets import QFileDialog, QSpacerItem, QWidget
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QSpacerItem,
+    QVBoxLayout,
+    QWidget,
+)
 from qfluentwidgets import (
+    BodyLabel,
+    CaptionLabel,
     ComboBoxSettingCard,
     Dialog,
     ExpandLayout,
     Flyout,
     FlyoutAnimationType,
+    IconWidget,
     LineEdit,
     PasswordLineEdit,
     PlainTextEdit,
@@ -27,6 +40,7 @@ from qfluentwidgets import (
     SwitchSettingCard,
     TitleLabel,
     ToolButton,
+    isDarkTheme,
     setFont,
 )
 from qfluentwidgets import FluentIcon as FIF
@@ -34,6 +48,136 @@ from qfluentwidgets import SettingCardGroup as CardGroup
 
 from ..common.config import cfg
 from ..common.setting import PADDLEOCR_VERSION
+
+
+class CustomModelDetectionThread(QThread):
+    """自定义模型参数检测线程"""
+
+    detection_finished = Signal(bool, str)  # 检测完成信号: (是否成功, 消息)
+
+    def __init__(
+        self, api_key: str, base_url: str, model_name: str, endpoint: str = None
+    ):
+        super().__init__()
+        self.api_key = api_key
+        self.base_url = base_url
+        self.model_name = model_name
+        self.endpoint = endpoint or model_name
+
+    def run(self):
+        """运行检测线程"""
+        try:
+            # 检查基本参数
+            if not self.api_key or not self.api_key.strip():
+                self.detection_finished.emit(False, "❌ API密钥不能为空")
+                return
+
+            if not self.base_url or not self.base_url.strip():
+                self.detection_finished.emit(False, "❌ API基础URL不能为空")
+                return
+
+            if not self.model_name or not self.model_name.strip():
+                self.detection_finished.emit(False, "❌ 模型名称不能为空")
+                return
+
+            # 检查URL格式
+            if not (
+                self.base_url.startswith("http://")
+                or self.base_url.startswith("https://")
+            ):
+                self.detection_finished.emit(
+                    False, "❌ API基础URL必须以http://或https://开头"
+                )
+                return
+
+            # 尝试导入并使用OpenAI库
+            try:
+                from openai import OpenAI
+            except ImportError:
+                self.detection_finished.emit(
+                    False, "❌ 未安装openai库，请运行: pip install openai"
+                )
+                return
+
+            # 创建OpenAI客户端并测试连接
+            client = OpenAI(
+                api_key=self.api_key.strip(), base_url=self.base_url.strip().rstrip("/")
+            )
+
+            # 发送一个简单的测试请求
+            response = client.chat.completions.create(
+                model=self.endpoint.strip(),
+                messages=[{"role": "user", "content": "Hello"}],
+                max_tokens=10,
+            )
+
+            # 检查响应
+            if response and response.choices:
+                self.detection_finished.emit(True, "✓ 参数配置正确，API连接成功！")
+            else:
+                self.detection_finished.emit(False, "❌ API响应异常")
+
+        except Exception as e:
+            error_msg = str(e)
+
+            # 根据不同的错误类型提供更友好的提示
+            if "401" in error_msg or "authentication" in error_msg.lower():
+                self.detection_finished.emit(False, "❌ API密钥无效或已过期")
+            elif "404" in error_msg:
+                self.detection_finished.emit(False, "❌ 模型不存在或API基础URL错误")
+            elif "Connection" in error_msg or "connection" in error_msg.lower():
+                self.detection_finished.emit(
+                    False, "❌ 无法连接到API服务器，请检查网络和URL"
+                )
+            elif "timeout" in error_msg.lower():
+                self.detection_finished.emit(False, "❌ 请求超时，请检查网络连接")
+            else:
+                self.detection_finished.emit(False, f"❌ 检测失败: {error_msg[:100]}")
+
+
+class DetectionCard(QFrame):
+    def __init__(self, icon, title, content, parent=None):
+        super().__init__(parent)
+        self.iconWidget = IconWidget(icon)
+        self.titleLabel = BodyLabel(title, self)
+        self.contentLabel = CaptionLabel(content, self)
+        self.openButton = PushButton("检测", self)
+
+        self.hBoxLayout = QHBoxLayout(self)
+        self.vBoxLayout = QVBoxLayout()
+
+        self.setFixedHeight(73)
+        self.iconWidget.setFixedSize(16, 16)
+        self.contentLabel.setTextColor("#606060", "#d2d2d2")
+        self.openButton.setFixedWidth(130)
+
+        self.hBoxLayout.setContentsMargins(20, 11, 11, 11)
+        self.hBoxLayout.setSpacing(15)
+        self.hBoxLayout.addWidget(self.iconWidget)
+
+        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
+        self.vBoxLayout.setSpacing(0)
+        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignVCenter)
+        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignVCenter)
+        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
+        self.hBoxLayout.addLayout(self.vBoxLayout)
+
+        self.hBoxLayout.addStretch(1)
+        self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
+        self.hBoxLayout.addSpacing(5)
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing)
+
+        if isDarkTheme():
+            painter.setBrush(QColor(255, 255, 255, 13))
+            painter.setPen(QColor(0, 0, 0, 50))
+        else:
+            painter.setBrush(QColor(255, 255, 255, 170))
+            painter.setPen(QColor(0, 0, 0, 19))
+
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
 
 
 class SettingCardGroup(CardGroup):
@@ -1199,6 +1343,12 @@ class TranslateSettingInterface(ScrollArea):
             parent=self.customModelGroup,
         )
         self.customModelEndpointCard.lineEdit.setFixedWidth(350)
+        self.detectionCard = DetectionCard(
+            FIF.SEARCH, "检测参数", "快速确认配置参数是否正确"
+        )
+
+        # 初始化检测线程
+        self.detection_thread: Optional[CustomModelDetectionThread] = None
 
         self.__initWidget()
 
@@ -1216,7 +1366,7 @@ class TranslateSettingInterface(ScrollArea):
 
         # initialize layout
         self.__initLayout()
-        # self._connectSignalToSlot()
+        self._connectSignalToSlot()
 
     def __initLayout(self):
         self.settingLabel.move(36, 40)
@@ -1254,6 +1404,7 @@ class TranslateSettingInterface(ScrollArea):
         self.customModelGroup.addSettingCard(self.customModelApiKeyCard)
         self.customModelGroup.addSettingCard(self.customModelBaseUrlCard)
         self.customModelGroup.addSettingCard(self.customModelEndpointCard)
+        self.customModelGroup.addSettingCard(self.detectionCard)
 
         self.expandLayout.setSpacing(26)
         self.expandLayout.setContentsMargins(36, 10, 36, 20)
@@ -1266,6 +1417,65 @@ class TranslateSettingInterface(ScrollArea):
         self.expandLayout.addWidget(self.sparkGroup)
         self.expandLayout.addWidget(self.ernieSpeedGroup)
         self.expandLayout.addWidget(self.customModelGroup)
+
+    def _connectSignalToSlot(self):
+        """绑定信号槽"""
+        self.detectionCard.openButton.clicked.connect(self._onDectectionCardClicked)
+
+    def _onDectectionCardClicked(self):
+        """检查参数"""
+        # 如果已有检测线程在运行，则不启动新的
+        if self.detection_thread and self.detection_thread.isRunning():
+            Flyout.create(
+                title="提示",
+                content="检测正在进行中，请稍候...",
+                target=self.detectionCard.openButton,
+                parent=self,
+                isClosable=True,
+                aniType=FlyoutAnimationType.PULL_UP,
+            )
+            return
+
+        # 获取当前的配置值
+        api_key = cfg.get(cfg.customModelApiKey)
+        base_url = cfg.get(cfg.customModelBaseUrl)
+        model_name = cfg.get(cfg.customModelName)
+        endpoint = cfg.get(cfg.customModelEndpoint)
+
+        # 创建并启动检测线程
+        self.detection_thread = CustomModelDetectionThread(
+            api_key=api_key, base_url=base_url, model_name=model_name, endpoint=endpoint
+        )
+
+        # 连接线程的信号
+        self.detection_thread.detection_finished.connect(self._onDetectionFinished)
+
+        # 启动线程
+        self.detection_thread.start()
+
+        # 显示正在检测的提示
+        Flyout.create(
+            title="正在检测...",
+            content="正在验证自定义模型参数，请稍候...",
+            target=self.detectionCard.openButton,
+            parent=self,
+            isClosable=True,
+            aniType=FlyoutAnimationType.PULL_UP,
+        )
+
+    def _onDetectionFinished(self, success: bool, message: str):
+        """处理检测完成信号"""
+        # 显示检测结果
+        title = "检测成功" if success else "检测失败"
+
+        Flyout.create(
+            title=title,
+            content=message,
+            target=self.detectionCard.openButton,
+            parent=self,
+            isClosable=True,
+            aniType=FlyoutAnimationType.PULL_UP,
+        )
 
 
 class FFmpegSettingInterface(ScrollArea):
