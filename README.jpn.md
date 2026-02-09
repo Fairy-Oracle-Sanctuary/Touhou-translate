@@ -96,7 +96,7 @@
 *   **AI翻訳:** Deepseek APIに接続し、自動翻訳機能を実現（API Keyは各自で準備が必要）。
 *   **视频压制:** ffmpeg ツールを組み込み、動画ファイルの压制をサポート。
 
-![Fairy-Kekkai-Workshop](Fairy-Kekkai-Workshop\thumbnail.jpg)
+![Fairy-Kekkai-Workshop\thumbnail.jpg](https://res.cloudinary.com/do6rggmy6/image/upload/v1770620997/thumbnail.png)
 
 ---
 

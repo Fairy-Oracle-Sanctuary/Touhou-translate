@@ -96,7 +96,7 @@
 - **AI翻译**: 接入Deepseek API，实现自动翻译功能(需自备API Key)。
 - **视频压制**：集成 ffmpeg 工具，支持压制视频文件。
 
-![Fairy-Kekkai-Workshop](Fairy-Kekkai-Workshop\thumbnail.jpg)
+![Fairy-Kekkai-Workshop\thumbnail.jpg](https://res.cloudinary.com/do6rggmy6/image/upload/v1770620997/thumbnail.png)
 
 ---
 
