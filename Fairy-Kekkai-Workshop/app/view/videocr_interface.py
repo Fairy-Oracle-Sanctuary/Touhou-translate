@@ -348,11 +348,25 @@ class VideocrInterface(BaseFunctionInterface):
         args["use_angle_cls"] = cfg.get(cfg.useAngleCls)
         args["use_server_model"] = cfg.get(cfg.useServerModel)
         # args["brightness_threshold"] = cfg.get(cfg.brightnessThreshold)
+        args["ssim_threshold"] = cfg.get(cfg.ssimThreshold)
         args["subtitle_position"] = subtitle_positions_list.get(
             cfg.get(cfg.ocr_position), "center"
         )
         args["frames_to_skip"] = cfg.get(cfg.framesToSkip)
-        args["crop_zones"] = self._get_crop_zones()
+        args["use_dual_zone"] = cfg.get(cfg.useDualZone)
+
+        crop_zones = self.video_preview.crop_boxes
+        print(crop_zones)
+        args["--crop_x"] = crop_zones[0]["coords"]["crop_x"]
+        args["--crop_y"] = crop_zones[0]["coords"]["crop_y"]
+        args["--crop_width"] = crop_zones[0]["coords"]["crop_width"]
+        args["--crop_height"] = crop_zones[0]["coords"]["crop_height"]
+        if args["use_dual_zone"]:
+            args["--crop_x2"] = crop_zones[1]["coords"]["crop_x"]
+            args["--crop_y2"] = crop_zones[1]["coords"]["crop_y"]
+            args["--crop_width2"] = crop_zones[1]["coords"]["crop_width"]
+            args["--crop_height2"] = crop_zones[1]["coords"]["crop_height"]
+
         args["ocr_image_max_width"] = cfg.get(cfg.ocrImageMaxWidth)
         args["post_processing"] = cfg.get(cfg.postProcessing)
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
@@ -361,22 +375,6 @@ class VideocrInterface(BaseFunctionInterface):
         args["supportFilesPath"] = cfg.get(cfg.supportFilesPath)
 
         return args
-
-    def _get_crop_zones(self):
-        """获取框选区域"""
-        crop_zones = []
-        crop_boxes = self.video_preview.crop_boxes
-        for zones in crop_boxes:
-            zones = zones["coords"]
-            crop_zones.append(
-                {
-                    "x": zones["crop_x"],
-                    "y": zones["crop_y"],
-                    "width": zones["crop_width"],
-                    "height": zones["crop_height"],
-                }
-            )
-        return crop_zones
 
     def _clear_log(self):
         """清空日志"""
