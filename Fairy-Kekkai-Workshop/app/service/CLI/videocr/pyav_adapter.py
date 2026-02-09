@@ -6,10 +6,15 @@ VFR_TIMESTAMP_BUFFER_MS = 500.0
 
 
 def get_video_properties(
-    path: str, is_vfr: bool, time_end, initial_fps: float, initial_num_frames: int
+    path: str,
+    is_vfr: bool,
+    time_end: str,
+    initial_fps: float,
+    initial_num_frames: int,
 ) -> dict:
     properties = {
         "height": 0,
+        "width": 0,
         "fps": initial_fps,
         "num_frames": initial_num_frames,
         "start_time_offset_ms": 0.0,
@@ -18,7 +23,9 @@ def get_video_properties(
 
     with av.open(path) as container:
         stream = container.streams.video[0]
+        stream.thread_type = "FRAME"
         properties["height"] = stream.height
+        properties["width"] = stream.width
 
         if not properties["fps"] or properties["fps"] <= 0:
             properties["fps"] = float(stream.average_rate)
@@ -128,6 +135,7 @@ class Capture:
         try:
             self.container = av.open(self.path)
             self.stream = self.container.streams.video[0]
+            self.stream.thread_type = "FRAME"
             self.frame_iterator = self.container.decode(self.stream)
             return self
         except av.AVError as e:

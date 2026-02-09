@@ -40,21 +40,12 @@ LATIN_LANGS = {
     "uz",
     "vi",
     "french",
-    "german"
+    "german",
 }
 
-ARABIC_LANGS = {
-    "ar",
-    "fa",
-    "ug",
-    "ur"
-}
+ARABIC_LANGS = {"ar", "fa", "ug", "ur"}
 
-ESLAV_LANGS = {
-    "ru",
-    "be",
-    "uk"
-}
+ESLAV_LANGS = {"ru", "be", "uk"}
 
 CYRILLIC_LANGS = {
     "rs_cyrillic",
@@ -69,7 +60,7 @@ CYRILLIC_LANGS = {
     "che",
     "lbe",
     "lez",
-    "tab"
+    "tab",
 }
 
 DEVANAGARI_LANGS = {
@@ -85,5 +76,5 @@ DEVANAGARI_LANGS = {
     "new",
     "gom",
     "bgc",
-    "sa"
+    "sa",
 }

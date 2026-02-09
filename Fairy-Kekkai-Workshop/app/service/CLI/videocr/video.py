@@ -8,10 +8,9 @@ import subprocess
 import sys
 import threading
 
+import cv2
 import fast_ssim
-import numpy as np
 import wordninja_enhanced as wordninja
-from PIL import Image
 from pymediainfo import MediaInfo
 
 from . import utils
@@ -32,6 +31,7 @@ class Video:
     num_frames: int
     fps: float
     height: int
+    width: int
     pred_frames_zone1: list[PredictedFrames]
     pred_frames_zone2: list[PredictedFrames]
     pred_subs: list[PredictedSubtitle]
@@ -56,7 +56,6 @@ class Video:
         self.rec_model_dir = rec_model_dir
         self.cls_model_dir = cls_model_dir
         self.temp_dir = temp_dir
-
         self.frame_timestamps = {}
         self.start_time_offset_ms = 0.0
 
@@ -77,6 +76,7 @@ class Video:
             self.path, self.is_vfr, time_end, initial_fps, initial_num_frames
         )
         self.height = props["height"]
+        self.width = props["width"]
         self.fps = props["fps"]
         self.num_frames = props["num_frames"]
         self.start_time_offset_ms = props["start_time_offset_ms"]
@@ -91,12 +91,13 @@ class Video:
         time_end: str,
         conf_threshold: int,
         use_fullframe: bool,
-        # brightness_threshold: int,
+        brightness_threshold: int,
         ssim_threshold: int,
         subtitle_position: str,
         frames_to_skip: int,
         crop_zones: list[dict],
         ocr_image_max_width: int,
+        normalize_to_simplified_chinese: bool,
     ) -> None:
         conf_threshold = float(conf_threshold / 100)
         ssim_threshold = float(ssim_threshold / 100)
@@ -139,6 +140,27 @@ class Video:
         num_ocr_frames = ocr_end - ocr_start
 
         for zone in crop_zones:
+            if zone["y"] >= self.height:
+                print(self.height)
+                raise ValueError(
+                    f"Crop Y position ({zone['y']}) is outside video height ({self.height})."
+                )
+            if zone["x"] >= self.width:
+                raise ValueError(
+                    f"Crop X position ({zone['x']}) is outside video width ({self.width})."
+                )
+
+            if zone["y"] + zone["height"] > self.height:
+                print(
+                    f"Warning: Crop area extends out of bounds (crop_y + crop_height > video height ({self.height})). The crop area will be clipped.",
+                    flush=True,
+                )
+            if zone["x"] + zone["width"] > self.width:
+                print(
+                    f"Warning: Crop area extends out of bounds (crop_x + crop_width > video width ({self.width})). The crop area will be clipped.",
+                    flush=True,
+                )
+
             self.validated_zones.append(
                 {
                     "x_start": zone["x"],
@@ -149,20 +171,28 @@ class Video:
                 }
             )
 
-        # TEMP_PREFIX = "videocr_temp_"
+        # TEMP_PREFIX = f"videocr_temp_{os.getpid()}_"
         # base_temp = tempfile.gettempdir()
-        # try:
-        #     for name in os.listdir(base_temp):
-        #         if name.startswith(TEMP_PREFIX):
-        #             try:
-        #                 shutil.rmtree(os.path.join(base_temp, name), ignore_errors=True)
-        #             except Exception as e:
-        #                 print(
-        #                     f"Could not remove leftover temp dir '{name}': {e}",
-        #                     flush=True,
-        #                 )
-        # except Exception:
-        #     pass
+        # current_pid = os.getpid()
+
+        # for name in os.listdir(base_temp):
+        #     if name.startswith("videocr_temp_"):
+        #         temp_path = os.path.join(base_temp, name)
+        #         try:
+        #             match = re.match(r"videocr_temp_(\d+)_", name)
+        #             if match:
+        #                 dir_pid = int(match.group(1))
+
+        #                 if dir_pid == current_pid:
+        #                     continue
+
+        #                 if os.path.isdir(temp_path):
+        #                     if not utils.is_process_running(dir_pid):
+        #                         shutil.rmtree(temp_path, ignore_errors=True)
+        #         except Exception as e:
+        #             print(
+        #                 f"Could not remove leftover temp dir '{name}': {e}", flush=True
+        #             )
 
         # temp_dir = tempfile.mkdtemp(prefix=TEMP_PREFIX)
 
@@ -216,10 +246,7 @@ class Video:
                     else:
                         # Default to bottom third if no zones are specified
                         images_to_process.append(
-                            {
-                                "image": frame[2 * self.height // 3 :, :],
-                                "zone_idx": 0,
-                            }
+                            {"image": frame[2 * self.height // 3 :, :], "zone_idx": 0}
                         )
 
                     for item in images_to_process:
@@ -230,16 +257,18 @@ class Video:
                             original_height, original_width = img.shape[:2]
                             scale_ratio = ocr_image_max_width / original_width
                             new_height = int(original_height * scale_ratio)
-                            pil_img = Image.fromarray(img)
-                            resized_pil_img = pil_img.resize(
+                            img = cv2.resize(
+                                img,
                                 (ocr_image_max_width, new_height),
-                                Image.Resampling.LANCZOS,
+                                interpolation=cv2.INTER_AREA,
                             )
-                            img = np.array(resized_pil_img)
 
-                        # if brightness_threshold:
-                        #     mask = np.all(img >= brightness_threshold, axis=2)
-                        #     img[~mask] = 0
+                        if brightness_threshold:
+                            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                            _, mask = cv2.threshold(
+                                gray, brightness_threshold, 255, cv2.THRESH_BINARY
+                            )
+                            img = cv2.bitwise_and(img, img, mask=mask)
 
                         if ssim_threshold < 1:
                             w = img.shape[1]
@@ -251,7 +280,7 @@ class Video:
                             elif subtitle_position == "right":
                                 sample = img[:, int(w * 0.7) :]
                             elif subtitle_position == "any":
-                                sample = frame
+                                sample = img
                             else:
                                 raise ValueError(
                                     f"Invalid subtitle_position: {subtitle_position}"
@@ -272,7 +301,8 @@ class Video:
                         )
                         frame_path = os.path.join(temp_dir, frame_filename)
 
-                        Image.fromarray(img).save(frame_path, format="JPEG", quality=95)
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        cv2.imwrite(frame_path, img)
                         frame_paths.append(frame_path)
                 else:
                     v.grab()
@@ -320,14 +350,11 @@ class Video:
         print("Starting PaddleOCR... This can take a while...", flush=True)
 
         if not os.path.isfile(self.paddleocr_path):
-            print(f"无法找到PaddleOCR可执行文件: {self.paddleocr_path}")
             raise OSError(f"PaddleOCR executable not found at: {self.paddleocr_path}")
 
-        print(args)
         # Run PaddleOCR
         process = subprocess.Popen(
             args,
-            creationflags=subprocess.CREATE_NO_WINDOW,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -418,7 +445,12 @@ class Video:
             pred_data = [ocr_result] if ocr_result else [[]]
 
             predicted_frame = PredictedFrames(
-                frame_index, pred_data, conf_threshold, zone_index
+                frame_index,
+                pred_data,
+                conf_threshold,
+                zone_index,
+                lang,
+                normalize_to_simplified_chinese,
             )
             frame_predictions_by_zone[zone_index][frame_index] = predicted_frame
 
@@ -659,9 +691,9 @@ class Video:
         max_merge_gap_sec: float,
     ) -> bool:
         if self.is_vfr:
-            end_time_ms = self.frame_timestamps.get(last_sub.index_end, 0)
-            start_time_ms = self.frame_timestamps.get(next_sub.index_start, 0)
-            gap_ms = start_time_ms - end_time_ms
+            _, last_end_ms = self._get_subtitle_ms_times(last_sub)
+            next_start_ms, _ = self._get_subtitle_ms_times(next_sub)
+            gap_ms = next_start_ms - last_end_ms
             return gap_ms <= (max_merge_gap_sec * 1000)
         else:
             max_frame_merge_diff = int(max_merge_gap_sec * self.fps) + 1

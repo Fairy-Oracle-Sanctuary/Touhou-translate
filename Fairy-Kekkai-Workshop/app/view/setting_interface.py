@@ -5,23 +5,18 @@ import shutil
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QColor, QDesktopServices, QFont, QPainter
-from PySide6.QtWidgets import QFileDialog, QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtGui import QDesktopServices, QFont
+from PySide6.QtWidgets import QFileDialog, QWidget
 from qfluentwidgets import (
-    BodyLabel,
-    CaptionLabel,
     ComboBoxSettingCard,
     Dialog,
     ExpandLayout,
-    IconWidget,
     PrimaryPushSettingCard,
-    PushButton,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
     SwitchSettingCard,
     TitleLabel,
-    isDarkTheme,
     setFont,
     setTheme,
     setThemeColor,
@@ -33,51 +28,7 @@ from qframelesswindow.utils import getSystemAccentColor
 from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR
-
-
-class DetectionCard(QFrame):
-    def __init__(self, icon, title, content, parent=None):
-        super().__init__(parent)
-        self.iconWidget = IconWidget(icon)
-        self.titleLabel = BodyLabel(title, self)
-        self.contentLabel = CaptionLabel(content, self)
-        self.openButton = PushButton("检测", self)
-
-        self.hBoxLayout = QHBoxLayout(self)
-        self.vBoxLayout = QVBoxLayout()
-
-        self.setFixedHeight(73)
-        self.iconWidget.setFixedSize(16, 16)
-        self.contentLabel.setTextColor("#606060", "#d2d2d2")
-        self.openButton.setFixedWidth(130)
-
-        self.hBoxLayout.setContentsMargins(20, 11, 11, 11)
-        self.hBoxLayout.setSpacing(15)
-        self.hBoxLayout.addWidget(self.iconWidget)
-
-        self.vBoxLayout.setContentsMargins(0, 0, 0, 0)
-        self.vBoxLayout.setSpacing(0)
-        self.vBoxLayout.addWidget(self.titleLabel, 0, Qt.AlignVCenter)
-        self.vBoxLayout.addWidget(self.contentLabel, 0, Qt.AlignVCenter)
-        self.vBoxLayout.setAlignment(Qt.AlignVCenter)
-        self.hBoxLayout.addLayout(self.vBoxLayout)
-
-        self.hBoxLayout.addStretch(1)
-        self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
-        self.hBoxLayout.addSpacing(5)
-
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.setRenderHints(QPainter.Antialiasing)
-
-        if isDarkTheme():
-            painter.setBrush(QColor(255, 255, 255, 13))
-            painter.setPen(QColor(0, 0, 0, 50))
-        else:
-            painter.setBrush(QColor(255, 255, 255, 170))
-            painter.setPen(QColor(0, 0, 0, 19))
-
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
+from ..components.config_card import DetectionCard
 
 
 class SettingCardGroup(CardGroup):
