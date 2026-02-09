@@ -95,7 +95,9 @@ This repository houses a collection of self-developed auxiliary scripts and tool
 *   **Subtitle Extraction:** Utilizes OCR technology to quickly identify and extract hardcoded subtitles from videos and generate SRT subtitle files.
 *   **AI Translation:** Integrates with the Deepseek API to enable automatic translation (requires your own API Key).
 *   **Video Compression:** Incorporates ffmpeg tool to support video file compression.
-  
+
+![Fairy-Kekkai-Workshop](Fairy-Kekkai-Workshop\thumbnail.jpg)
+
 ---
 
 **Thanks to all the original authors for their wonderful creations, and to everyone who participates in and follows this project!**
