@@ -69,6 +69,7 @@ class OCRProcess(QObject):
         cmd_args.extend(["--use_gpu", str(args["use_gpu"]).lower()])
         cmd_args.extend(["--use_angle_cls", str(args["use_angle_cls"]).lower()])
         cmd_args.extend(["--use_server_model", str(args["use_server_model"]).lower()])
+        cmd_args.extend(["--ssim_threshold", str(args["ssim_threshold"])])
         cmd_args.extend(["--subtitle_position", args["subtitle_position"]])
         cmd_args.extend(["--frames_to_skip", str(args["frames_to_skip"])])
         cmd_args.extend(["--ocr_image_max_width", str(args["ocr_image_max_width"])])
@@ -85,10 +86,20 @@ class OCRProcess(QObject):
         if "supportFilesPath" in args and args["supportFilesPath"]:
             cmd_args.extend(["--supportFilesPath", args["supportFilesPath"]])
 
+        # 处理use_dual_zone参数
+        if args["use_dual_zone"]:
+            cmd_args.extend(["--use_dual_zone", str(args["use_dual_zone"]).lower()])
+
         # 处理crop_zones参数
-        if args["crop_zones"]:
-            # 由于命令行无法直接传递复杂结构，这里暂时不处理crop_zones
-            pass
+        cmd_args.extend(["--crop_x", str(args["--crop_x"])])
+        cmd_args.extend(["--crop_y", str(args["--crop_y"])])
+        cmd_args.extend(["--crop_width", str(args["--crop_width"])])
+        cmd_args.extend(["--crop_height", str(args["--crop_height"])])
+        if args["use_dual_zone"]:
+            cmd_args.extend(["--crop_x2", str(args["--crop_x2"])])
+            cmd_args.extend(["--crop_y2", str(args["--crop_y2"])])
+            cmd_args.extend(["--crop_width2", str(args["--crop_width2"])])
+            cmd_args.extend(["--crop_height2", str(args["--crop_height2"])])
 
         return cmd_path, cmd_args
 
