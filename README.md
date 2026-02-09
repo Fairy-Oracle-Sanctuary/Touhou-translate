@@ -96,6 +96,8 @@
 - **AI翻译**: 接入Deepseek API，实现自动翻译功能(需自备API Key)。
 - **视频压制**：集成 ffmpeg 工具，支持压制视频文件。
 
+![Fairy-Kekkai-Workshop](Fairy-Kekkai-Workshop\thumbnail.jpg)
+
 ---
 
 **感谢所有原作者的精彩创作，以及每一位参与和关注本项目的朋友！**
