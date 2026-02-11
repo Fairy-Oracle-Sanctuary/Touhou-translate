@@ -405,14 +405,14 @@ class Config(QConfig):
     useGpu = ConfigItem("OCR", "UseGpu", True, BoolValidator(), restart=False)
 
     # GPU环境
-    # PaddleOCR-GPU-v1.3.2-CUDA-11.8
-    # PaddleOCR-GPU-v1.3.2-CUDA-12.9
+    # PaddleOCR-GPU-v1.4.2-CUDA-11.8
+    # PaddleOCR-GPU-v1.4.2-CUDA-12.9
     gpuEnv = OptionsConfigItem(
         "OCR",
         "GpuEnv",
-        "CPU-v1.3.2",
+        "CPU-v1.4.0",
         OptionsValidator(
-            ["CPU-v1.3.2", "GPU-v1.3.2-CUDA-11.8", "GPU-v1.3.2-CUDA-12.9"]
+            ["CPU-v1.4.0", "GPU-v1.4.0-CUDA-11.8", "GPU-v1.4.0-CUDA-12.9"]
         ),
         restart=False,
     )

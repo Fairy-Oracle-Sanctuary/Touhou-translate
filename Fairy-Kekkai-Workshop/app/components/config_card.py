@@ -54,7 +54,9 @@ from ..common.setting import PADDLEOCR_VERSION
 class CustomModelDetectionThread(QThread):
     """自定义模型参数检测线程"""
 
-    detection_finished = Signal(bool, str)  # 检测完成信号: (是否成功, 消息)
+    detection_finished = Signal(
+        bool, str, str
+    )  # 检测完成信号: (是否成功, 消息, 规范化后的URL)
 
     def __init__(
         self, api_key: str, base_url: str, model_name: str, endpoint: str = None
@@ -121,26 +123,30 @@ class CustomModelDetectionThread(QThread):
 
             # 检查响应
             if response and response.choices:
-                self.detection_finished.emit(True, "✓ 参数配置正确，API连接成功！")
+                self.detection_finished.emit(
+                    True, "✓ 参数配置正确，API连接成功！", normalized_base
+                )
             else:
-                self.detection_finished.emit(False, "❌ API响应异常")
+                self.detection_finished.emit(False, "❌ API响应异常", normalized_base)
 
         except Exception as e:
             error_msg = str(e)
 
             # 根据不同的错误类型提供更友好的提示
             if "401" in error_msg or "authentication" in error_msg.lower():
-                self.detection_finished.emit(False, "❌ API密钥无效或已过期")
+                self.detection_finished.emit(False, "❌ API密钥无效或已过期", "")
             elif "404" in error_msg:
-                self.detection_finished.emit(False, "❌ 模型不存在或API基础URL错误")
+                self.detection_finished.emit(False, "❌ 模型不存在或API基础URL错误", "")
             elif "Connection" in error_msg or "connection" in error_msg.lower():
                 self.detection_finished.emit(
-                    False, "❌ 无法连接到API服务器，请检查网络和URL"
+                    False, "❌ 无法连接到API服务器，请检查网络和URL", ""
                 )
             elif "timeout" in error_msg.lower():
-                self.detection_finished.emit(False, "❌ 请求超时，请检查网络连接")
+                self.detection_finished.emit(False, "❌ 请求超时，请检查网络连接", "")
             else:
-                self.detection_finished.emit(False, f"❌ 检测失败: {error_msg[:100]}")
+                self.detection_finished.emit(
+                    False, f"❌ 检测失败: {error_msg[:100]}", ""
+                )
 
 
 class DetectionCard(QFrame):
@@ -916,9 +922,9 @@ class OCRSettingInterface(ScrollArea):
             title=self.tr("选择GPU环境"),
             content=self.tr("请检查你的GPU环境并选择相应的配置"),
             texts=[
-                self.tr("CPU-v1.3.2"),
-                self.tr("GPU-v1.3.2-CUDA-11.8"),
-                self.tr("GPU-v1.3.2-CUDA-12.9"),
+                self.tr("CPU-v1.4.0"),
+                self.tr("GPU-v1.4.0-CUDA-11.8"),
+                self.tr("GPU-v1.4.0-CUDA-12.9"),
             ],
             parent=self.featureGroup,
         )
@@ -1118,7 +1124,7 @@ class OCRSettingInterface(ScrollArea):
 
     def _gpuEnvCardChangeSelection(self, gpu_env):
         """更改框选设置"""
-        if gpu_env == "CPU-v1.3.2" or gpu_env == "None":
+        if gpu_env == "CPU-v1.4.0" or gpu_env == "None":
             self.useGpuCard.switchButton.setChecked(False)
             self.useGpuCard.switchButton.setEnabled(False)
         else:
@@ -1471,8 +1477,13 @@ class TranslateSettingInterface(ScrollArea):
             aniType=FlyoutAnimationType.PULL_UP,
         )
 
-    def _onDetectionFinished(self, success: bool, message: str):
+    def _onDetectionFinished(self, success: bool, message: str, normalized_url: str):
         """处理检测完成信号"""
+        # 如果规范化成功且有新的URL，同步到LineEdit
+        if normalized_url:
+            self.customModelBaseUrlCard.lineEdit.setText(normalized_url)
+            cfg.set(cfg.customModelBaseUrl, normalized_url)
+
         # 显示检测结果
         title = "检测成功" if success else "检测失败"
 

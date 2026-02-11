@@ -66,17 +66,15 @@ if __name__ == "__main__":
 
 """
 ## 更新日志
-- AI设置页面新增测试配置是否正常的按钮，能快速确认配置参数是否正确
-- 同步了最新的VideOCR (https://github.com/timminator/VideOCR)
-- 字幕提取功能现在预处理步骤（映射）和步骤 1 是多线程的（例如，在 6 核 5600x 上性能最多可提高 7 倍）
-- 修复了字幕提取ssim参数未能传递的BUG
-- 优化了翻译功能，glm模型现用OpenAI接口调用
+- 集成了最新的 PaddleOCR 3.4 版本，该版本将支持语言扩展至 110 种，并提高了拉丁字母、西里尔字母、阿拉伯字母等的识别准确率。
+- 自定义api功能会在只有主机:端口且无 path 时追加 /v1
+
 
 ## 下载提示
-- [Fairy-Kekkai-Workshop-v1.15.0-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.15.0/Fairy-Kekkai-Workshop-v1.15.0-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
-- [Fairy-Kekkai-Workshop-v1.15.0-CPU-v1.3.2-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.15.0/Fairy-Kekkai-Workshop-v1.15.0-CPU-v1.3.2-Windows-x86_64-Setup.exe) (CPU版本)
-- [Fairy-Kekkai-Workshop-v1.15.0-GPU-v1.3.2-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.15.0/Fairy-Kekkai-Workshop-v1.15.0-GPU-v1.3.2-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
-- [Fairy-Kekkai-Workshop-v1.15.0-GPU-v1.3.2-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.15.0/Fairy-Kekkai-Workshop-v1.15.0-GPU-v1.3.2-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.16.0-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
+- [Fairy-Kekkai-Workshop-v1.16.0-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
+- [Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
 此次版本更新意在修复bug以及潜在bug，版本号提升为1.15是为了同步videocr的更新
