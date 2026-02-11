@@ -149,9 +149,9 @@ def convert_visual_to_logical(text: str) -> str:
 def find_paddleocr() -> str:
     program_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     base_folders = [
-        "PaddleOCR-CPU-v1.3.2",
-        "PaddleOCR-GPU-v1.3.2-CUDA-11.8",
-        "PaddleOCR-GPU-v1.3.2-CUDA-12.9",
+        "PaddleOCR-CPU-v1.4.0",
+        "PaddleOCR-GPU-v1.4.0-CUDA-11.8",
+        "PaddleOCR-GPU-v1.4.0-CUDA-12.9",
     ]
     program_name = "paddleocr"
 

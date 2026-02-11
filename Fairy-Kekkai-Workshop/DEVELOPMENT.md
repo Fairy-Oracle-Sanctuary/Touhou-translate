@@ -102,8 +102,8 @@ Fairy-Kekkai-Workshop/
 4. **创建配置文件**
    ```bash
    # 创建 PADDLEOCR_VERSION 文件（OCR 模型版本配置）
-   echo "CPU-v1.3.2" > PADDLEOCR_VERSION
-   # 或 GPU-v1.3.2-CUDA-11.8 / GPU-v1.3.2-CUDA-12.9
+   echo "CPU-v1.4.0" > PADDLEOCR_VERSION
+   # 或 GPU-v1.4.0-CUDA-11.8 / GPU-v1.4.0-CUDA-12.9
    ```
 
 5. **运行应用**
