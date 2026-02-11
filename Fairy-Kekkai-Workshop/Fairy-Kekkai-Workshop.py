@@ -66,10 +66,11 @@ if __name__ == "__main__":
 
 """
 ## 更新日志
-- 集成了最新的 PaddleOCR 3.4 版本，该版本将支持语言扩展至 110 种，并提高了拉丁字母、西里尔字母、阿拉伯字母等的识别准确率。
+- 集成了最新的 PaddleOCR 版本，该版本将支持语言扩展至 110 种，并提高了拉丁字母、西里尔字母、阿拉伯字母等的识别准确率。
 - 自定义api功能会在只有主机:端口且无 path 时追加 /v1
 - 字幕提取视频框选支持了从视频范围外向内拖动，当鼠标进入视频范围时自动开始框选
 - 字幕提取视频框选支持了对坐标值进行修改的功能
+- 优化了翻译功能的默认prompt
 
 ## 下载提示
 - [Fairy-Kekkai-Workshop-v1.16.0-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 - [Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
-此次版本更新后PaddleOCR版本变更为1.4.0，如果您需要用字幕功能请不要下载 `PaddleOCR-None` 版本，安装完后可以删除先前的PaddleOCR-v1.3.2程序，请注意此次更新将强制覆盖你先前的软件配置，包括但不限于OCR模型路径、支持文件路径等、apikey等等，这是必要的。
+此次版本更新后PaddleOCR版本变更为1.4.0，如果您需要用字幕功能请不要下载 `PaddleOCR-None` 版本，安装完后可以删除先前的PaddleOCR-v1.3.2程序，请注意此次更新将强制覆盖你先前的软件配置，包括但不限于OCR模型路径、支持文件路径等、apikey(请备份好这个)等等，这是必要的。
 
 关于字幕提取的推荐参数：
 """
