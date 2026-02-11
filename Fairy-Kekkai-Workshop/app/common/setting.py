@@ -26,9 +26,9 @@ try:
     with open("PADDLEOCR_VERSION", "r", encoding="utf-8") as f:
         text = f.readline().strip()
         if text in {
-            "CPU-v1.3.2",
-            "GPU-v1.3.2-CUDA-11.8",
-            "GPU-v1.3.2-CUDA-12.9",
+            "CPU-v1.4.0",
+            "GPU-v1.4.0-CUDA-11.8",
+            "GPU-v1.4.0-CUDA-12.9",
         }:
             PADDLEOCR_VERSION = text
 except FileNotFoundError:
@@ -38,9 +38,9 @@ except Exception:
     # Any other error reading/parsing the file -> fallback
     PADDLEOCR_VERSION = "None"
 
-# CPU-v1.3.2
-# GPU-v1.3.2-CUDA-11.8
-# GPU-v1.3.2-CUDA-12.9
+# CPU-v1.4.0
+# GPU-v1.4.0-CUDA-11.8
+# GPU-v1.4.0-CUDA-12.9
 
 # videocr
 videocr_languages_dict = {
@@ -138,6 +138,31 @@ videocr_languages_dict = {
     "奥克语": "oc",
     "巴利语": "pi",
     "塔巴萨兰语": "tab",
+    "俾路支语": "bal",
+    "巴什基尔语": "ba",
+    "巴斯克语": "eu",
+    "布里亚特语": "bua",
+    "加泰罗尼亚语": "ca",
+    "加利西亚语": "gl",
+    "格鲁吉亚语": "ka",
+    "卡尔梅克语": "xal",
+    "喀拉卡尔帕克语": "kaa",
+    "哈萨克语": "kk",
+    "科米语": "kv",
+    "吉尔吉斯语": "ky",
+    "卢森堡语": "lb",
+    "马其顿语": "mk",
+    "草原马里语": "mhr",
+    "摩尔多瓦语": "mo",
+    "奥塞梯语": "os",
+    "克丘亚语": "qu",
+    "罗曼什语": "rm",
+    "信德语": "sd",
+    "塔吉克语": "tg",
+    "鞑靼语": "tt",
+    "图瓦语": "tyv",
+    "乌德穆尔特语": "udm",
+    "萨哈语": "sah",
 }
 subtitle_positions_list = {
     "居中": "center",

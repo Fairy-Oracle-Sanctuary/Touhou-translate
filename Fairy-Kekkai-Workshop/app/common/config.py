@@ -347,7 +347,7 @@ class Config(QConfig):
     ocr_position = OptionsConfigItem(
         "OCR",
         "Position",
-        "居中",
+        "任意",
         OptionsValidator(list(subtitle_positions_list.keys())),
         restart=False,
     )
