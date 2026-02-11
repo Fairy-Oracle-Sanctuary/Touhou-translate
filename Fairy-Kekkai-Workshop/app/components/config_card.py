@@ -1,5 +1,6 @@
 # coding:utf-8
 import re
+import urllib.parse
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal
@@ -99,10 +100,17 @@ class CustomModelDetectionThread(QThread):
                 )
                 return
 
+            # 规范化 base_url：若只有 host[:port] 而无 path，则自动追加 /v1
+            def _normalize_base_url(url: str) -> str:
+                u = urllib.parse.urlparse(url)
+                if not u.path or u.path == "":
+                    return url.rstrip("/") + "/v1"
+                return url.rstrip("/")
+
+            normalized_base = _normalize_base_url(self.base_url.strip())
+
             # 创建OpenAI客户端并测试连接
-            client = OpenAI(
-                api_key=self.api_key.strip(), base_url=self.base_url.strip().rstrip("/")
-            )
+            client = OpenAI(api_key=self.api_key.strip(), base_url=normalized_base)
 
             # 发送一个简单的测试请求
             response = client.chat.completions.create(

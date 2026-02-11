@@ -14,7 +14,7 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.logger import Logger
 from ..common.setting import AI_ERROR_MAP
-
+from urllib.parse import urlparse
 
 def remove_thinking_content(text: str) -> str:
     # 匹配<think>和</think>
@@ -201,10 +201,16 @@ class CustomModelService(BaseTranslateService):
         if not base_url:
             raise Exception("请填写自定义模型的API基础URL")
 
-        return OpenAI(
-            api_key=api_key,
-            base_url=base_url,
-        )
+        # 规范化 base_url：若只有 host[:port] 而无 path，则自动追加 /v1
+        def _normalize_base_url(url: str) -> str:
+            parsed = urlparse(url)
+            if not parsed.path or parsed.path == "":
+                return url.rstrip("/") + "/v1"
+            return url.rstrip("/")
+
+        normalized_base = _normalize_base_url(base_url)
+
+        return OpenAI(api_key=api_key, base_url=normalized_base)
 
     def get_model_name(self):
         if not cfg.get(cfg.customModelEnabled):

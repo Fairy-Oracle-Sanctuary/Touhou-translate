@@ -15,6 +15,8 @@ from qfluentwidgets import (
     CardWidget,
     FluentIcon,
     PushButton,
+    SpinBox,
+    LineEdit,
 )
 
 from ..common.config import cfg
@@ -58,15 +60,21 @@ class VideoPreview(CardWidget):
         self.control_layout.addWidget(self.clear_selection_btn)
         self.control_layout.addStretch()
 
-        # 框选坐标显示
+        # 框选坐标显示和编辑区域
         self.coords_layout = QHBoxLayout()
         self.coords_label = CaptionLabel("框选区域坐标: 未选择")
         self.coords_layout.addWidget(self.coords_label)
         self.coords_layout.addStretch()
+        
+        # 坐标编辑区域
+        self.coord_edit_layout = QVBoxLayout()
+        self.coord_inputs = []  # 存储每个区域的坐标输入框
+        self.coord_edit_widgets = []  # 存储坐标编辑组件
 
         self.vBoxLayout.addWidget(self.previewLabel)
         self.vBoxLayout.addLayout(self.control_layout)
         self.vBoxLayout.addLayout(self.coords_layout)
+        self.vBoxLayout.addLayout(self.coord_edit_layout)
         self.vBoxLayout.setContentsMargins(20, 20, 20, 20)
 
         # 连接信号
@@ -115,8 +123,8 @@ class VideoPreview(CardWidget):
         self.select_btn.setEnabled(True)
         self.previewLabel.setCursor(Qt.ArrowCursor)
 
-        # 更新坐标显示
-        self.coords_label.setText("框选区域坐标: 未选择")
+        # 更新坐标显示（这会清除坐标编辑组件）
+        self._update_coords_display()
 
         # 重绘画布
         self._redraw_canvas_and_boxes()
@@ -171,7 +179,7 @@ class VideoPreview(CardWidget):
             self.end_point_img = (img_x, img_y)
 
             # 重绘画布和临时矩形
-            self._redraw_canvas_and_boxes()
+            self._redraw_canvas_and_boxes(preview_mode=True)
 
             # 绘制临时矩形
             if self.start_point_img and self.end_point_img:
@@ -273,7 +281,7 @@ class VideoPreview(CardWidget):
         else:
             event.ignore()
 
-    def _redraw_canvas_and_boxes(self):
+    def _redraw_canvas_and_boxes(self, preview_mode=False):
         """重绘画布和所有框选框"""
         if self.current_pixmap is None:
             return
@@ -291,7 +299,11 @@ class VideoPreview(CardWidget):
 
             # 绘制所有已确定的框选框
             for i, crop_box in enumerate(self.crop_boxes):
-                start_img, end_img = crop_box["img_points"]
+                # 在预览模式下，如果有临时预览坐标，使用临时坐标
+                if preview_mode and "temp_img_points" in crop_box:
+                    start_img, end_img = crop_box["temp_img_points"]
+                else:
+                    start_img, end_img = crop_box["img_points"]
 
                 rect_x1_img = min(start_img[0], end_img[0])
                 rect_y1_img = min(start_img[1], end_img[1])
@@ -306,10 +318,14 @@ class VideoPreview(CardWidget):
 
                 # 选择颜色
                 color = colors[i % len(colors)]
-
-                # 绘制矩形
-                pen = QPen(color, 2)
+                
+                # 在预览模式下使用虚线
+                if preview_mode and "temp_img_points" in crop_box:
+                    pen = QPen(color, 2, Qt.DashLine)
+                else:
+                    pen = QPen(color, 2)
                 painter.setPen(pen)
+                
                 painter.drawRect(
                     QRect(
                         int(draw_x1),
@@ -500,10 +516,100 @@ class VideoPreview(CardWidget):
         self._redraw_canvas_and_boxes()
         self._update_coords_display()
 
+    def _create_coord_edit_widget(self, zone_index):
+        """创建坐标编辑组件"""
+        widget = CardWidget()
+        layout = QVBoxLayout(widget)
+        
+        # 标题
+        title_layout = QHBoxLayout()
+        title_label = CaptionLabel(f"区域 {zone_index + 1} 坐标")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        
+        # 坐标输入框
+        coords_input_layout = QHBoxLayout()
+        
+        # X坐标
+        x_layout = QVBoxLayout()
+        x_label = CaptionLabel("X:")
+        x_input = SpinBox()
+        x_input.setMinimum(0)
+        x_input.setMaximum(9999)
+        x_layout.addWidget(x_label)
+        x_layout.addWidget(x_input)
+        
+        # Y坐标
+        y_layout = QVBoxLayout()
+        y_label = CaptionLabel("Y:")
+        y_input = SpinBox()
+        y_input.setMinimum(0)
+        y_input.setMaximum(9999)
+        y_layout.addWidget(y_label)
+        y_layout.addWidget(y_input)
+        
+        # 宽度
+        w_layout = QVBoxLayout()
+        w_label = CaptionLabel("宽度:")
+        w_input = SpinBox()
+        w_input.setMinimum(1)
+        w_input.setMaximum(9999)
+        w_layout.addWidget(w_label)
+        w_layout.addWidget(w_input)
+        
+        # 高度
+        h_layout = QVBoxLayout()
+        h_label = CaptionLabel("高度:")
+        h_input = SpinBox()
+        h_input.setMinimum(1)
+        h_input.setMaximum(9999)
+        h_layout.addWidget(h_label)
+        h_layout.addWidget(h_input)
+        
+        coords_input_layout.addLayout(x_layout)
+        coords_input_layout.addLayout(y_layout)
+        coords_input_layout.addLayout(w_layout)
+        coords_input_layout.addLayout(h_layout)
+        coords_input_layout.addStretch()
+        
+        # 应用按钮
+        apply_btn = PushButton(FluentIcon.ACCEPT, "应用")
+        coords_input_layout.addWidget(apply_btn)
+        coords_input_layout.addSpacing(12)
+        
+        layout.addLayout(title_layout)
+        layout.addLayout(coords_input_layout)
+        
+        # 保存输入框引用
+        coord_inputs = {
+            'x': x_input,
+            'y': y_input,
+            'width': w_input,
+            'height': h_input,
+            'apply_btn': apply_btn
+        }
+        
+        # 连接信号
+        apply_btn.clicked.connect(lambda: self._apply_coord_changes(zone_index))
+        
+        # 当输入框值改变时实时更新
+        x_input.valueChanged.connect(lambda: self._preview_coord_changes(zone_index))
+        y_input.valueChanged.connect(lambda: self._preview_coord_changes(zone_index))
+        w_input.valueChanged.connect(lambda: self._preview_coord_changes(zone_index))
+        h_input.valueChanged.connect(lambda: self._preview_coord_changes(zone_index))
+        
+        return widget, coord_inputs
+
     def _update_coords_display(self):
         """更新坐标显示"""
         if not self.crop_boxes:
             self.coords_label.setText("框选区域坐标: 未选择")
+            # 清除所有坐标编辑组件
+            for widget in self.coord_edit_widgets:
+                widget.setParent(None)
+                widget.deleteLater()
+            self.coord_edit_widgets.clear()
+            self.coord_inputs.clear()
             return
 
         coords_texts = []
@@ -514,6 +620,139 @@ class VideoPreview(CardWidget):
             )
 
         self.coords_label.setText(" | ".join(coords_texts))
+        
+        # 更新或创建坐标编辑组件
+        self._update_coord_edit_widgets()
+
+    def _update_coord_edit_widgets(self):
+        """更新坐标编辑组件"""
+        # 清除现有组件
+        for widget in self.coord_edit_widgets:
+            widget.setParent(None)
+            widget.deleteLater()
+        self.coord_edit_widgets.clear()
+        self.coord_inputs.clear()
+        
+        # 为每个框选区域创建编辑组件
+        for i in range(len(self.crop_boxes)):
+            widget, coord_inputs = self._create_coord_edit_widget(i)
+            
+            # 设置当前坐标值
+            coords = self.crop_boxes[i]["coords"]
+            coord_inputs['x'].setValue(coords['crop_x'])
+            coord_inputs['y'].setValue(coords['crop_y'])
+            coord_inputs['width'].setValue(coords['crop_width'])
+            coord_inputs['height'].setValue(coords['crop_height'])
+            
+            # 设置最大值限制（基于原始图像尺寸）
+            if self.original_frame_size:
+                max_x, max_y = self.original_frame_size
+                coord_inputs['x'].setMaximum(max_x - 1)
+                coord_inputs['y'].setMaximum(max_y - 1)
+                coord_inputs['width'].setMaximum(max_x)
+                coord_inputs['height'].setMaximum(max_y)
+            
+            self.coord_edit_layout.addWidget(widget)
+            self.coord_edit_widgets.append(widget)
+            self.coord_inputs.append(coord_inputs)
+    
+    def _preview_coord_changes(self, zone_index):
+        """预览坐标变化（实时更新显示但不保存）"""
+        if zone_index >= len(self.coord_inputs) or zone_index >= len(self.crop_boxes):
+            return
+            
+        coord_inputs = self.coord_inputs[zone_index]
+        crop_box = self.crop_boxes[zone_index]
+        
+        # 获取新的坐标值
+        new_x = coord_inputs['x'].value()
+        new_y = coord_inputs['y'].value()
+        new_w = coord_inputs['width'].value()
+        new_h = coord_inputs['height'].value()
+        
+        # 验证坐标值
+        if self.original_frame_size:
+            max_x, max_y = self.original_frame_size
+            new_x = max(0, min(new_x, max_x - 1))
+            new_y = max(0, min(new_y, max_y - 1))
+            new_w = max(1, min(new_w, max_x - new_x))
+            new_h = max(1, min(new_h, max_y - new_y))
+        
+        # 转换为预览图像坐标
+        if self.current_pixmap and self.original_frame_size:
+            original_width, original_height = self.original_frame_size
+            preview_width = self.current_pixmap.width()
+            preview_height = self.current_pixmap.height()
+            
+            scale_x = preview_width / original_width
+            scale_y = preview_height / original_height
+            
+            img_x1 = int(new_x * scale_x)
+            img_y1 = int(new_y * scale_y)
+            img_x2 = int((new_x + new_w) * scale_x)
+            img_y2 = int((new_y + new_h) * scale_y)
+            
+            # 临时更新框选区域的预览坐标
+            crop_box["temp_img_points"] = ((img_x1, img_y1), (img_x2, img_y2))
+            
+            # 重绘画布显示预览
+            self._redraw_canvas_and_boxes(preview_mode=True)
+    
+    def _apply_coord_changes(self, zone_index):
+        """应用坐标变化"""
+        if zone_index >= len(self.coord_inputs) or zone_index >= len(self.crop_boxes):
+            return
+            
+        coord_inputs = self.coord_inputs[zone_index]
+        crop_box = self.crop_boxes[zone_index]
+        
+        # 获取新的坐标值
+        new_x = coord_inputs['x'].value()
+        new_y = coord_inputs['y'].value()
+        new_w = coord_inputs['width'].value()
+        new_h = coord_inputs['height'].value()
+        
+        # 验证坐标值
+        if self.original_frame_size:
+            max_x, max_y = self.original_frame_size
+            new_x = max(0, min(new_x, max_x - 1))
+            new_y = max(0, min(new_y, max_y - 1))
+            new_w = max(1, min(new_w, max_x - new_x))
+            new_h = max(1, min(new_h, max_y - new_y))
+        
+        # 更新框选区域的坐标
+        crop_box["coords"] = {
+            "crop_x": new_x,
+            "crop_y": new_y,
+            "crop_width": new_w,
+            "crop_height": new_h,
+        }
+        
+        # 转换为预览图像坐标
+        if self.current_pixmap and self.original_frame_size:
+            original_width, original_height = self.original_frame_size
+            preview_width = self.current_pixmap.width()
+            preview_height = self.current_pixmap.height()
+            
+            scale_x = preview_width / original_width
+            scale_y = preview_height / original_height
+            
+            img_x1 = int(new_x * scale_x)
+            img_y1 = int(new_y * scale_y)
+            img_x2 = int((new_x + new_w) * scale_x)
+            img_y2 = int((new_y + new_h) * scale_y)
+            
+            crop_box["img_points"] = ((img_x1, img_y1), (img_x2, img_y2))
+        
+        # 清除临时预览坐标
+        if "temp_img_points" in crop_box:
+            del crop_box["temp_img_points"]
+        
+        # 重绘画布
+        self._redraw_canvas_and_boxes()
+        
+        # 更新坐标显示
+        self._update_coords_display()
 
     def clear_selection(self, index=None):
         """清除指定索引的框选区域或所有区域"""
