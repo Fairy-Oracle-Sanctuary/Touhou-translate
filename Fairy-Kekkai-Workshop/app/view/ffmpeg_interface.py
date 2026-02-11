@@ -57,7 +57,9 @@ class FFmpegInterface(BaseFunctionInterface):
         """开始压制"""
         args = self._get_args()
         self.addTask.emit(args)
-        self.logger.info(f"开始压制视频: -{self.input_path_edit.text()}- 参数: {args}")
+        self.logger.info(
+            f"开始压制视频: -{self.inputFileCard.lineEdit.text()}- 参数: {args}"
+        )
 
     def _get_args(self):
         """获取压制参数"""

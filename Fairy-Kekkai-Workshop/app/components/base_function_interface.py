@@ -174,7 +174,7 @@ class BaseFunctionInterface(ScrollArea):
                 return
 
             # 设置文件路径到输入框
-            self.input_path_edit.setText(str(file_path))
+            self.inputFileCard.lineEdit.setText(str(file_path))
             self.load_file_content(file_path)
             event.accept()
         else:
@@ -290,8 +290,8 @@ class BaseFunctionInterface(ScrollArea):
         output_path = self._generate_output_path(new_path)
 
         # 更新界面
-        self.input_path_edit.setText(str(self.file_path))
-        self.output_path_edit.setText(str(output_path))
+        self.inputFileCard.lineEdit.setText(str(self.file_path))
+        self.outputFileCard.lineEdit.setText(str(output_path))
 
         # 加载文件内容
         self.load_file_content(new_path)
