@@ -338,8 +338,8 @@ class VideocrInterface(BaseFunctionInterface):
         args["file_path"] = self.outputFileCard.lineEdit.text()
         args["temp_dir"] = cfg.get(cfg.tempDir)
         args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
-        args["time_start"] = "0:00"
-        args["time_end"] = ""
+        args["time_start"] = cfg.get(cfg.timeStart)
+        args["time_end"] = cfg.get(cfg.timeEnd)
         args["conf_threshold"] = cfg.get(cfg.confThreshold)
         args["sim_threshold"] = cfg.get(cfg.simThreshold)
         args["max_merge_gap_sec"] = cfg.get(cfg.maxMergeGap)
