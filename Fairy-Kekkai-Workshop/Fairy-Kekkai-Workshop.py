@@ -78,7 +78,7 @@ if __name__ == "__main__":
 - [Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.0/Fairy-Kekkai-Workshop-v1.16.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
-此次版本更新后PaddleOCR版本变更为1.4.0，如果您需要用字幕功能请不要下载 `PaddleOCR-None` 版本，安装完后可以删除先前的PaddleOCR-v1.3.2程序
+此次版本更新后PaddleOCR版本变更为1.4.0，如果您需要用字幕功能请不要下载 `PaddleOCR-None` 版本，安装完后可以删除先前的PaddleOCR-v1.3.2程序，请注意此次更新将强制覆盖你先前的软件配置，包括但不限于OCR模型路径、支持文件路径等、apikey等等，这是必要的。
 
 关于字幕提取的推荐参数：
 """

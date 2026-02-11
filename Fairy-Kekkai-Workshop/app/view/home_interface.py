@@ -116,7 +116,7 @@ class HomeInterface(ScrollArea):
             icon=QIcon(":/app/images/logo/Paddle.svg"),
             title="PaddleOCRv5.support.files (已内置)",
             content="PaddleOCR支持文件下载地址\n下载后设置其路径",
-            url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.3.2/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
+            url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.4.0/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
         )
 
         """
