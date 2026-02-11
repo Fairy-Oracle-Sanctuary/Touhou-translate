@@ -72,7 +72,7 @@ class HomeInterface(ScrollArea):
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/translate.svg"),
             title="翻译字幕",
-            content=self.tr("翻译提取出的字幕文件(Deepseek)"),
+            content=self.tr("翻译提取出的字幕文件"),
             routeKey="TranslationStackedInterface",
             index=4,
         )
