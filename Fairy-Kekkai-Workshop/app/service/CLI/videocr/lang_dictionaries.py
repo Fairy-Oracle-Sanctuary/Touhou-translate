@@ -41,15 +41,25 @@ LATIN_LANGS = {
     "vi",
     "french",
     "german",
+    "fi",
+    "eu",
+    "gl",
+    "lb",
+    "rm",
+    "ca",
+    "qu",
 }
 
-ARABIC_LANGS = {"ar", "fa", "ug", "ur"}
+ARABIC_LANGS = {"ar", "fa", "ug", "ur", "ps", "ku", "sd", "bal"}
 
 ESLAV_LANGS = {"ru", "be", "uk"}
 
 CYRILLIC_LANGS = {
+    "ru",
     "rs_cyrillic",
+    "be",
     "bg",
+    "uk",
     "mn",
     "abq",
     "ady",
@@ -61,6 +71,23 @@ CYRILLIC_LANGS = {
     "lbe",
     "lez",
     "tab",
+    "kk",
+    "ky",
+    "tg",
+    "mk",
+    "tt",
+    "cv",
+    "ba",
+    "mhr",
+    "mo",
+    "udm",
+    "kv",
+    "os",
+    "bua",
+    "xal",
+    "tyv",
+    "sah",
+    "kaa",
 }
 
 DEVANAGARI_LANGS = {
@@ -75,6 +102,6 @@ DEVANAGARI_LANGS = {
     "sck",
     "new",
     "gom",
-    "bgc",
     "sa",
+    "bgc",
 }
