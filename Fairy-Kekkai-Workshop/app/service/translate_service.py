@@ -2,6 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generator
+from urllib.parse import urlparse
 
 from openai import OpenAI
 from PySide6.QtCore import QThread, Signal
@@ -14,7 +15,7 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.logger import Logger
 from ..common.setting import AI_ERROR_MAP
-from urllib.parse import urlparse
+
 
 def remove_thinking_content(text: str) -> str:
     # 匹配<think>和</think>
