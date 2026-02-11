@@ -355,13 +355,13 @@ class Config(QConfig):
     # 置信度阈值 (0-100)
     # 命令行使用：--conf_threshold
     confThreshold = RangeConfigItem(
-        "OCR", "ConfThreshold", 75, RangeValidator(0, 100), restart=False
+        "OCR", "ConfThreshold", 30, RangeValidator(0, 100), restart=False
     )
 
     # 相似度阈值 (0-100)
     # 命令行使用：--sim_threshold
     simThreshold = RangeConfigItem(
-        "OCR", "SimThreshold", 80, RangeValidator(0, 100), restart=False
+        "OCR", "SimThreshold", 65, RangeValidator(0, 100), restart=False
     )
 
     # 最大合并间隔（秒）
@@ -391,7 +391,7 @@ class Config(QConfig):
     # 跳过的帧数
     # 命令行使用：--frames_to_skip
     framesToSkip = RangeConfigItem(
-        "OCR", "FramesToSkip", 1, RangeValidator(0, 100), restart=False
+        "OCR", "FramesToSkip", 3, RangeValidator(0, 100), restart=False
     )
 
     # 最小字幕持续时间（秒）
@@ -438,13 +438,13 @@ class Config(QConfig):
     # 是否启用后处理
     # 命令行使用：--post_processing
     postProcessing = ConfigItem(
-        "OCR", "PostProcessing", True, BoolValidator(), restart=False
+        "OCR", "PostProcessing", False, BoolValidator(), restart=False
     )
 
     # 是否使用服务器模型
     # 命令行使用：--use_server_model
     useServerModel = ConfigItem(
-        "OCR", "UseServerModel", False, BoolValidator(), restart=False
+        "OCR", "UseServerModel", True, BoolValidator(), restart=False
     )
 
     # translate settings
