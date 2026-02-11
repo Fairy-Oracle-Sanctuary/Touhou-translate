@@ -307,9 +307,9 @@ class Config(QConfig):
             ).absolute()
         ),
     )
-    # tools/PaddleOCR-CPU-v1.3.2/paddleocr{EXE_SUFFIX}
-    # tools/PaddleOCR-GPU-v1.3.2-CUDA-11.8/paddleocr{EXE_SUFFIX}
-    # tools/PaddleOCR-GPU-v1.3.2-CUDA-12.9/paddleocr{EXE_SUFFIX}
+    # tools/PaddleOCR-CPU-v1.4.0/paddleocr{EXE_SUFFIX}
+    # tools/PaddleOCR-GPU-v1.4.0-CUDA-11.8/paddleocr{EXE_SUFFIX}
+    # tools/PaddleOCR-GPU-v1.4.0-CUDA-12.9/paddleocr{EXE_SUFFIX}
 
     # support.files路径
     supportFilesPath = ConfigItem(
