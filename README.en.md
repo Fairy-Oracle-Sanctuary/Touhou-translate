@@ -46,6 +46,7 @@ This project plans to translate and repost the following works:
 | 10 | 色付く恋は、貴方から | 《染上色彩的恋爱始于你第一季》 | [YouTube Link](https://www.youtube.com/playlist?list=PLwsFUfY3oQWJ3GsyshggcsJbI6_X8hRD0) | [BiliBili Link](https://space.bilibili.com/499929312/lists/7221002) |
 | 11 | 盲目の少女と醜い少年の話 | 《盲眼的少女与丑陋的少年》 | [YouTube Link](https://youtube.com/playlist?list=PLuabzLomQRYUsFGKUThPnEMJ-zT2dxdBj) | `Pending` |
 | 12 | 東方MMD（初心者動画） | 《東方MMD（初心者動画）》 | [YouTube链接](https://www.youtube.com/playlist?list=PLAj9cJ2slYo_AJjUvKGFmG-j0lzySK_e8) | [BiliBili Link](https://space.bilibili.com/499929312/lists/7120067) |
+| 13 | 騒がしすぎて怖くない夜廻三 | 《闹腾到不恐怖的夜廻三》 | [YouTube链接](https://www.youtube.com/playlist?list=PLxioisTzjlBYrCViDpMBfFOEy1R4xNi1t) | [BiliBili链接](https://space.bilibili.com/499929312/lists/7392546) |
 
 **Status Explanation:**
 - `BiliBili Link`: Uploaded/Uploading.
