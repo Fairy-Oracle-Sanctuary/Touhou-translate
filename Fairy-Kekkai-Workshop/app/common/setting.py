@@ -4,9 +4,9 @@ from pathlib import Path
 
 AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
-VERSION = "1.16.0"
+VERSION = "1.16.1"
 YEAR = "2025"
-UPDATE_TIME = "2026-2-11"
+UPDATE_TIME = "2026-2-13"
 
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
