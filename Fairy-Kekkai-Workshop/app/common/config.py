@@ -470,7 +470,7 @@ class Config(QConfig):
     promptTemplate = ConfigItem(
         "Translate",
         "PromptTemplate",
-        "将以下{origin_lang}文本翻译成{target_lang},\n人名优先匹配《东方Project》,保留原本srt格式,你只需要输出翻译后的结果，不需要输出多余内容\n{content}",
+        "请将以下{origin_lang}文本翻译为{target_lang}，并满足以下要求：\n翻译提供的文本内容，保持原意流畅自然。\n若文本中出现人名，优先参照《东方Project》官方或相关常见译名进行匹配与统一，如果出现了非东方人物的名字，则照常翻译。\n严格保留原始 srt 字幕格式（包括时间轴、序号等），仅对文本内容进行翻译。\n如因 OCR 识别错误导致语句无法理解或无法翻译，请将该句替换为 ***\n只输出翻译后的完整 srt 内容，无需任何额外说明或注释。\n待翻译内容：\n{content}",
         restart=False,
     )
 
