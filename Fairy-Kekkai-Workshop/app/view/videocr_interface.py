@@ -4,7 +4,6 @@
 
 import os
 import re
-import tempfile
 
 import cv2
 from PySide6.QtCore import Qt, QTime
@@ -284,7 +283,7 @@ class VideocrInterface(BaseFunctionInterface):
             return
 
         # 检测临时文件夹路径是否有中文
-        temp_path = tempfile.gettempdir()
+        temp_path = cfg.get(cfg.tempDir)
         if re.search("[\u4e00-\u9fff\u3400-\u4dbf]", temp_path):
             dialog = Dialog(
                 self.tr("警告"),

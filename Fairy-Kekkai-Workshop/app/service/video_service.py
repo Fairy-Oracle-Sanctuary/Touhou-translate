@@ -184,15 +184,8 @@ class VideoPreview(CardWidget):
             img_x = mouse_pos.x() - image_offset_x
             img_y = mouse_pos.y() - image_offset_y
 
-            # 检查是否在图像范围内
-            if 0 <= img_x < pixmap_rect.width() and 0 <= img_y < pixmap_rect.height():
-                # 在图像范围内
-                if self.start_point_img is None and hasattr(self, "mouse_start_pos"):
-                    # 如果起点未设置且存在鼠标起始位置，说明是从外向内拖动
-                    # 设置当前鼠标位置为起点
-                    self.start_point_img = (img_x, img_y)
-                    del self.mouse_start_pos  # 清除临时记录
-
+            # 如果已经有起点，即使鼠标离开图像范围也继续更新终点（限制在图像范围内）
+            if self.start_point_img is not None:
                 # 限制在图像范围内
                 img_x = max(0, min(img_x, pixmap_rect.width() - 1))
                 img_y = max(0, min(img_y, pixmap_rect.height() - 1))
@@ -209,12 +202,21 @@ class VideoPreview(CardWidget):
                 event.accept()
                 return
             else:
-                # 在图像范围外，如果已经有起点，继续绘制临时矩形
-                if self.start_point_img and self.end_point_img:
-                    # 重绘画布和临时矩形
-                    self._redraw_canvas_and_boxes(preview_mode=True)
-                    # 绘制临时矩形（保持上一个有效位置）
-                    self._draw_temp_rectangle()
+                # 还没有起点，检查是否在图像范围内
+                if (
+                    0 <= img_x < pixmap_rect.width()
+                    and 0 <= img_y < pixmap_rect.height()
+                ):
+                    # 在图像范围内
+                    if hasattr(self, "mouse_start_pos"):
+                        # 从外向内拖动时才设置起点
+                        self.start_point_img = (img_x, img_y)
+                        del self.mouse_start_pos  # 清除临时记录
+                else:
+                    # 在图像范围外，只记录鼠标位置
+                    if not hasattr(self, "mouse_start_pos"):
+                        self.mouse_start_pos = mouse_pos
+
                 event.accept()
                 return
 
