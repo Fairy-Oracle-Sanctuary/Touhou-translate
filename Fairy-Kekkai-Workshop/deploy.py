@@ -17,7 +17,7 @@ if sys.platform == "win32":
         "--mingw64",
         "--show-memory",
         "--show-progress",
-        "--jobs=8",
+        "--jobs=16",
         "--prefer-source-code",
         "--lto=yes",
         "--windows-icon-from-ico=Fairy-Kekkai-Workshop/app/resource/images/logo.ico",
