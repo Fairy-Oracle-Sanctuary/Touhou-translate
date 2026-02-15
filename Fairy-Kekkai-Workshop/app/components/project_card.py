@@ -249,7 +249,7 @@ class ProjectInterface(ScrollArea):
         for project_num in range(len(project.project_title)):
             self.addProjectCard(
                 project,
-                ":/app/images/logo.png",
+                ":/app/images/logo.ico",
                 project.project_name[project_num],
                 project.project_title[project_num],
                 card_id,
