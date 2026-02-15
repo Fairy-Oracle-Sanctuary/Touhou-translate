@@ -27,5 +27,6 @@
     <file>images/controls/SkipStartFill_black.svg</file>
     <file>images/controls/SkipStartFill_white.svg</file>
     <file>images/controls/SkipEndFill_black.svg</file>
+    <file>images/logo.ico</file>
   </qresource>
 </RCC>

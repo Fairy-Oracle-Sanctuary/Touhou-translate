@@ -25,7 +25,7 @@ class PredictedFrames:
     words: list[PredictedText]
     confidence: float  # total confidence of all words
     text: str
-    _converter = OpenCC("t2s")
+    _converter = None
 
     def __init__(
         self,
@@ -87,7 +87,14 @@ class PredictedFrames:
         )
 
         if normalize_to_simplified_chinese and lang == "ch" and self.text:
-            self.text = self._converter.convert(self.text)
+            try:
+                if self._converter is None:
+                    self._converter = OpenCC("t2s")
+                self.text = self._converter.convert(self.text)
+            except (RuntimeError, Exception) as e:
+                # 如果OpenCC初始化失败，跳过繁简转换
+                print(f"警告: OpenCC繁简转换失败，跳过转换: {e}")
+                pass
 
 
 class PredictedSubtitle:
