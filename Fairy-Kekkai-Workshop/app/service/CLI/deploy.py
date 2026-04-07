@@ -33,10 +33,9 @@ def run_nuitka():
         "--include-module=json",
         "--include-module=argparse",
         "--include-module=subprocess",
-        "--include-module=sys",
         "--include-module=os",
-        "--include-module=time",
         "--include-module=logging",
+        "--include-module=opencc",
         "--assume-yes-for-downloads",
         "--mingw64",  # 使用mingw64编译器
         "--show-memory",
