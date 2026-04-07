@@ -4,7 +4,6 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 import wordninja_enhanced as wordninja
-from opencc import OpenCC
 from thefuzz import fuzz
 
 from . import utils
@@ -88,6 +87,8 @@ class PredictedFrames:
 
         if normalize_to_simplified_chinese and lang == "ch" and self.text:
             try:
+                from opencc import OpenCC
+
                 if self._converter is None:
                     self._converter = OpenCC("t2s")
                 self.text = self._converter.convert(self.text)
