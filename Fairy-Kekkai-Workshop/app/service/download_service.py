@@ -3,7 +3,6 @@ import os
 import re
 from datetime import datetime
 
-import requests
 from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from ..common.config import cfg
@@ -152,26 +151,25 @@ class DownloadProcess(QObject):
         return cmd
 
     def start(self):
-        # 网络检查部分保持不变
-        try:
-            resp = requests.get("https://www.youtube.com", timeout=3)
-            if resp.status_code != 200:
-                self.finished_signal.emit(
-                    False, f"无法访问YouTube，HTTP状态码: {resp.status_code}"
-                )
-                return
-        except requests.exceptions.Timeout:
-            self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
-            return
-        except requests.exceptions.ConnectionError:
-            self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
-            return
-        except requests.exceptions.RequestException as e:
-            self.finished_signal.emit(False, f"网络错误: {str(e)}")
-            return
-        except Exception as e:
-            self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
-            return
+        # try:
+        #     resp = requests.get("https://www.youtube.com", timeout=3)
+        #     if resp.status_code != 200:
+        #         self.finished_signal.emit(
+        #             False, f"无法访问YouTube，HTTP状态码: {resp.status_code}"
+        #         )
+        #         return
+        # except requests.exceptions.Timeout:
+        #     self.finished_signal.emit(False, "连接YouTube超时，请检查网络连接")
+        #     return
+        # except requests.exceptions.ConnectionError:
+        #     self.finished_signal.emit(False, "无法连接到YouTube，请检查网络连接")
+        #     return
+        # except requests.exceptions.RequestException as e:
+        #     self.finished_signal.emit(False, f"网络错误: {str(e)}")
+        #     return
+        # except Exception as e:
+        #     self.finished_signal.emit(False, f"检测网络连接时发生未知错误: {str(e)}")
+        #     return
 
         self.task.status = "下载中"
         self.task.start_time = datetime.now()

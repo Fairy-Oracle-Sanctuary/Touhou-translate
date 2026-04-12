@@ -2,6 +2,7 @@
 # from ..common.signal_bus import signalBus
 # from ..common.icon import Logo
 import shutil
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
@@ -27,7 +28,7 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR
+from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR, COPYLEFT
 from ..components.config_card import DetectionCard
 
 
@@ -81,26 +82,27 @@ class SettingInterface(ScrollArea):
             configItem=cfg.closeDirectly,
             parent=self.personalGroup,
         )
-        self.showBackgroundCard = SwitchSettingCard(
-            FIF.BACKGROUND_FILL,
-            self.tr("背景图片"),
-            self.tr("启用或禁用应用背景图片"),
-            configItem=cfg.showBackground,
-            parent=self.personalGroup,
-        )
-        self.backgroundPathCard = PushSettingCard(
-            self.tr("选择文件"),
-            FIF.PHOTO,
-            "选择背景图片",
-            cfg.get(cfg.backgroundPath),
-            self.personalGroup,
-        )
-        self.backgroundRectCard = RangeSettingCard(
-            cfg.backgroundRect,
-            FIF.TRANSPARENT,
-            title="背景透明度",
-            content="调整背景图片的透明度",
-        )
+        if sys.platform == "win32":
+            self.showBackgroundCard = SwitchSettingCard(
+                FIF.BACKGROUND_FILL,
+                self.tr("背景图片"),
+                self.tr("启用或禁用应用背景图片"),
+                configItem=cfg.showBackground,
+                parent=self.personalGroup,
+            )
+            self.backgroundPathCard = PushSettingCard(
+                self.tr("选择文件"),
+                FIF.PHOTO,
+                "选择背景图片",
+                cfg.get(cfg.backgroundPath),
+                self.personalGroup,
+            )
+            self.backgroundRectCard = RangeSettingCard(
+                cfg.backgroundRect,
+                FIF.TRANSPARENT,
+                title="背景透明度",
+                content="调整背景图片的透明度",
+            )
 
         # project
         self.projectGroup = SettingCardGroup(self.tr("项目"), self.scrollWidget)
@@ -138,7 +140,7 @@ class SettingInterface(ScrollArea):
             self.tr("检查更新"),
             ":/app/images/logo.png",
             self.tr("关于"),
-            "🄯 "
+            COPYLEFT
             + self.tr("Copyleft")
             + f" {YEAR}, {TEAM}. "
             + self.tr("当前版本")
@@ -172,9 +174,10 @@ class SettingInterface(ScrollArea):
         self.personalGroup.addSettingCard(self.zoomCard)
         self.personalGroup.addSettingCard(self.accentColorCard)
         self.personalGroup.addSettingCard(self.closeDirectlyCard)
-        self.personalGroup.addSettingCard(self.showBackgroundCard)
-        self.personalGroup.addSettingCard(self.backgroundPathCard)
-        self.personalGroup.addSettingCard(self.backgroundRectCard)
+        if sys.platform == "win32":
+            self.personalGroup.addSettingCard(self.showBackgroundCard)
+            self.personalGroup.addSettingCard(self.backgroundPathCard)
+            self.personalGroup.addSettingCard(self.backgroundRectCard)
 
         self.projectGroup.addSettingCard(self.detailProjectItemNumCard)
 
@@ -280,7 +283,8 @@ class SettingInterface(ScrollArea):
         # 个性化
         cfg.themeChanged.connect(setTheme)
         cfg.accentColor.valueChanged.connect(self._onAccentColorChanged)
-        self.backgroundPathCard.clicked.connect(self._backgroundPathCardClicked)
+        if sys.platform == "win32":
+            self.backgroundPathCard.clicked.connect(self._backgroundPathCardClicked)
 
         # 下载
         self.ytdlpPathCard.clicked.connect(self._onYTDLPPathCardClicked)

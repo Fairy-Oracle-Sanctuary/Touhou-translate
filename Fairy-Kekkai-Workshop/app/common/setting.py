@@ -7,7 +7,11 @@ TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
 VERSION = "1.16.2"
 YEAR = "2025"
 UPDATE_TIME = "2026-4-7"
-
+if sys.platform == "win32":
+    COPYLEFT = "🄯 "
+else:
+    COPYLEFT = "©️ "
+    
 RELEASE_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases"
 GITHUB_URL = "https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate"
 
