@@ -1,4 +1,6 @@
 # coding:utf-8
+import sys
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -62,26 +64,27 @@ class HomeInterface(ScrollArea):
             routeKey="VideocrStackedInterfaces",
             index=2,
         )
-        basicInputView.addSampleCard(
-            icon=QIcon(":/app/images/controls/subtitle.svg"),
-            title="字幕提取",
-            content=self.tr("使用最新的PaddleOCR引擎提取字幕"),
-            routeKey="DownloadStackedInterfaces",
-            index=3,
-        )
+        if sys.platform == "win32":
+            basicInputView.addSampleCard(
+                icon=QIcon(":/app/images/controls/subtitle.svg"),
+                title="字幕提取",
+                content=self.tr("使用最新的PaddleOCR引擎提取字幕"),
+                routeKey="DownloadStackedInterfaces",
+                index=3,
+            )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/translate.svg"),
             title="翻译字幕",
             content=self.tr("翻译提取出的字幕文件"),
             routeKey="TranslationStackedInterface",
-            index=4,
+            index=4 if sys.platform != "darwin" else 3,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/video.svg"),
             title="视频压制",
             content=self.tr("压制烤制好的视频"),
             routeKey="FFmpegStackedInterface",
-            index=5,
+            index=5 if sys.platform != "darwin" else 4,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),

@@ -27,7 +27,9 @@ from .project_interface import ProjectStackedInterface
 # from .release_interface import ReleaseStackedInterfaces
 from .setting_interface import SettingInterface
 from .translate_interface import TranslateStackedInterfaces
-from .videocr_interface import VideocrStackedInterfaces
+
+if sys.platform == "win32":
+    from .videocr_interface import VideocrStackedInterfaces
 
 
 class MainWindow(MSFluentWindow):
@@ -71,13 +73,14 @@ class MainWindow(MSFluentWindow):
 
         self._connectSignalToSlot()
 
-        # 恢复窗口状态
-        self.restore_window_state()
-
         self.show()
 
     def paintEvent(self, event):
         """重绘事件，绘制背景图片"""
+        if sys.platform != "win32":
+            super().paintEvent(event)
+            return
+
         if self.isShowBackground:
             painter = QPainter(self)
             painter.setRenderHints(
@@ -175,27 +178,40 @@ class MainWindow(MSFluentWindow):
         self.homeInterface = HomeInterface(self)
         self.projectInterface = ProjectStackedInterface(self)
         self.downloadInterface = DownloadStackedInterface(self)
-        self.videoCRInterface = VideocrStackedInterfaces(self)
+        if sys.platform == "win32":
+            self.videoCRInterface = VideocrStackedInterfaces(self)
         self.translateInterface = TranslateStackedInterfaces(self)
         self.ffmpegInterface = FFmpegStackedInterfaces(self)
         # self.releaseInterface = ReleaseStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
-        self.interface = [
-            self.homeInterface,
-            self.projectInterface,
-            self.downloadInterface,
-            self.videoCRInterface,
-            self.translateInterface,
-            self.ffmpegInterface,
-            # self.releaseInterface,
-            self.settingInterface,
-        ]
+        if sys.platform == "win32":
+            self.interface = [
+                self.homeInterface,
+                self.projectInterface,
+                self.downloadInterface,
+                self.videoCRInterface,
+                self.translateInterface,
+                self.ffmpegInterface,
+                # self.releaseInterface,
+                self.settingInterface,
+            ]
+        elif sys.platform == "darwin":
+            self.interface = [
+                self.homeInterface,
+                self.projectInterface,
+                self.downloadInterface,
+                self.translateInterface,
+                self.ffmpegInterface,
+                # self.releaseInterface,
+                self.settingInterface,
+            ]
 
         self.addSubInterface(self.homeInterface, FIF.HOME, "主页")
         self.addSubInterface(self.projectInterface, FIF.FOLDER, "项目")
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
-        self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
+        if sys.platform == "win32":
+            self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
         self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
         # self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "发布")
@@ -253,19 +269,6 @@ class MainWindow(MSFluentWindow):
 
         if w.exec():
             QDesktopServices.openUrl(QUrl(GITHUB_URL))
-
-    def restore_window_state(self):
-        """恢复窗口状态"""
-        # 恢复窗口大小和位置
-        size = self.settings.value("window/size", self.size())
-        position = self.settings.value("window/position", self.pos())
-
-        self.resize(size)
-        self.move(position)
-
-        # 恢复窗口最大化状态
-        if self.settings.value("window/maximized", False, type=bool):
-            self.showMaximized()
 
     def save_window_state(self):
         """保存窗口状态"""
