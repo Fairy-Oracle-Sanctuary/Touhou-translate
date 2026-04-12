@@ -11,6 +11,7 @@ Pillow
 requests
 bilibili-api-python
 spark_ai_python
+srt
 
 # Optional / likely useful tools
 # paddleocr
