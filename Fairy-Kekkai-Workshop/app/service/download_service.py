@@ -186,7 +186,11 @@ class DownloadProcess(QObject):
 
             # 构建命令
             cmd = self.build_ytdlp_command()
-            print(f"执行yt-dlp命令: {' '.join(cmd)}")
+            try:
+                print(f"yt-dlp command: {' '.join(cmd)}")
+            except UnicodeEncodeError:
+                # macOS/Windows terminal may not support Chinese characters
+                pass
 
             # 创建QProcess
             self.process = QProcess()

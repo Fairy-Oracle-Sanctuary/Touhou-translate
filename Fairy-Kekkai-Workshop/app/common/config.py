@@ -28,6 +28,26 @@ from .setting import (
 )
 
 
+def get_default_exe_path(exe_name: str) -> str:
+    """获取可执行文件的默认路径，根据操作系统返回不同路径"""
+    # Windows: 使用 tools 目录
+    if sys.platform == "win32":
+        return str(Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute())
+    
+    # macOS: 优先检测 Homebrew 安装路径
+    if sys.platform == "darwin":
+        brew_paths = [
+            f"/opt/homebrew/bin/{exe_name}",   # Apple Silicon
+            f"/usr/local/bin/{exe_name}",      # Intel Mac
+        ]
+        for path in brew_paths:
+            if Path(path).exists():
+                return path
+    
+    # Linux 或其他: 使用 tools 目录
+    return str(Path(f"tools/{exe_name}").absolute())
+
+
 def isWin11():
     return sys.platform == "win32" and sys.getwindowsversion().build >= 22000
 
@@ -116,7 +136,7 @@ class Config(QConfig):
 
     # download
     ytdlpPath = ConfigItem(
-        "Download", "YTDLPPath", str(Path(f"tools/yt-dlp{EXE_SUFFIX}").absolute())
+        "Download", "YTDLPPath", get_default_exe_path("yt-dlp")
     )
 
     # ytdlp parameters
@@ -294,7 +314,7 @@ class Config(QConfig):
     videocrCliPath = ConfigItem(
         "OCR",
         "VideocrCliPath",
-        str(Path(f"tools/videocr-cli{EXE_SUFFIX}").absolute()),
+        get_default_exe_path("videocr-cli"),
     )
 
     # paddleocr exe路径
@@ -520,7 +540,7 @@ class Config(QConfig):
 
     # ffmpeg settings
     ffmpegPath = ConfigItem(
-        "FFmpeg", "FFmpegPath", str(Path(f"tools/ffmpeg{EXE_SUFFIX}").absolute())
+        "FFmpeg", "FFmpegPath", get_default_exe_path("ffmpeg")
     )
 
     # 并发数量，同时压制多个视频时的最大并行数

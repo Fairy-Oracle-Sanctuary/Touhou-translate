@@ -54,6 +54,12 @@ class Logger:
 
         self.__logger = logging.getLogger(fileName)
         self.__consoleHandler = logging.StreamHandler()
+        # Set UTF-8 encoding for console to support Chinese characters
+        try:
+            if hasattr(self.__consoleHandler.stream, "reconfigure"):
+                self.__consoleHandler.stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
         self.__fileHandler = logging.FileHandler(self.logFile, encoding="utf-8")
 
         # set log level
