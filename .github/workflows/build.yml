@@ -29,12 +29,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install nuitka imageio
+          pip install nuitka
 
       - name: Build with Nuitka
-        run: |
-          cd Fairy-Kekkai-Workshop
-          python deploy.py
+        run: python Fairy-Kekkai-Workshop/deploy.py
 
       - name: Package artifact
         run: |
