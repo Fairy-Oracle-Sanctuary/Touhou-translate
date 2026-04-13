@@ -1,18 +1,8 @@
-# Project Python dependencies for Fairy-Kekkai-Workshop
-# Note: PaddleOCR in this project is expected as a standalone executable
-# (see app/view/home_interface.py). If you prefer the Python package,
-# install `paddleocr` and its backend `paddlepaddle` separately.
-
 PySide6-Fluent-Widgets[full]
 opencv-python
 openai
 numpy
 Pillow
 requests
-bilibili-api-python
 spark_ai_python
 srt
-
-# Optional / likely useful tools
-# paddleocr
-# paddlepaddle
