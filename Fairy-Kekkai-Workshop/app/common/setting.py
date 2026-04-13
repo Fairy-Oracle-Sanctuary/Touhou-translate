@@ -26,21 +26,22 @@ COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 PIC_SUFFIX = ".jpg"
 
 PADDLEOCR_VERSION = "None"
-try:
-    with open("PADDLEOCR_VERSION", "r", encoding="utf-8") as f:
-        text = f.readline().strip()
-        if text in {
-            "CPU-v1.4.0",
-            "GPU-v1.4.0-CUDA-11.8",
-            "GPU-v1.4.0-CUDA-12.9",
-        }:
-            PADDLEOCR_VERSION = text
-except FileNotFoundError:
-    # Missing file is acceptable; fallback to default "None"
-    pass
-except Exception:
-    # Any other error reading/parsing the file -> fallback
-    PADDLEOCR_VERSION = "None"
+if sys.platform != "darwin":
+    try:
+        with open("PADDLEOCR_VERSION", "r", encoding="utf-8") as f:
+            text = f.readline().strip()
+            if text in {
+                "CPU-v1.4.0",
+                "GPU-v1.4.0-CUDA-11.8",
+                "GPU-v1.4.0-CUDA-12.9",
+            }:
+                PADDLEOCR_VERSION = text
+    except FileNotFoundError:
+        # Missing file is acceptable; fallback to default "None"
+        pass
+    except Exception:
+        # Any other error reading/parsing the file -> fallback
+        PADDLEOCR_VERSION = "None"
 
 # CPU-v1.4.0
 # GPU-v1.4.0-CUDA-11.8

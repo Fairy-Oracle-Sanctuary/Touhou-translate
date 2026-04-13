@@ -28,7 +28,7 @@ from qframelesswindow.utils import getSystemAccentColor
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
-from ..common.setting import EXE_SUFFIX, TEAM, VERSION, YEAR, COPYLEFT
+from ..common.setting import COPYLEFT, EXE_SUFFIX, TEAM, VERSION, YEAR
 from ..components.config_card import DetectionCard
 
 
@@ -235,7 +235,7 @@ class SettingInterface(ScrollArea):
         if not exe_path.exists():
             exe_path = shutil.which(exe_name)
         exe_path = str(exe_path)
-        if exe_path:
+        if exe_path != "None" or exe_path:
             cfg.set(cfg_item, exe_path)
             event_bus.notification_service.show_success(
                 "检测成功", f"{exe_name}路径已设置为" + exe_path

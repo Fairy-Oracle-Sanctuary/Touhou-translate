@@ -72,8 +72,8 @@ class DownloadProcess(QObject):
             )
             cmd.extend(["-o", output_template])
 
-        # 格式设置 - 强制 MP4 格式
-        cmd.extend(["-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"])
+        # 格式设置
+        cmd.extend(["-f", "bestvideo*+bestaudio/best"])
 
         # 质量筛选
         if cfg.downloadQuality.value not in ["best", "worst"]:
