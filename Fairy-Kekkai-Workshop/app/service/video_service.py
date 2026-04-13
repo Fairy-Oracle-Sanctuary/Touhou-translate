@@ -12,16 +12,16 @@ from PySide6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
-    CardWidget,
     FluentIcon,
     PushButton,
+    SimpleCardWidget,
     SpinBox,
 )
 
 from ..common.config import cfg
 
 
-class VideoPreview(CardWidget):
+class VideoPreview(SimpleCardWidget):
     """视频预览组件，支持框选功能"""
 
     isCropChoose = Signal(bool)
@@ -210,8 +210,9 @@ class VideoPreview(CardWidget):
                     # 在图像范围内
                     if hasattr(self, "mouse_start_pos"):
                         # 从外向内拖动时才设置起点
-                        self.start_point_img = (img_x, img_y)
-                        del self.mouse_start_pos  # 清除临时记录
+                        if event.buttons() == Qt.LeftButton:
+                            self.start_point_img = (img_x, img_y)
+                            del self.mouse_start_pos  # 清除临时记录
                 else:
                     # 在图像范围外，只记录鼠标位置
                     if not hasattr(self, "mouse_start_pos"):
@@ -555,7 +556,7 @@ class VideoPreview(CardWidget):
 
     def _create_coord_edit_widget(self, zone_index):
         """创建坐标编辑组件"""
-        widget = CardWidget()
+        widget = SimpleCardWidget()
         layout = QVBoxLayout(widget)
 
         # 标题

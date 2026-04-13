@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from typing import Any
 
-import wordninja_enhanced as wordninja
-from thefuzz import fuzz
+import wordninja_enhanced as wordninja  # type: ignore
+from thefuzz import fuzz  # type: ignore
 
 from . import utils
+from .lang_dictionaries import ARABIC_LANGS
 
 
 @dataclass
 class PredictedText:
     __slots__ = "bounding_box", "confidence", "text"
-    bounding_box: list
+    bounding_box: list[list[float]]
     confidence: float
     text: str
 
@@ -21,7 +23,7 @@ class PredictedFrames:
     start_index: int  # 0-based index of the frame
     end_index: int
     zone_index: int
-    words: list[PredictedText]
+    lines: list[list[PredictedText]]
     confidence: float  # total confidence of all words
     text: str
     _converter = None
@@ -29,18 +31,18 @@ class PredictedFrames:
     def __init__(
         self,
         index: int,
-        pred_data: list[list],
+        pred_data: list[list[Any]],
         conf_threshold: float,
         zone_index: int,
         lang: str,
-        normalize_to_simplified_chinese: bool = True,
-    ):
+        normalize_to_simplified_chinese: bool,
+    ) -> None:
         self.start_index = index
         self.end_index = index
         self.zone_index = zone_index
-        self.lines = []
+        self.lines: list[list[PredictedText]] = []
 
-        all_words = []
+        all_words: list[PredictedText] = []
         for word_pred in pred_data[0]:
             if len(word_pred) < 2:
                 continue
@@ -56,7 +58,7 @@ class PredictedFrames:
             self.text = ""
             return
 
-        lines_of_words = []
+        lines_of_words: list[list[PredictedText]] = []
         for word in all_words:
             placed = False
             for line in lines_of_words:
@@ -69,8 +71,9 @@ class PredictedFrames:
 
         lines_of_words.sort(key=lambda line: min(p[1] for p in line[0].bounding_box))
 
+        is_rtl = lang in ARABIC_LANGS
         for line in lines_of_words:
-            line.sort(key=lambda word: word.bounding_box[0][0])
+            line.sort(key=lambda word: word.bounding_box[0][0], reverse=is_rtl)
 
         self.lines = lines_of_words
 
@@ -89,12 +92,11 @@ class PredictedFrames:
             try:
                 from opencc import OpenCC
 
-                if self._converter is None:
-                    self._converter = OpenCC("t2s")
+                self._converter = OpenCC("t2s")
                 self.text = self._converter.convert(self.text)
-            except (RuntimeError, Exception) as e:
-                # 如果OpenCC初始化失败，跳过繁简转换
-                print(f"警告: OpenCC繁简转换失败，跳过转换: {e}")
+            except ImportError:
+                pass
+            except Exception:
                 pass
 
 
@@ -112,7 +114,7 @@ class PredictedSubtitle:
         zone_index: int,
         sim_threshold: int,
         lang: str,
-        language_model: wordninja.LanguageModel | None = None,
+        language_model: wordninja.LanguageModel | None,
     ):
         self.frames = [f for f in frames if f.confidence > 0]
         self.frames.sort(key=lambda frame: frame.start_index)
@@ -142,14 +144,11 @@ class PredictedSubtitle:
         return (
             fuzz.ratio(self.text.replace(" ", ""), other.text.replace(" ", ""))
             >= self.sim_threshold
-        )
-
-    def __repr__(self):
-        return f"{self.index_start} - {self.index_end}. {self.text}"
+        )  # type: ignore
 
     def finalize_text(self, post_processing: bool) -> None:
-        text_counts = Counter()
-        text_confidences = defaultdict(list)
+        text_counts: Counter[str] = Counter()
+        text_confidences: dict[str, list[float]] = defaultdict(list)
 
         for frame in self.frames:
             text_counts[frame.text] += 1
@@ -167,7 +166,14 @@ class PredictedSubtitle:
             )
 
         if post_processing:
-            if self.lang in ("en", "fr", "german", "it", "es", "pt"):
+            if self._language_model is not None and self.lang in (
+                "en",
+                "fr",
+                "german",
+                "it",
+                "es",
+                "pt",
+            ):
                 final_text = self._language_model.rejoin(final_text)
             elif self.lang == "ch":
                 segments = utils.extract_non_chinese_segments(final_text)

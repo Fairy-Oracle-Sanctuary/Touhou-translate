@@ -1,8 +1,12 @@
 # coding:utf-8
 import os
+import shutil
+import sys
+import tempfile
+import urllib.request
 
 from app.common.config import cfg
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -15,6 +19,7 @@ from qfluentwidgets import (
     FluentIcon,
     Pivot,
     PrimaryPushButton,
+    PushButton,
     ScrollArea,
     SegmentedWidget,
 )
@@ -104,6 +109,10 @@ class DownloadInterface(ScrollArea):
         addDownloadBtn.setIcon(FluentIcon.ADD)
         addDownloadBtn.clicked.connect(self.showAddDownloadDialog)
 
+        # 创建更新组件
+        if sys.platform == "win32":
+            self.updateBtn = PushButton("更新yt-dlp", self)
+
         # 创建分段控件
         self.segmentedWidget = SegmentedWidget(self)
         self.allTab = QWidget()
@@ -134,6 +143,9 @@ class DownloadInterface(ScrollArea):
 
         # 设置布局
         self.vBoxLayout.addWidget(addDownloadBtn)
+        if sys.platform == "win32":
+            self.vBoxLayout.addWidget(self.updateBtn)
+            self.updateBtn.clicked.connect(self.updateYtDlp)
         self.vBoxLayout.addWidget(self.segmentedWidget)
         self.vBoxLayout.addWidget(self.taskListContainer)
 
@@ -237,6 +249,7 @@ class DownloadInterface(ScrollArea):
         if waiting_tasks:
             task = waiting_tasks[0]
             self.startDownload(task)
+            self.setUpdateBoxEnabled(False)
 
     def startDownload(self, task: DownloadTask):
         """开始下载任务"""
@@ -293,6 +306,7 @@ class DownloadInterface(ScrollArea):
 
     def onDownloadFinished(self, task_id, success, message):
         """下载完成"""
+        self.setUpdateBoxEnabled(True)
         for task in self.download_tasks:
             if task.id == task_id:
                 if success:
@@ -402,3 +416,111 @@ class DownloadInterface(ScrollArea):
             file_name="生肉.mp4",
         )
         self.addDownloadTask(task)
+
+    def setUpdateBoxEnabled(self, enabled):
+        """设置更新框状态"""
+        if sys.platform == "win32":
+            self.updateBtn.setEnabled(enabled)
+
+    def updateYtDlp(self):
+        """Update yt-dlp"""
+        self.setUpdateBoxEnabled(False)
+        self.update_thread = UpdateYtDlpThread()
+        self.update_thread.progress_signal.connect(self.onUpdateProgress)
+        self.update_thread.finished_signal.connect(self.onUpdateFinished)
+        self.update_thread.start()
+        event_bus.notification_service.show_info("yt-dlp", "下载/更新yt-dlp中...")
+
+    def onUpdateProgress(self, progress, message):
+        """Handle yt-dlp update progress"""
+        self.updateBtn.setText(f"下载中: {progress}%")
+
+    def onUpdateFinished(self, success, message):
+        """Handle yt-dlp update completion"""
+        self.setUpdateBoxEnabled(True)
+        self.updateBtn.setText("下载/更新yt-dlp")
+        if success:
+            event_bus.notification_service.show_success("更新成功", message)
+            self.logger.info(f"yt-dlp update success: {message}")
+        else:
+            event_bus.notification_service.show_error("更新失败", message)
+            self.logger.error(f"yt-dlp update failed: {message}")
+
+
+class UpdateYtDlpThread(QThread):
+    """更新yt-dlp线程"""
+
+    progress_signal = Signal(int, str)  # progress, status message
+    finished_signal = Signal(bool, str)  # success, message
+
+    # yt-dlp release URLs
+    YTDLP_URLS = {
+        "GitHub": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe",
+        "Mirror": "https://ghproxy.cc/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe",
+    }
+
+    def __init__(self, source="GitHub"):
+        super().__init__()
+        self.source = source
+        self._is_cancelled = False
+
+    def run(self):
+
+        try:
+            url = self.YTDLP_URLS.get(self.source, self.YTDLP_URLS["GitHub"])
+            target_path = cfg.ytdlpPath.value
+
+            self.progress_signal.emit(0, f"从yt-dlp下载从 {self.source}开始下载...")
+
+            # Create temp file for download
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, "yt-dlp_download.exe")
+
+            # Download with progress
+            def report_progress(block_num, block_size, total_size):
+                if self._is_cancelled:
+                    raise Exception("下载取消")
+                if total_size > 0:
+                    progress = min(
+                        int((block_num * block_size / total_size) * 100), 100
+                    )
+                    self.progress_signal.emit(progress, f"yt-dlp已下载: {progress}%")
+
+            urllib.request.urlretrieve(url, temp_file, reporthook=report_progress)
+
+            if self._is_cancelled:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+                self.finished_signal.emit(False, "yt-dlp下载已取消")
+                return
+
+            self.progress_signal.emit(100, "yt-dlp下载完成，正在移动文件...")
+
+            # Ensure target directory exists
+            target_dir = os.path.dirname(target_path)
+            if target_dir and not os.path.exists(target_dir):
+                os.makedirs(target_dir)
+
+            # Force replace existing file
+            if os.path.exists(target_path):
+                try:
+                    # Try to delete first (more reliable than overwrite on Windows)
+                    os.remove(target_path)
+                except PermissionError:
+                    # File might be in use, try rename old file
+                    backup_path = target_path + ".old"
+                    if os.path.exists(backup_path):
+                        os.remove(backup_path)
+                    os.rename(target_path, backup_path)
+
+            # Move downloaded file to target location
+            shutil.move(temp_file, target_path)
+
+            self.finished_signal.emit(True, f"yt-dlp更新成功: {target_path}")
+
+        except Exception as e:
+            self.finished_signal.emit(False, f"yt-dlp更新失败: {str(e)}")
+
+    def cancel(self):
+        """Cancel the download"""
+        self._is_cancelled = True

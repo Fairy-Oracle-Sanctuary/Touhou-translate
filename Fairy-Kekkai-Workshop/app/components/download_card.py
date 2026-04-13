@@ -7,7 +7,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     CaptionLabel,
-    CardWidget,
+    SimpleCardWidget,
     FluentIcon,
     IconWidget,
     MessageBox,
@@ -21,7 +21,7 @@ from ..common.event_bus import event_bus
 from ..service.download_service import DownloadTask
 
 
-class DownloadItemWidget(CardWidget):
+class DownloadItemWidget(SimpleCardWidget):
     """下载任务项组件"""
 
     # 定义信号

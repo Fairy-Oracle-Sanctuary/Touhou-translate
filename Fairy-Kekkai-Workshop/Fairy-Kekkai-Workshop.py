@@ -67,15 +67,19 @@ if __name__ == "__main__":
 
 """
 ## 更新日志
-- 修复了字幕提取在检测路径时检测了错误临时文件夹路径的bug
+- 更新自动更新ytdlp功能
+- 取消字幕提取的设置：文本对齐
+- 字幕提取步骤一的速度提升2倍
+- 字幕提取 VFR 视频的预处理步骤已不再必要
 - 优化视频框选手感
+- 支持macos arm64
+
 
 ## 下载提示
-- [Fairy-Kekkai-Workshop-v1.16.1-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.1/Fairy-Kekkai-Workshop-v1.16.1-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
-- [Fairy-Kekkai-Workshop-v1.16.1-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.1/Fairy-Kekkai-Workshop-v1.16.1-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
-- [Fairy-Kekkai-Workshop-v1.16.1-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.1/Fairy-Kekkai-Workshop-v1.16.1-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
-- [Fairy-Kekkai-Workshop-v1.16.1-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.16.1/Fairy-Kekkai-Workshop-v1.16.1-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.17.0-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
+- [Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
+- [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
-关于字幕提取的推荐参数(如果是整个画面提取把ssim拉到96以上)：
 """
