@@ -1,11 +1,13 @@
 import datetime
 import os
-import platform
-import re
+import shutil
 import subprocess
 import sys
+from typing import IO, Any
 
-from cpuid import cpuid, cpuid_count, xgetbv
+import av
+import numpy as np
+from cpuid import cpuid, xgetbv  # type: ignore
 
 from .lang_dictionaries import (
     ARABIC_LANGS,
@@ -16,28 +18,23 @@ from .lang_dictionaries import (
 )
 from .models import PredictedText
 
-
-# convert time string to frame index
-def get_frame_index(time_str: str, fps: float) -> int:
-    t = time_str.split(":")
-    t = list(map(float, t))
-    if len(t) == 3:
-        td = datetime.timedelta(hours=t[0], minutes=t[1], seconds=t[2])
-    elif len(t) == 2:
-        td = datetime.timedelta(minutes=t[0], seconds=t[1])
-    else:
-        raise ValueError(f'Time data "{time_str}" does not match format "%H:%M:%S"')
-
-    total_seconds = td.total_seconds()
-    if total_seconds < 0:
-        return 0
-    return int(total_seconds * fps)
+ALIGNMENT_MAP = {
+    "bottom-left": "an1",
+    "bottom-center": "an2",
+    "bottom-right": "an3",
+    "middle-left": "an4",
+    "middle-center": "an5",
+    "middle-right": "an6",
+    "top-left": "an7",
+    "top-center": "an8",
+    "top-right": "an9",
+}
+VALID_ALIGNMENT_NAMES = set(ALIGNMENT_MAP.keys())
 
 
-# convert time string to milliseconds
 def get_ms_from_time_str(time_str: str) -> float:
-    t = time_str.split(":")
-    t = list(map(float, t))
+    """Convert time string to milliseconds."""
+    t = [float(x) for x in time_str.split(":")]
     if len(t) == 3:
         td = datetime.timedelta(hours=t[0], minutes=t[1], seconds=t[2])
     elif len(t) == 2:
@@ -47,15 +44,8 @@ def get_ms_from_time_str(time_str: str) -> float:
     return td.total_seconds() * 1000
 
 
-# finds the frame index closest to the target millisecond timestamp.
-def get_frame_index_from_ms(
-    frame_timestamps: dict[int, float], target_ms: float
-) -> int:
-    return min(frame_timestamps.items(), key=lambda item: abs(item[1] - target_ms))[0]
-
-
-# convert frame index into SRT timestamp
 def get_srt_timestamp(frame_index: int, fps: float, offset_ms: float = 0.0) -> str:
+    """Convert frame index into SRT timestamp."""
     td = datetime.timedelta(milliseconds=(frame_index / fps * 1000 + offset_ms))
     ms = td.microseconds // 1000
     m, s = divmod(td.seconds, 60)
@@ -63,8 +53,8 @@ def get_srt_timestamp(frame_index: int, fps: float, offset_ms: float = 0.0) -> s
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-# convert milliseconds into SRT timestamp
 def get_srt_timestamp_from_ms(ms: float) -> str:
+    """Convert milliseconds into SRT timestamp."""
     td = datetime.timedelta(milliseconds=ms)
     minutes, seconds = divmod(td.seconds, 60)
     hours, minutes = divmod(minutes, 60)
@@ -72,8 +62,22 @@ def get_srt_timestamp_from_ms(ms: float) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
 
 
-# checks if two words are on the same line based on vertical overlap
+def frame_to_array(frame: av.VideoFrame, fmt: str) -> np.ndarray[Any, Any]:
+    """Converts a frame to an array, safely falls back if threads arg is unsupported."""
+    if not hasattr(frame_to_array, "supports_threads"):
+        frame_to_array.supports_threads = True  # type: ignore
+
+    if frame_to_array.supports_threads:  # type: ignore
+        try:
+            return frame.to_ndarray(format=fmt, threads=1)
+        except TypeError:
+            frame_to_array.supports_threads = False  # type: ignore
+
+    return frame.to_ndarray(format=fmt)
+
+
 def is_on_same_line(word1: PredictedText, word2: PredictedText) -> bool:
+    """Checks if two words are on the same line based on vertical overlap."""
     y_min1 = min(p[1] for p in word1.bounding_box)
     y_max1 = max(p[1] for p in word1.bounding_box)
     y_min2 = min(p[1] for p in word2.bounding_box)
@@ -85,12 +89,12 @@ def is_on_same_line(word1: PredictedText, word2: PredictedText) -> bool:
     return (y_min1 < midpoint2 < y_max1) or (y_min2 < midpoint1 < y_max2)
 
 
-# extracts non chinese segments out of the detected text for post processing
-def extract_non_chinese_segments(text) -> list[tuple[str, str]]:
-    segments = []
+def extract_non_chinese_segments(text: str) -> list[tuple[str, str]]:
+    """Extracts non chinese segments out of the detected text for post processing."""
+    segments: list[tuple[str, str]] = []
     current_segment = ""
 
-    def is_chinese(char):
+    def is_chinese(char: str) -> bool:
         return "\u4e00" <= char <= "\u9fff"
 
     for char in text:
@@ -108,66 +112,21 @@ def extract_non_chinese_segments(text) -> list[tuple[str, str]]:
     return segments
 
 
-# Converts sentences from the OCR's non-standard 'reversed visual' order to the correct 'logical' order.
-def convert_visual_to_logical(text: str) -> str:
-
-    ARABIC_CHARS = re.compile(
-        r"[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+"
-    )
-    ARABIC_TRAILING_PUNCT = re.compile(r'([،؟؛!,.:?()\'"]+)$')
-
-    words = text.split()
-    fixed_words = []
-    arabic_words = []
-
-    for w in words:
-        if ARABIC_CHARS.search(w):
-            m = ARABIC_TRAILING_PUNCT.search(w)
-            if m:
-                punct = m.group(1)
-                core_word = w[: -len(punct)]
-            else:
-                punct = ""
-                core_word = w
-
-            reversed_core = core_word[::-1]
-
-            arabic_words.append(reversed_core + punct)
-        else:
-            if arabic_words:
-                fixed_words.extend(arabic_words[::-1])
-                arabic_words = []
-            fixed_words.append(w)
-
-    if arabic_words:
-        fixed_words.extend(arabic_words[::-1])
-
-    return " ".join(fixed_words)
-
-
-# finds the available PaddleOCR executable and returns its path
 def find_paddleocr() -> str:
+    """Finds the available PaddleOCR executable and returns its path."""
     program_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    base_folders = [
-        "PaddleOCR-CPU-v1.4.0",
-        "PaddleOCR-GPU-v1.4.0-CUDA-11.8",
-        "PaddleOCR-GPU-v1.4.0-CUDA-12.9",
-    ]
     program_name = "paddleocr"
-
-    ext = ".exe" if platform.system() == "Windows" else ".bin"
-
+    ext = ".exe" if sys.platform == "win32" else ".bin"
     executable_name = f"{program_name}{ext}"
 
     for entry in os.listdir(program_dir):
-        for base in base_folders:
-            if entry.startswith(base):
-                path = os.path.join(program_dir, entry, executable_name)
-                if os.path.isfile(path):
-                    return path
+        if entry.startswith("PaddleOCR-"):
+            path = os.path.join(program_dir, entry, executable_name)
+            if os.path.isfile(path):
+                return path
 
     raise FileNotFoundError(
-        f"Could not find {executable_name} in any folder matching: {base_folders}"
+        f"Could not find {executable_name} in any folder starting with 'PaddleOCR'"
     )
 
 
@@ -189,15 +148,10 @@ def resolve_model_dirs(
     mode = "server" if use_server_model else "mobile"
 
     # DET
-    if (
-        lang
-        in {"ch", "chinese_cht", "en", "japan", "korean", "th", "el"}
-        | LATIN_LANGS
-        | ESLAV_LANGS
-    ):
-        det_sub = f"PP-OCRv5_{mode}_det"
-    else:
+    if lang == "ka":
         det_sub = "PP-OCRv3_mobile_det"
+    else:
+        det_sub = f"PP-OCRv5_{mode}_det"
 
     # REC
     if lang in ("ch", "chinese_cht", "japan"):
@@ -205,33 +159,34 @@ def resolve_model_dirs(
     elif lang in LATIN_LANGS:
         rec_sub = "latin_PP-OCRv5_mobile_rec"
     elif lang in ARABIC_LANGS:
-        rec_sub = "arabic_PP-OCRv3_mobile_rec"
+        rec_sub = "arabic_PP-OCRv5_mobile_rec"
     elif lang in ESLAV_LANGS:
         rec_sub = "eslav_PP-OCRv5_mobile_rec"
     elif lang in CYRILLIC_LANGS:
-        rec_sub = "cyrillic_PP-OCRv3_mobile_rec"
+        rec_sub = "cyrillic_PP-OCRv5_mobile_rec"
     elif lang in DEVANAGARI_LANGS:
-        rec_sub = "devanagari_PP-OCRv3_mobile_rec"
-    elif lang in ("korean", "en", "th", "el"):
+        rec_sub = "devanagari_PP-OCRv5_mobile_rec"
+    elif lang in ("en", "korean", "th", "el", "te", "ta"):
         rec_sub = f"{lang}_PP-OCRv5_mobile_rec"
+    elif lang == "ka":
+        rec_sub = "ka_PP-OCRv3_mobile_rec"
 
     return (os.path.join(det_path, det_sub), os.path.join(rec_path, rec_sub), cls_path)
 
 
-# checks if the current system supports the hardware requirements
 def perform_hardware_check(paddleocr_path: str, use_gpu: bool) -> None:
+    """Checks if the current system supports the hardware requirements."""
     error_prefix = "Unsupported Hardware Error:"
     warning_prefix = "Hardware Check Warning:"
 
-    def has_avx2_and_fma() -> bool:
-        # CPUID leaf 1: AVX, OSXSAVE, FMA
+    def has_avx() -> bool:
+        # CPUID leaf 1: Check AVX and OSXSAVE flags
         _, _, ecx, _ = cpuid(1)
         osxsave = bool(ecx & (1 << 27))
         avx = bool(ecx & (1 << 28))
-        fma = bool(ecx & (1 << 12))
 
         # OS support check: XGETBV for YMM registers
-        ymm_supported = True
+        ymm_supported = False
         if osxsave:
             try:
                 xcr0 = xgetbv(0)
@@ -239,17 +194,13 @@ def perform_hardware_check(paddleocr_path: str, use_gpu: bool) -> None:
             except Exception:
                 ymm_supported = False
 
-        # CPUID leaf 7: AVX2
-        _, ebx, _, _ = cpuid_count(7, 0)
-        avx2 = bool(ebx & (1 << 5))
-
-        return osxsave and avx and avx2 and fma and ymm_supported
+        return avx and ymm_supported
 
     def check_cpu() -> None:
         try:
-            if not has_avx2_and_fma():
+            if not has_avx():
                 raise SystemExit(
-                    f"{error_prefix} CPU does not support AVX2 and/or FMA, which is required."
+                    f"{error_prefix} CPU or Operating System does not support the AVX instruction set, which is required."
                 )
         except Exception as e:
             print(
@@ -258,13 +209,13 @@ def perform_hardware_check(paddleocr_path: str, use_gpu: bool) -> None:
             )
 
     CUDA_COMPATIBILITY_MAP = {
-        "CUDA-11.8": (6.1, 8.9) if platform.system() == "Windows" else (6.0, 8.9),
+        "CUDA-11.8": (6.1, 8.9) if sys.platform == "win32" else (6.0, 8.9),
         "CUDA-12.9": (7.5, 12.0),
     }
 
     CUDA_DRIVER_MAP = {
-        "CUDA-11.8": "451.22" if platform.system() == "Windows" else "450.36.06",
-        "CUDA-12.9": "527.41" if platform.system() == "Windows" else "525.60.13",
+        "CUDA-11.8": "451.22" if sys.platform == "win32" else "450.36.06",
+        "CUDA-12.9": "527.41" if sys.platform == "win32" else "525.60.13",
     }
 
     def parse_version(v_str: str) -> tuple[int, ...]:
@@ -327,8 +278,8 @@ def perform_hardware_check(paddleocr_path: str, use_gpu: bool) -> None:
         check_gpu()
 
 
-# reads lines from a pipe and appends them to a list
-def read_pipe(pipe, output_list: list[str]) -> None:
+def read_pipe(pipe: IO[str], output_list: list[str]) -> None:
+    """Reads lines from a pipe and appends them to a list."""
     try:
         for line in iter(pipe.readline, ""):
             output_list.append(line)
@@ -336,10 +287,10 @@ def read_pipe(pipe, output_list: list[str]) -> None:
         pipe.close()
 
 
-# Check if a process with given PID is still running (cross-platform)
 def is_process_running(pid: int) -> bool:
+    """Check if a process with given PID is still running."""
     try:
-        if platform.system() == "Windows":
+        if sys.platform == "win32":
             result = subprocess.run(
                 ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
                 capture_output=True,
@@ -355,10 +306,41 @@ def is_process_running(pid: int) -> bool:
     return False
 
 
-# saves errors to log file
+def create_clean_temp_dir(temp_dir: str) -> str:
+    """Cleans up orphaned temporary directories from previous crashed runs and creates a fresh one for the current process."""
+    # current_pid = os.getpid()
+    # temp_prefix = f"videocr_temp_{current_pid}_"
+    # base_temp = tempfile.gettempdir()
+
+    # for name in os.listdir(base_temp):
+    #     if name.startswith("videocr_temp_"):
+    #         temp_path = os.path.join(base_temp, name)
+    #         try:
+    #             match = re.match(r"videocr_temp_(\d+)_", name)
+    #             if match:
+    #                 dir_pid = int(match.group(1))
+
+    #                 if dir_pid == current_pid:
+    #                     continue
+
+    #                 if os.path.isdir(temp_path):
+    #                     if not is_process_running(dir_pid):
+    #                         shutil.rmtree(temp_path, ignore_errors=True)
+    #         except Exception as e:
+    #             print(f"Could not remove leftover temp dir '{name}': {e}", flush=True)
+
+    # return tempfile.mkdtemp(prefix=temp_prefix)
+    shutil.rmtree(temp_dir, ignore_errors=True)
+    os.makedirs(temp_dir, exist_ok=True)
+    return temp_dir
+
+
 def log_error(message: str, log_name: str = "error_log.txt") -> str:
-    if platform.system() == "Windows":
-        log_dir = os.path.join(os.getenv("LOCALAPPDATA"), "VideOCR")
+    """Saves errors to a log file."""
+    if sys.platform == "win32":
+        log_dir = os.path.join(
+            os.getenv("LOCALAPPDATA") or os.path.expanduser("~"), "VideOCR"
+        )
     else:
         log_dir = os.path.join(os.path.expanduser("~"), ".config", "VideOCR")
 

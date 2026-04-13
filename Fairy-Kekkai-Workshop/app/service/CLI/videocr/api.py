@@ -59,7 +59,6 @@ def save_subtitles_to_file(
         rec_model_dir,
         cls_model_dir,
         temp_dir,
-        time_end,
     )
     try:
         v.run_ocr(

@@ -13,10 +13,10 @@ from PySide6.QtWidgets import (
 )
 from qfluentwidgets import (
     CaptionLabel,
-    CardWidget,
     ComboBoxSettingCard,
     Dialog,
     PushButton,
+    SimpleCardWidget,
     Slider,
     StrongBodyLabel,
     TextEdit,
@@ -102,18 +102,18 @@ class VideocrInterface(BaseFunctionInterface):
         self.settingsGroup.addSettingCard(self.languageCard)
 
         # 位置设置卡片
-        self.positionCard = ComboBoxSettingCard(
-            configItem=cfg.ocr_position,
-            icon=FIF.LAYOUT,
-            title="文本对齐",
-            content="指定字幕的对齐方式",
-            texts=subtitle_positions_list.keys(),
-        )
-        self.settingsGroup.addSettingCard(self.positionCard)
+        # self.positionCard = ComboBoxSettingCard(
+        #     configItem=cfg.ocr_position,
+        #     icon=FIF.LAYOUT,
+        #     title="文本对齐",
+        #     content="指定字幕的对齐方式",
+        #     texts=subtitle_positions_list.keys(),
+        # )
+        # self.settingsGroup.addSettingCard(self.positionCard)
 
     def create_preview_card(self):
         """创建视频预览卡片"""
-        card = CardWidget()
+        card = SimpleCardWidget()
         layout = QVBoxLayout(card)
 
         # 标题
@@ -288,6 +288,19 @@ class VideocrInterface(BaseFunctionInterface):
             dialog = Dialog(
                 self.tr("警告"),
                 self.tr(f"临时文件夹路径 {temp_path} 不能包含中文字符"),
+                self.window(),
+            )
+            dialog.yesButton.setText("确认")
+            dialog.cancelButton.setVisible(False)
+            dialog.exec()
+            return
+
+        # 检测临时文件夹如果存在则必须为空
+        temp_path = cfg.get(cfg.tempDir)
+        if os.path.exists(temp_path) and os.listdir(temp_path):
+            dialog = Dialog(
+                self.tr("警告"),
+                self.tr(f"临时文件夹 {temp_path} 必须为空"),
                 self.window(),
             )
             dialog.yesButton.setText("确认")

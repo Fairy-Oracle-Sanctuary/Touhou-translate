@@ -37,7 +37,6 @@ def run_nuitka():
         "--include-module=logging",
         "--include-module=opencc",
         "--assume-yes-for-downloads",
-        "--mingw64",  # 使用mingw64编译器
         "--show-memory",
         "--show-progress",
         str(VIDEOCR_CLI_PATH),

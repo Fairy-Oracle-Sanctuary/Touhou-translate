@@ -46,42 +46,48 @@ class OcrTaskInterface(BaseTaskInterface):
         """解析OCR输出消息并计算进度"""
         # 这里保持原有的 parseOCRProgress 方法实现
         try:
-            # Mapping frame {i + 1} of {progress_total}
-            if "Mapping frame" in message:
+            # Step 1/2: Processing video... Current: {curr_str} / {target_end_str}, Frame: {expected_index + 1}
+            if "Step 1/2" in message:
                 import re
 
-                match = re.search(r"Mapping frame\s+(\d+)\s+of\s+(\d+)", message)
+                # Current: HH:MM:SS / HH:MM:SS
+                match = re.search(
+                    r"Current:\s+(\d+:\d+:\d+)\s+/\s+(\d+:\d+:\d+)", message
+                )
                 if match:
-                    current = int(match.group(1))
-                    total = int(match.group(2))
-                    if current - 1 == 0:
-                        self.log_signal.emit("正在处理视频帧中…", False, False)
-                    else:
-                        self.log_signal.emit(
-                            f"正在处理视频帧 {current}/{total}", False, True
-                        )
-                    return 0
+                    current_time_str = match.group(1)
+                    total_time_str = match.group(2)
 
-            # Step 1: Processing image {current} of {total}
-            if "Step 1: Processing image" in message:
-                import re
+                    # Convert time string to seconds
+                    def time_to_seconds(time_str):
+                        parts = time_str.split(":")
+                        if len(parts) == 3:
+                            h, m, s = parts
+                            return int(h) * 3600 + int(m) * 60 + int(s)
+                        elif len(parts) == 2:
+                            m, s = parts
+                            return int(m) * 60 + int(s)
+                        return 0
 
-                match = re.search(r"Processing image\s+(\d+)\s+of\s+(\d+)", message)
-                if match:
-                    current = int(match.group(1))
-                    total = int(match.group(2))
-                    if total > 0:
-                        progress = (current / total) * 50
-                        if current - 1 == 0:
-                            self.log_signal.emit("步骤1: 正在处理图像中…", False, False)
+                    current_seconds = time_to_seconds(current_time_str)
+                    total_seconds = time_to_seconds(total_time_str)
+
+                    if total_seconds > 0:
+                        progress = (current_seconds / total_seconds) * 50
+                        if current_seconds == 0:
+                            self.log_signal.emit(
+                                "步骤1/2: 正在处理图像中…", False, False
+                            )
                         else:
                             self.log_signal.emit(
-                                f"步骤1: 正在处理图像 {current}/{total}", False, True
+                                f"步骤1/2: 正在处理图像中… {current_time_str} / {total_time_str}",
+                                False,
+                                True,
                             )
                         return min(progress, 50)
 
-            # Step 2: Performing OCR on image {current} of {total}
-            elif "Step 2: Performing OCR on image" in message:
+            # Step 2/2: Performing OCR on image {current} of {total}
+            elif "Step 2/2: Performing OCR on image" in message:
                 import re
 
                 match = re.search(
@@ -93,24 +99,11 @@ class OcrTaskInterface(BaseTaskInterface):
                     if total > 0:
                         progress = 50 + (current / total) * 50
                         self.log_signal.emit(
-                            f"步骤2: 正在对图像进行OCR {current}/{total}", False, True
+                            f"步骤2/2: 正在对图像进行OCR {current}/{total}", False, True
                         )
                         return min(progress, 100)
 
-            elif "Advancing to frame" in message:
-                import re
-
-                match = re.search(r"Advancing to frame\s+(\d+)\s+of\s+(\d+)", message)
-                if match:
-                    current = int(match.group(1))
-                    total = int(match.group(2))
-                    if total > 0:
-                        progress = (current / total) * 100
-                        self.log_signal.emit(
-                            f"正在提取处理视频帧 {current}/{total}", False, True
-                        )
-
-            elif "Starting PaddleOCR... This can take a while..." in message:
+            elif "Starting PaddleOCR..." in message:
                 self.log_signal.emit(
                     "正在启动PaddleOCR... 请耐心等待…\n ", False, False
                 )
