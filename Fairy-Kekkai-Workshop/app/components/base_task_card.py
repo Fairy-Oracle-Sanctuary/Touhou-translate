@@ -161,17 +161,11 @@ class BaseItemWidget(CardWidget):
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
             elif platform.system() == "Darwin":
-                subprocess.Popen(
-                    ["open", "-R", self.task.output_file],
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
+                subprocess.Popen(["open", "-R", self.task.output_file])
             else:
                 # Linux系统
                 folder_path = os.path.dirname(self.task.output_file)
-                subprocess.Popen(
-                    ["xdg-open", folder_path],
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
+                subprocess.Popen(["xdg-open", folder_path])
         else:
             # 如果文件不存在，只打开文件夹
             folder_path = os.path.dirname(self.task.output_file)

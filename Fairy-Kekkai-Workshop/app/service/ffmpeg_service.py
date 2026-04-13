@@ -172,7 +172,10 @@ class FFmpegProcess(QObject):
                 return False
 
         except Exception as e:
-            print(f"使用FFmpeg获取音频流失败: {str(e)}")
+            try:
+                print(f"使用FFmpeg获取音频流失败: {str(e)}")
+            except UnicodeEncodeError:
+                pass
             return False
 
     def _get_video_duration(self):
@@ -199,13 +202,19 @@ class FFmpegProcess(QObject):
                 seconds = float(duration_match.group(3))
                 total_seconds = hours * 3600 + minutes * 60 + seconds
                 self.task.duration = total_seconds
-                print(f"获取视频时长成功: {self.task.duration}秒")
+                try:
+                    print(f"获取视频时长成功: {self.task.duration}秒")
+                except UnicodeEncodeError:
+                    pass
                 return [True, None]
             else:
                 return [False, "在FFmpeg输出中未找到时长信息"]
 
         except Exception as e:
-            print(f"使用FFmpeg获取时长失败: {str(e)}")
+            try:
+                print(f"使用FFmpeg获取时长失败: {str(e)}")
+            except UnicodeEncodeError:
+                pass
             return [False, str(e)]
 
     def start(self):
@@ -232,7 +241,10 @@ class FFmpegProcess(QObject):
 
             # 构建命令
             cmd = self.build_ffmpeg_command()
-            print(f"执行FFmpeg命令: {' '.join(cmd)}")
+            try:
+                print(f"执行FFmpeg命令: {' '.join(cmd)}")
+            except UnicodeEncodeError:
+                pass
 
             # 创建QProcess
             self.process = QProcess()
@@ -425,7 +437,10 @@ class FFmpegProcess(QObject):
 
         self.is_cancelled = True
 
-        print("正在取消视频压制...")
+        try:
+            print("正在取消视频压制...")
+        except UnicodeEncodeError:
+            pass
 
         if self.process and self.process.state() == QProcess.Running:
             # 先尝试优雅地终止
@@ -453,12 +468,21 @@ class FFmpegProcess(QObject):
     def _forceTerminateIfNeeded(self):
         """如果需要，强制终止进程"""
         if self.process and self.process.state() == QProcess.Running:
-            print("强制终止压制进程...")
+            try:
+                print("强制终止压制进程...")
+            except UnicodeEncodeError:
+                pass
             self.process.kill()
             # 等待一小段时间让进程终止
             if self.process.waitForFinished(1000):
-                print("压制进程已强制终止")
+                try:
+                    print("压制进程已强制终止")
+                except UnicodeEncodeError:
+                    pass
                 self.cancelled_signal.emit()
             else:
-                print("警告: 进程终止可能未完成")
+                try:
+                    print("警告: 进程终止可能未完成")
+                except UnicodeEncodeError:
+                    pass
                 self.cancelled_signal.emit()
