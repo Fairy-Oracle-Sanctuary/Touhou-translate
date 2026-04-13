@@ -232,10 +232,21 @@ class SettingInterface(ScrollArea):
 
     def _detectExe(self, exe_name, url, cfg_item, path_card):
         exe_path = Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute()
-        if not exe_path.exists():
+        if not exe_path.exists() and sys.platform == "win32":
             exe_path = shutil.which(exe_name)
-        exe_path = str(exe_path)
-        if exe_path != "None" or exe_path:
+        # macOS: check Homebrew paths
+        if not exe_path.exists() and sys.platform == "darwin":
+            brew_paths = [
+                f"/opt/homebrew/bin/{exe_name}",  # Apple Silicon
+                f"/usr/local/bin/{exe_name}",     # Intel Mac
+            ]
+            for path in brew_paths:
+                if Path(path).exists():
+                    exe_path = path
+                    break
+                else:
+                    exe_path = None
+        if exe_path is not None:
             cfg.set(cfg_item, exe_path)
             event_bus.notification_service.show_success(
                 "检测成功", f"{exe_name}路径已设置为" + exe_path
