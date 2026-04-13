@@ -641,6 +641,10 @@ class YTDLPSettingInterface(ScrollArea):
 
         self.__initWidget()
 
+    def enterEvent(self, event):
+        self.ytdlpPathCard.setContent(cfg.get(cfg.ytdlpPath))
+        return super().enterEvent(event)
+
     def __initWidget(self):
         self.resize(1000, 800)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1760,6 +1764,10 @@ class FFmpegSettingInterface(ScrollArea):
         )
 
         self.__initWidget()
+
+    def enterEvent(self, event):
+        self.ffmpegPathCard.setContent(cfg.get(cfg.ffmpegPath))
+        return super().enterEvent(event)
 
     def _onFFmpegPathCardClicked(self):
         path, _ = QFileDialog.getOpenFileName(self, self.tr("选择ffmpeg文件"))
