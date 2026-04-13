@@ -6,3 +6,4 @@ Pillow
 requests
 spark_ai_python
 srt
+imageio
