@@ -80,6 +80,7 @@ if __name__ == "__main__":
 - [Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
 - [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
 - [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.17.0-macos-arm64](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-macos-arm64.dmg)(macos arm64)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
 """
