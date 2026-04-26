@@ -485,6 +485,18 @@ class Config(QConfig):
 
     # Deepseek API Key (付费)
     deepseekApiKey = ConfigItem("Translate", "DeepseekApiKey", "", restart=False)
+    # Deepseek 模型选择
+    deepseekModel = OptionsConfigItem(
+        "Translate",
+        "DeepseekModel",
+        "deepseek-v4-flash",
+        OptionsValidator(["deepseek-v4-flash", "deepseek-v4-pro"]),
+        restart=False,
+    )
+    # Deepseek 深度思考模式
+    deepseekReasoning = ConfigItem(
+        "Translate", "DeepseekReasoning", False, BoolValidator(), restart=False
+    )
     # glm-4.5-flash API Key (免费)
     glmApiKey = ConfigItem("Translate", "GlmApiKey", "", restart=False)
     # Spark Lite API Key (免费)

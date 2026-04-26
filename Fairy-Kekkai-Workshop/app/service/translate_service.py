@@ -46,6 +46,9 @@ class TranslateTask:
         self.raw_content = self.args.get("raw_content", "")
         self.AI = self.args.get("AI")
         self.temperature = self.args.get("temperature", 0.7)
+        # Deepseek 专属参数
+        self.deepseek_model = self.args.get("deepseek_model", "deepseek-v4-flash")
+        self.deepseek_reasoning = self.args.get("deepseek_reasoning", False)
 
 
 class BaseTranslateService(ABC):
@@ -106,13 +109,49 @@ class BaseTranslateService(ABC):
 
 
 class DeepseekService(BaseTranslateService):
+    def __init__(self, task: TranslateTask = None):
+        self.task = task
+
     def get_client(self):
         return OpenAI(
             api_key=cfg.get(cfg.deepseekApiKey), base_url="https://api.deepseek.com"
         )
 
     def get_model_name(self):
-        return "deepseek-chat"
+        if self.task:
+            return self.task.deepseek_model
+        return cfg.get(cfg.deepseekModel)
+
+    def translate(
+        self, origin_lang: str, target_lang: str, content: str, temperature: float
+    ) -> Generator[str, None, None]:
+        prompt = cfg.get(cfg.promptTemplate).format(
+            origin_lang=origin_lang,
+            target_lang=target_lang,
+            content=content,
+        )
+        print(prompt)
+
+        try:
+            # 构建基础参数
+            create_params = {
+                "model": self.get_model_name(),
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": True,
+                "temperature": temperature,
+            }
+
+            # 如果启用深度思考模式
+            if self.task and self.task.deepseek_reasoning:
+                create_params["reasoning_effort"] = "high"
+                create_params["extra_body"] = {"thinking": {"type": "enabled"}}
+
+            response = self.get_client().chat.completions.create(**create_params)
+            for chunk in response:
+                if content_piece := chunk.choices[0].delta.content:
+                    yield content_piece
+        except Exception as e:
+            raise e
 
 
 class GLMService(BaseTranslateService):
@@ -260,7 +299,11 @@ class TranslateThread(QThread):
                 self.logger.error(f"不支持的AI模型: {self.task.AI}")
                 return
 
-            service = service_cls()
+            service = (
+                service_cls(self.task)
+                if service_cls == DeepseekService
+                else service_cls()
+            )
             chunks_to_translate = self.task.raw_content.split("\n\n")
             batch_size = 50
 
