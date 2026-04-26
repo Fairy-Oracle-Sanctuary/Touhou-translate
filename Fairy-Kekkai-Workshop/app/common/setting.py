@@ -4,9 +4,9 @@ from pathlib import Path
 
 AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
-VERSION = "1.17.0"
+VERSION = "1.17.1"
 YEAR = "2025"
-UPDATE_TIME = "2026-4-13"
+UPDATE_TIME = "2026-4-27"
 if sys.platform == "win32":
     COPYLEFT = "🄯 "
 else:

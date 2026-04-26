@@ -42,7 +42,7 @@ elif sys.platform == "darwin":
         "--assume-yes-for-download",
         "--macos-disable-console",
         f"--macos-app-version={VERSION}",
-        "--macos-app-name=\"Fairy Kekkai Workshop\"",
+        '--macos-app-name="Fairy Kekkai Workshop"',
         "--macos-app-icon=Fairy-Kekkai-Workshop/app/resource/images/logo.ico",
         "--output-dir=Fairy-Kekkai-Workshop/dist",
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",

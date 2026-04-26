@@ -7,6 +7,7 @@ from qfluentwidgets import (
     BodyLabel,
     CardWidget,
     ComboBoxSettingCard,
+    SwitchSettingCard,
     TableWidget,
 )
 from qfluentwidgets import FluentIcon as FIF
@@ -86,6 +87,35 @@ class TranslationInterface(BaseFunctionInterface):
             texts=AI_model_dict.keys(),
         )
         self.settingsGroup.addSettingCard(self.AI_modelCard)
+
+        # Deepseek 专属设置 - 模型选择
+        self.deepseekModelCard = ComboBoxSettingCard(
+            configItem=cfg.deepseekModel,
+            icon=FIF.ROBOT,
+            title="Deepseek模型",
+            content="选择Deepseek模型版本",
+            texts=["deepseek-v4-flash", "deepseek-v4-pro"],
+        )
+        self.settingsGroup.addSettingCard(self.deepseekModelCard)
+
+        # Deepseek 专属设置 - 深度思考模式
+        self.deepseekReasoningCard = SwitchSettingCard(
+            icon=FIF.IOT,
+            title="深度思考",
+            content="启用Deepseek深度思考模式",
+            configItem=cfg.deepseekReasoning,
+        )
+        self.settingsGroup.addSettingCard(self.deepseekReasoningCard)
+
+        cfg.ai_model.valueChanged.connect(self._onAIModelChanged)
+        self._onAIModelChanged(cfg.get(cfg.ai_model))
+
+    def _onAIModelChanged(self, model_name: str):
+        """根据选择的AI模型动态显示/隐藏专属设置"""
+        # Deepseek 专属设置
+        is_deepseek = model_name == "Deepseek"
+        self.deepseekModelCard.setVisible(is_deepseek)
+        self.deepseekReasoningCard.setVisible(is_deepseek)
 
     def create_preview_card(self):
         """创建内容预览卡片"""
@@ -208,6 +238,11 @@ class TranslationInterface(BaseFunctionInterface):
         args["raw_content"] = self.file_srt.raw_content
         args["AI"] = AI_model_dict.get(cfg.get(cfg.ai_model), "glm-4.5-flash")
         args["temperature"] = float(cfg.get(cfg.aiTemperature))
+
+        # Deepseek 专属参数
+        if cfg.get(cfg.ai_model) == "Deepseek":
+            args["deepseek_model"] = cfg.get(cfg.deepseekModel)
+            args["deepseek_reasoning"] = cfg.get(cfg.deepseekReasoning)
 
         return args
 

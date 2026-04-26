@@ -67,20 +67,15 @@ if __name__ == "__main__":
 
 """
 ## 更新日志
-- 更新自动更新ytdlp功能
-- 取消字幕提取的设置：文本对齐
-- 字幕提取步骤一的速度提升2倍
-- 字幕提取 VFR 视频的预处理步骤已不再必要
-- 优化视频框选手感
-- 支持macos arm64
+- 对于deepseek更新了切换模型功能（deepseek-v4-flash和deepseek-v4-pro）以及是否开启深度思考功能
 
 
 ## 下载提示
-- [Fairy-Kekkai-Workshop-v1.17.0-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
-- [Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
-- [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
-- [Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
-- [Fairy-Kekkai-Workshop-v1.17.0-macos-arm64](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.0/Fairy-Kekkai-Workshop-v1.17.0-macos-arm64.dmg)(macos arm64)
+- [Fairy-Kekkai-Workshop-v1.17.1-PaddleOCR-None-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.1/Fairy-Kekkai-Workshop-v1.17.1-PaddleOCR-None-Windows-x86_64-Setup.exe) (无OCR版本/可自由配置OCR)
+- [Fairy-Kekkai-Workshop-v1.17.1-CPU-v1.4.0-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.1/Fairy-Kekkai-Workshop-v1.17.1-CPU-v1.4.0-Windows-x86_64-Setup.exe) (CPU版本)
+- [Fairy-Kekkai-Workshop-v1.17.1-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.1/Fairy-Kekkai-Workshop-v1.17.1-GPU-v1.4.0-CUDA-11.8-Windows-x86_64-Setup.exe) (Nvidia 10 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.17.1-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.1/Fairy-Kekkai-Workshop-v1.17.1-GPU-v1.4.0-CUDA-12.9-Windows-x86_64-Setup.exe) (Nvidia 16 - 50 系列显卡)
+- [Fairy-Kekkai-Workshop-v1.17.1-macos-arm64](https://github.com/Fairy-Oracle-Sanctuary/Touhou-translate/releases/download/v1.17.1/Fairy-Kekkai-Workshop-v1.17.1-macos-arm64.dmg)(macos arm64)
 - 迅雷链接：https://pan.xunlei.com/s/VOl2n0KP6LH3zXUqcYX1iYUAA1?pwd=yzim#
 
 """
