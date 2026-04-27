@@ -80,7 +80,7 @@ class VideocrInterface(BaseFunctionInterface):
 
         super().__init__(parent, "提取字幕")
 
-        self.file_extension = "*.mp4"
+        self.file_extension = "*.mp4;*.flv;*.mkv;*.avi;*.wmv;*.m2ts;*.ts;*.mov;*.webm"
         self.default_output_suffix = ".srt"
         self.special_filename_mapping = {"生肉.mp4": "原文.srt"}
 
@@ -288,19 +288,6 @@ class VideocrInterface(BaseFunctionInterface):
             dialog = Dialog(
                 self.tr("警告"),
                 self.tr(f"临时文件夹路径 {temp_path} 不能包含中文字符"),
-                self.window(),
-            )
-            dialog.yesButton.setText("确认")
-            dialog.cancelButton.setVisible(False)
-            dialog.exec()
-            return
-
-        # 检测临时文件夹如果存在则必须为空
-        temp_path = cfg.get(cfg.tempDir)
-        if os.path.exists(temp_path) and os.listdir(temp_path):
-            dialog = Dialog(
-                self.tr("警告"),
-                self.tr(f"临时文件夹 {temp_path} 必须为空"),
                 self.window(),
             )
             dialog.yesButton.setText("确认")
