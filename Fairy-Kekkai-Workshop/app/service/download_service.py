@@ -64,7 +64,10 @@ class DownloadProcess(QObject):
 
         # 输出路径和模板
         if self.task.file_name:
-            output_path = os.path.join(self.task.download_path, self.task.file_name)
+            # 使用 %(ext)s 占位符让 yt-dlp 自动添加正确的扩展名
+            output_path = os.path.join(
+                self.task.download_path, f"{self.task.file_name}.%(ext)s"
+            )
             cmd.extend(["-o", output_path])
         else:
             output_template = os.path.join(
@@ -73,7 +76,9 @@ class DownloadProcess(QObject):
             cmd.extend(["-o", output_template])
 
         # 格式设置
-        cmd.extend(["-f", "bestvideo*+bestaudio/best"])
+        cmd.extend(
+            ["-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"]
+        )
 
         # 质量筛选
         if cfg.downloadQuality.value not in ["best", "worst"]:

@@ -413,7 +413,7 @@ class DownloadInterface(ScrollArea):
         task = DownloadTask(
             url=request_data["url"],
             download_path=request_data["save_path"],
-            file_name="生肉.mp4",
+            file_name="生肉",
         )
         self.addDownloadTask(task)
 
