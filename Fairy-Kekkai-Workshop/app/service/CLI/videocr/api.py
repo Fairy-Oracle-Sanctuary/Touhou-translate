@@ -1,4 +1,5 @@
-import os
+from __future__ import annotations
+
 import sys
 
 from . import utils
@@ -7,50 +8,58 @@ from .video import Video
 
 def save_subtitles_to_file(
     video_path: str,
-    file_path="subtitle.srt",
-    temp_dir=None,
-    lang="ch",
-    time_start="0:00",
-    time_end="",
-    conf_threshold=75,
-    sim_threshold=80,
-    max_merge_gap_sec=0.1,
-    use_fullframe=False,
-    use_gpu=False,
-    use_angle_cls=False,
-    use_server_model=False,
-    brightness_threshold=None,
-    ssim_threshold=92,
-    subtitle_position="center",
-    frames_to_skip=1,
-    crop_zones=None,
-    ocr_image_max_width=1280,
-    post_processing=False,
-    min_subtitle_duration_sec=0.2,
-    normalize_to_simplified_chinese=True,
-    paddleocr_path=None,
-    supportFilesPath=None,
+    file_path: str = "subtitle.srt",
+    temp_dir: str | None = None,
+    ocr_engine: str = "google_lens",
+    paddleocr_path: str | None = None,
+    supportFilesPath: str | None = None,
+    lang: str = "en",
+    time_start: str = "0:00",
+    time_end: str = "",
+    sim_threshold: int = 80,
+    max_merge_gap_sec: float = 0.1,
+    use_fullframe: bool = False,
+    use_gpu: bool = False,
+    use_angle_cls: bool = False,
+    use_server_model: bool = False,
+    brightness_threshold: int | None = None,
+    ssim_threshold: int = 92,
+    subtitle_position: str = "center",
+    frames_to_skip: int = 1,
+    crop_zones: list[dict[str, int]] | None = None,
+    ocr_image_max_width: int = 720,
+    post_processing: bool = False,
+    min_subtitle_duration_sec: float = 0.2,
+    subtitle_alignments: list[str | None] | None = None,
 ) -> None:
 
     if crop_zones is None:
         crop_zones = []
 
-    if os.path.exists(paddleocr_path):
-        print(f"找到PaddleOCR路径: {paddleocr_path}")
-    else:
-        print(f"找不到PaddleOCR路径: {paddleocr_path}")
-        return
+    if subtitle_alignments is None:
+        subtitle_alignments = [None, None]
+    elif len(subtitle_alignments) == 1:
+        subtitle_alignments.append(None)
 
+    if not paddleocr_path:
+        paddleocr_path = utils.find_executable("paddleocr")
     try:
         utils.perform_hardware_check(paddleocr_path, use_gpu)
     except SystemExit as e:
         print(e, flush=True)
         sys.exit(1)
 
-    det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
-        lang, use_server_model, supportFilesPath
-    )
-    print(f"找到模型路径: {det_model_dir} {rec_model_dir} {cls_model_dir}")
+    if ocr_engine == "paddleocr":
+        det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
+            lang, use_server_model, supportFilesPath
+        )
+        google_lens_path = ""
+    else:
+        # For the Text-Detection-Only Pass just the default detection model is needed
+        det_model_dir, rec_model_dir, cls_model_dir = utils.resolve_model_dirs(
+            "en", use_server_model, supportFilesPath
+        )
+        google_lens_path = utils.find_executable("chrome-lens")
 
     v = Video(
         video_path,
@@ -58,16 +67,17 @@ def save_subtitles_to_file(
         det_model_dir,
         rec_model_dir,
         cls_model_dir,
+        google_lens_path,
         temp_dir,
     )
     try:
         v.run_ocr(
             use_gpu,
+            ocr_engine,
             lang,
             use_angle_cls,
             time_start,
             time_end,
-            conf_threshold,
             use_fullframe,
             brightness_threshold,
             ssim_threshold,
@@ -75,9 +85,8 @@ def save_subtitles_to_file(
             frames_to_skip,
             crop_zones,
             ocr_image_max_width,
-            normalize_to_simplified_chinese,
         )
-    except ValueError as e:
+    except Exception as e:
         print(f"Error: {e}", flush=True)
         sys.exit(1)
     subtitles = v.get_subtitles(
@@ -86,6 +95,7 @@ def save_subtitles_to_file(
         lang,
         post_processing,
         min_subtitle_duration_sec,
+        subtitle_alignments,
     )
 
     with open(file_path, "w+", encoding="utf-8") as f:

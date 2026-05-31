@@ -85,10 +85,28 @@ def main():
         help="Output SRT file path (default: subtitle.srt)",
     )
     parser.add_argument(
+        "--ocr_engine",
+        type=str,
+        default="paddleocr",
+        help="OCR engine (default: paddleocr)",
+    )
+    parser.add_argument(
         "--temp_dir",
         type=str,
         default=None,
         help="Temporary directory for OCR results (default: system temp)",
+    )
+    parser.add_argument(
+        "--paddleocr_path",
+        type=str,
+        default=None,
+        help="Custom path to paddleocr.exe (default: auto-detect)",
+    )
+    parser.add_argument(
+        "--supportFilesPath",
+        type=str,
+        default=None,
+        help="Path to OCR model directory (default: tools/OCR.model)",
     )
     parser.add_argument(
         "--lang", type=str, default="ch", help="OCR language (default: ch)"
@@ -104,12 +122,6 @@ def main():
         type=valid_time_string,
         default="",
         help="End time (MM:SS or HH:MM:SS)",
-    )
-    parser.add_argument(
-        "--conf_threshold",
-        type=restricted_int(0, 100),
-        default=75,
-        help="Confidence threshold (default: 75)",
     )
     parser.add_argument(
         "--sim_threshold",
@@ -172,12 +184,6 @@ def main():
         help="Frames to skip (default: 1)",
     )
     parser.add_argument(
-        "--normalize_to_simplified_chinese",
-        type=lambda x: x.lower() == "true",
-        default=True,
-        help="Normalize Traditional Chinese characters to Simplified Chinese for ch (default: true)",
-    )
-    parser.add_argument(
         "--post_processing",
         type=lambda x: x.lower() == "true",
         default=False,
@@ -231,19 +237,6 @@ def main():
         default=False,
         help="Allow the system to sleep during processing (default: false)",
     )
-    parser.add_argument(
-        "--paddleocr_path",
-        type=str,
-        default=None,
-        help="Path to PaddleOCR directory",
-    )
-    parser.add_argument(
-        "--supportFilesPath",
-        type=str,
-        default=None,
-        help="Path to support files directory",
-    )
-
     args = parser.parse_args()
 
     try:
@@ -315,10 +308,12 @@ def main():
                 video_path=args.video_path,
                 file_path=args.output,
                 temp_dir=args.temp_dir,
+                ocr_engine=args.ocr_engine,
+                paddleocr_path=args.paddleocr_path,
+                supportFilesPath=args.supportFilesPath,
                 lang=args.lang,
                 time_start=args.time_start,
                 time_end=args.time_end,
-                conf_threshold=args.conf_threshold,
                 sim_threshold=args.sim_threshold,
                 max_merge_gap_sec=args.max_merge_gap,
                 use_fullframe=args.use_fullframe,
@@ -330,12 +325,9 @@ def main():
                 subtitle_position=args.subtitle_position,
                 frames_to_skip=args.frames_to_skip,
                 crop_zones=crop_zones,
-                normalize_to_simplified_chinese=args.normalize_to_simplified_chinese,
                 post_processing=args.post_processing,
                 min_subtitle_duration_sec=args.min_subtitle_duration,
                 ocr_image_max_width=args.ocr_image_max_width,
-                paddleocr_path=args.paddleocr_path,
-                supportFilesPath=args.supportFilesPath,
             )
     except ValueError as e:
         print(f"Error: {e}")

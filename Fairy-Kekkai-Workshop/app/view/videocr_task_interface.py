@@ -44,13 +44,11 @@ class OcrTaskInterface(BaseTaskInterface):
 
     def parseOCRProgress(self, task_id, message):
         """解析OCR输出消息并计算进度"""
-        # 这里保持原有的 parseOCRProgress 方法实现
         try:
-            # Step 1/2: Processing video... Current: {curr_str} / {target_end_str}, Frame: {expected_index + 1}
-            if "Step 1/2" in message:
-                import re
+            import re
 
-                # Current: HH:MM:SS / HH:MM:SS
+            # Step 1/3: Processing video... Current: HH:MM:SS / HH:MM:SS
+            if "Step 1/3" in message:
                 match = re.search(
                     r"Current:\s+(\d+:\d+:\d+)\s+/\s+(\d+:\d+:\d+)", message
                 )
@@ -58,7 +56,6 @@ class OcrTaskInterface(BaseTaskInterface):
                     current_time_str = match.group(1)
                     total_time_str = match.group(2)
 
-                    # Convert time string to seconds
                     def time_to_seconds(time_str):
                         parts = time_str.split(":")
                         if len(parts) == 3:
@@ -73,23 +70,26 @@ class OcrTaskInterface(BaseTaskInterface):
                     total_seconds = time_to_seconds(total_time_str)
 
                     if total_seconds > 0:
-                        progress = (current_seconds / total_seconds) * 50
+                        progress = (current_seconds / total_seconds) * 33
                         if current_seconds == 0:
                             self.log_signal.emit(
-                                "步骤1/2: 正在处理图像中…", False, False
+                                "步骤1/3: 正在处理图像中…", False, False
                             )
                         else:
                             self.log_signal.emit(
-                                f"步骤1/2: 正在处理图像中… {current_time_str} / {total_time_str}",
+                                f"步骤1/3: 正在处理图像中… {current_time_str} / {total_time_str}",
                                 False,
                                 True,
                             )
-                        return min(progress, 50)
+                        return min(progress, 33)
 
-            # Step 2/2: Performing OCR on image {current} of {total}
-            elif "Step 2/2: Performing OCR on image" in message:
-                import re
+            # Running Text-Detection-Only pass
+            elif "Running Text-Detection-Only pass" in message:
+                self.log_signal.emit("步骤2/3: 正在检测文本区域…", False, False)
+                return 33
 
+            # Step 3/3: Performing OCR on image X of Y
+            elif "Step 3/3: Performing OCR on image" in message:
                 match = re.search(
                     r"Performing OCR on image\s+(\d+)\s+of\s+(\d+)", message
                 )
@@ -97,23 +97,49 @@ class OcrTaskInterface(BaseTaskInterface):
                     current = int(match.group(1))
                     total = int(match.group(2))
                     if total > 0:
-                        progress = 50 + (current / total) * 50
+                        progress = 66 + (current / total) * 34
                         self.log_signal.emit(
-                            f"步骤2/2: 正在对图像进行OCR {current}/{total}", False, True
+                            f"步骤3/3: 正在对图像进行OCR {current}/{total}", False, True
                         )
                         return min(progress, 100)
 
+            # Starting PaddleOCR... (只显示一次)
             elif "Starting PaddleOCR..." in message:
-                self.log_signal.emit(
-                    "正在启动PaddleOCR... 请耐心等待…\n ", False, False
-                )
+                self.log_signal.emit("正在启动PaddleOCR... 请耐心等待…", False, False)
 
+            # Generating subtitles...
             elif "Generating subtitles..." in message:
                 self.log_signal.emit("正在生成字幕文件...", False, False)
 
+            # ppocr INFO: Processed item
+            elif "ppocr INFO: Processed item" in message:
+                # 不显示，避免过多输出
+                pass
+
+            # Filtered out redundant frames
+            elif "Filtered out" in message:
+                match = re.search(r"Filtered out (\d+) redundant frame", message)
+                if match:
+                    count = match.group(1)
+                    self.log_signal.emit(f"已过滤 {count} 个冗余帧", False, False)
+                else:
+                    self.log_signal.emit("已过滤冗余帧", False, False)
+
+            # Analyzing frame
+            elif "Analyzing frame" in message:
+                match = re.search(r"Analyzing frame (\d+) of (\d+)", message)
+                if match:
+                    current = match.group(1)
+                    total = match.group(2)
+                    self.log_signal.emit(f"正在分析帧 {current}/{total}", False, False)
+                else:
+                    self.log_signal.emit("正在分析帧", False, False)
+
+            # 找到PaddleOCR路径
             elif "找到PaddleOCR路径:" in message:
                 self.log_signal.emit(message, False, False)
 
+            # 找到模型路径
             elif "找到模型路径:" in message:
                 message = message.split(" ")
                 self.log_signal.emit(
@@ -128,14 +154,17 @@ class OcrTaskInterface(BaseTaskInterface):
                     False,
                 )
 
+            # 找不到PaddleOCR路径
             elif "找不到PaddleOCR路径:" in message:
                 self.onTaskFinished(task_id, False, message)
                 self.log_signal.emit(message, True, False)
 
+            # 无法找到PaddleOCR可执行文件
             elif "无法找到PaddleOCR可执行文件:" in message:
                 self.onTaskFinished(task_id, False, message)
                 self.log_signal.emit(message, True, False)
 
+            # PaddleOCR failed
             elif (
                 "Error: PaddleOCR failed. See the log file for technical details:"
                 in message

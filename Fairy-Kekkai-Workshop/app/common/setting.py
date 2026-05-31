@@ -4,9 +4,9 @@ from pathlib import Path
 
 AUTHOR = "baby2016"
 TEAM = "天机阁(Fairy-Oracle-Sanctuary)"
-VERSION = "1.17.1"
+VERSION = "1.18.0"
 YEAR = "2025"
-UPDATE_TIME = "2026-4-27"
+UPDATE_TIME = "2026-6-30"
 if sys.platform == "win32":
     COPYLEFT = "🄯 "
 else:
@@ -24,28 +24,6 @@ COVER_FOLDER = CONFIG_FOLDER / "Cover"
 COVER_FOLDER.mkdir(exist_ok=True, parents=True)
 
 PIC_SUFFIX = ".jpg"
-
-PADDLEOCR_VERSION = "None"
-if sys.platform != "darwin":
-    try:
-        with open("PADDLEOCR_VERSION", "r", encoding="utf-8") as f:
-            text = f.readline().strip()
-            if text in {
-                "CPU-v1.4.0",
-                "GPU-v1.4.0-CUDA-11.8",
-                "GPU-v1.4.0-CUDA-12.9",
-            }:
-                PADDLEOCR_VERSION = text
-    except FileNotFoundError:
-        # Missing file is acceptable; fallback to default "None"
-        pass
-    except Exception:
-        # Any other error reading/parsing the file -> fallback
-        PADDLEOCR_VERSION = "None"
-
-# CPU-v1.4.0
-# GPU-v1.4.0-CUDA-11.8
-# GPU-v1.4.0-CUDA-12.9
 
 # videocr
 videocr_languages_dict = {

@@ -6,7 +6,7 @@
 
 ### 核心特性
 - 📥 **视频下载**：基于 yt-dlp，支持 YouTube 等多个视频平台
-- 🔤 **字幕提取**：集成 PaddleOCR，支持自定义 OCR 参数
+- 🔤 **字幕提取**：集成 paddleocr，支持自定义 OCR 参数和模型路径
 - 🌐 **智能翻译**：支持多个 AI 模型（OpenAI、Deepseek、腾讯混元、ERNIE、Gemini、书生等）
 - 🎬 **视频压制**：基于 FFmpeg，支持自定义编码参数
 - 💾 **项目管理**：完整的项目文件系统管理，支持导入/链接外部项目
@@ -20,6 +20,7 @@ Fairy-Kekkai-Workshop/
 ├── Fairy-Kekkai-Workshop.py       # 主入口文件
 ├── DEVELOPMENT.md                 # 本文件
 ├── requirements.txt               # 依赖列表
+├── deploy.py                      # 打包脚本
 ├── app/
 │   ├── common/                    # 公共模块
 │   │   ├── config.py              # 配置管理（QConfig）
@@ -45,7 +46,17 @@ Fairy-Kekkai-Workshop/
 │   │   ├── ffmpeg_service.py      # 视频压制服务
 │   │   ├── ocr_service.py         # OCR 字幕提取服务
 │   │   ├── srt_service.py         # 字幕文件处理
-│   │   └── version_service.py     # 版本更新检查
+│   │   ├── version_service.py     # 版本更新检查
+│   │   └── CLI/                   # CLI 工具模块
+│   │       ├── videocr_cli.py     # videocr CLI 入口
+│   │       ├── deploy.py          # CLI 打包脚本
+│   │       ├── videocr/           # videocr 核心模块
+│   │       │   ├── api.py         # OCR API
+│   │       │   ├── video.py       # 视频处理
+│   │       │   ├── models.py      # 数据模型
+│   │       │   └── utils.py       # 工具函数
+│   │       └── paddleocr/         # paddleocr 源码
+│   │           └── main.cpp       # C++ CLI 实现
 │   │
 │   ├── view/                      # UI 视图层
 │   │   ├── main_window.py         # 主窗口
@@ -64,6 +75,17 @@ Fairy-Kekkai-Workshop/
 │       ├── images/                # 图片资源
 │       └── qss/                   # 样式表
 │
+├── tools/                         # 外部工具目录
+│   ├── OCR.model/                 # OCR 模型文件
+│   ├── PaddleOCR/                 # paddleocr 可执行文件
+│   │   ├── paddleocr.exe
+│   │   ├── CVUtils.dll
+│   │   ├── onnxruntime.dll
+│   │   └── ...
+│   ├── videocr-cli.exe            # videocr CLI 可执行文件
+│   ├── yt-dlp.exe                 # 视频下载工具
+│   └── ffmpeg.exe                 # 视频处理工具
+│
 └── AppData/                       # 应用数据目录
     ├── config.json                # 用户配置
     ├── project.json               # 项目记录
@@ -75,7 +97,7 @@ Fairy-Kekkai-Workshop/
 ## 环境搭建
 
 ### 系统要求
-- Python 3.10+
+- Python 3.9+
 - Windows/macOS/Linux
 - 硬件加速器（可选）：用于视频压制加速
 
@@ -99,12 +121,10 @@ Fairy-Kekkai-Workshop/
    uv pip install -r requirements.txt
    ```
 
-4. **创建配置文件**
-   ```bash
-   # 创建 PADDLEOCR_VERSION 文件（OCR 模型版本配置）
-   echo "CPU-v1.4.0" > PADDLEOCR_VERSION
-   # 或 GPU-v1.4.0-CUDA-11.8 / GPU-v1.4.0-CUDA-12.9
-   ```
+4. **准备 OCR 工具**
+   - 下载 paddleocr 放到 `tools/PaddleOCR/` 目录
+   - 下载 OCR 模型文件放到 `tools/OCR.model/` 目录
+   - 编译 videocr CLI: `cd app/service/CLI && python deploy.py`
 
 5. **运行应用**
    ```bash
@@ -121,12 +141,15 @@ Fairy-Kekkai-Workshop/
 | numpy | 最新 | 数值计算 |
 | Pillow | 最新 | 图像处理 |
 | requests | 最新 | HTTP 请求 |
+| av | 最新 | 视频处理 |
+| fast_ssim | 最新 | 图像相似度计算 |
 
 
-**可选依赖**（需手动安装）：
+**外部工具**（需手动准备）：
 ```bash
-# PaddleOCR（字幕提取）
-uv pip install paddleocr paddlepaddle
+# paddleocr（字幕提取）
+# 下载 paddleocr.exe 放到 tools/PaddleOCR/ 目录
+# 下载 OCR 模型文件放到 tools/OCR.model/ 目录
 
 # FFmpeg（视频压制）
 # Windows: 下载编译版本或通过 scoop/chocolatey
@@ -241,7 +264,36 @@ thread.start()
 - ✅ GLM-4.5 Flash（SDK 不兼容）
 - ✅ 自定义模型（兼容 OpenAI API 格式）
 
-### 5. 日志系统（`app/common/logger.py`）
+### 5. OCR 服务（`app/service/ocr_service.py`）
+
+基于 paddleocr 的字幕提取服务。
+
+```python
+from app.service.ocr_service import OCRProcess, OCRTask
+
+# 创建 OCR 任务
+task = OCRTask(args={
+    "video_path": "/path/to/video.mp4",
+    "file_path": "/path/to/output.srt",
+    "temp_dir": "/path/to/temp",
+    "lang": "ja",
+    "paddleocr_path": "tools/PaddleOCR/paddleocr.exe",
+    "supportFilesPath": "tools/OCR.model",
+})
+
+# 执行 OCR
+process = OCRProcess(task)
+process.finished_signal.connect(on_finished)
+process.start()
+```
+
+**OCR 流程**：
+1. 视频帧提取和 SSIM 过滤
+2. 文本检测（Text-Detection-Only pass）
+3. 文本识别（OCR）
+4. 字幕生成和合并
+
+### 6. 日志系统（`app/common/logger.py`）
 
 结构化日志，自动保存到 AppData。
 
@@ -316,10 +368,11 @@ myNewModelApiKey = ConfigItem(
 
 ### Q: 字幕提取失败
 
-**A**: 
-1. 确保 PaddleOCR 已安装：`uv pip install paddleocr paddlepaddle`
-2. 检查 `PADDLEOCR_VERSION` 文件是否存在且格式正确
-3. 检查网络连接（首次运行需下载模型）
+**A**:
+1. 确保 `paddleocr.exe` 存在于 `tools/PaddleOCR/` 目录
+2. 确保 OCR 模型文件存在于 `tools/OCR.model/` 目录
+3. 检查 VC++ 运行时是否已安装（需要 MSVCP140.dll 和 VCRUNTIME140.dll）
+4. 检查 GPU 驱动是否支持 DirectML（如使用 GPU）
 
 ### Q: 翻译功能不可用
 
@@ -393,7 +446,7 @@ myNewModelApiKey = ConfigItem(
 
 - **UI 框架**：PySide6 + QFluentWidgets (Modern UI)
 - **视频处理**：FFmpeg + yt-dlp
-- **字幕识别**：PaddleOCR
+- **字幕识别**：paddleocr
 - **翻译**：多个云 API（OpenAI、Deepseek、腾讯混元等）
 - **B 站上传**：Bilibili API
 - **配置存储**：JSON + SQLite

@@ -27,7 +27,6 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.logger import Logger
 from ..common.setting import (
-    PADDLEOCR_VERSION,
     subtitle_positions_list,
     videocr_languages_dict,
 )
@@ -251,9 +250,10 @@ class VideocrInterface(BaseFunctionInterface):
 
     def _start_processing(self):
         """开始OCR处理"""
-        # 检测paddleocr版本是否配置
-        if PADDLEOCR_VERSION == "None":
-            self.show_error_message("请先修改PADDLEOCR_VERSION文件")
+        # 检测paddleocr.exe是否存在
+        paddleocr_path = cfg.get(cfg.paddleocrPath)
+        if not os.path.exists(paddleocr_path):
+            self.show_error_message(f"paddleocr.exe不存在: {paddleocr_path}")
             return
 
         # 检测paddleocr路径内是否有中文
@@ -339,7 +339,6 @@ class VideocrInterface(BaseFunctionInterface):
         args["lang"] = videocr_languages_dict.get(cfg.get(cfg.ocr_lang), "japan")
         args["time_start"] = cfg.get(cfg.timeStart)
         args["time_end"] = cfg.get(cfg.timeEnd)
-        args["conf_threshold"] = cfg.get(cfg.confThreshold)
         args["sim_threshold"] = cfg.get(cfg.simThreshold)
         args["max_merge_gap_sec"] = cfg.get(cfg.maxMergeGap)
         args["use_fullframe"] = False
@@ -369,7 +368,6 @@ class VideocrInterface(BaseFunctionInterface):
         args["ocr_image_max_width"] = cfg.get(cfg.ocrImageMaxWidth)
         args["post_processing"] = cfg.get(cfg.postProcessing)
         args["min_subtitle_duration_sec"] = cfg.get(cfg.minSubtitleDuration)
-        args["gpu_env"] = cfg.get(cfg.gpuEnv)
         args["paddleocr_path"] = cfg.get(cfg.paddleocrPath)
         args["supportFilesPath"] = cfg.get(cfg.supportFilesPath)
 
