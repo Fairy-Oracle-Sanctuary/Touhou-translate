@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - -ID:/CODE/LunaTranslator/src/NativeImpl/build/x64_win10/_deps/opencv-src/windows-x64/include
+    - -std=c++17

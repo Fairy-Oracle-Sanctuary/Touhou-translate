@@ -97,6 +97,10 @@
 *   **AI翻訳:** Deepseek APIに接続し、自動翻訳機能を実現（API Keyは各自で準備が必要）。
 *   **视频压制:** ffmpeg ツールを組み込み、動画ファイルの压制をサポート。
 
+**謝辞:**
+- videocli は [VideOCR](https://github.com/timminator/VideOCR) から
+- OCR 実装のアイデアは [LunaTranslator](https://github.com/HIllya51/LunaTranslator) から
+
 ![Fairy-Kekkai-Workshop\thumbnail.jpg](https://res.cloudinary.com/do6rggmy6/image/upload/v1770620997/thumbnail.png)
 
 ---

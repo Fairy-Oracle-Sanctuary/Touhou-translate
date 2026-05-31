@@ -19,7 +19,6 @@ from .setting import (
     CONFIG_FILE,
     CONFIG_FOLDER,
     EXE_SUFFIX,
-    PADDLEOCR_VERSION,
     PIC_SUFFIX,
     AI_model_dict,
     subtitle_positions_list,
@@ -33,17 +32,17 @@ def get_default_exe_path(exe_name: str) -> str:
     # Windows: 使用 tools 目录
     if sys.platform == "win32":
         return str(Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute())
-    
+
     # macOS: 优先检测 Homebrew 安装路径
     if sys.platform == "darwin":
         brew_paths = [
-            f"/opt/homebrew/bin/{exe_name}",   # Apple Silicon
-            f"/usr/local/bin/{exe_name}",      # Intel Mac
+            f"/opt/homebrew/bin/{exe_name}",  # Apple Silicon
+            f"/usr/local/bin/{exe_name}",  # Intel Mac
         ]
         for path in brew_paths:
             if Path(path).exists():
                 return path
-    
+
     # Linux 或其他: 使用 tools 目录
     return str(Path(f"tools/{exe_name}").absolute())
 
@@ -135,9 +134,7 @@ class Config(QConfig):
     )
 
     # download
-    ytdlpPath = ConfigItem(
-        "Download", "YTDLPPath", get_default_exe_path("yt-dlp")
-    )
+    ytdlpPath = ConfigItem("Download", "YTDLPPath", get_default_exe_path("yt-dlp"))
 
     # ytdlp parameters
     # 下载格式选择：mp4(确保mp4格式), best(最佳质量), worst(最差质量), bestvideo(最佳视频), bestaudio(最佳音频)
@@ -321,21 +318,14 @@ class Config(QConfig):
     paddleocrPath = ConfigItem(
         "OCR",
         "PaddleocrPath",
-        str(
-            Path(
-                f"tools/PaddleOCR-{PADDLEOCR_VERSION}/paddleocr{EXE_SUFFIX}"
-            ).absolute()
-        ),
+        str(Path(f"tools/PaddleOCR/paddleocr{EXE_SUFFIX}").absolute()),
     )
-    # tools/PaddleOCR-CPU-v1.4.0/paddleocr{EXE_SUFFIX}
-    # tools/PaddleOCR-GPU-v1.4.0-CUDA-11.8/paddleocr{EXE_SUFFIX}
-    # tools/PaddleOCR-GPU-v1.4.0-CUDA-12.9/paddleocr{EXE_SUFFIX}
 
     # support.files路径
     supportFilesPath = ConfigItem(
         "OCR",
         "supportFilesPath",
-        str(Path("tools/PaddleOCR.PP-OCRv5.support.files/").absolute()),
+        str(Path("tools/OCR.model").absolute()),
     )
 
     tempDir = ConfigItem(
@@ -370,12 +360,6 @@ class Config(QConfig):
         "任意",
         OptionsValidator(list(subtitle_positions_list.keys())),
         restart=False,
-    )
-
-    # 置信度阈值 (0-100)
-    # 命令行使用：--conf_threshold
-    confThreshold = RangeConfigItem(
-        "OCR", "ConfThreshold", 30, RangeValidator(0, 100), restart=False
     )
 
     # 相似度阈值 (0-100)
@@ -423,19 +407,6 @@ class Config(QConfig):
     # 是否启用GPU使用
     # 命令行使用：--use_gpu
     useGpu = ConfigItem("OCR", "UseGpu", True, BoolValidator(), restart=False)
-
-    # GPU环境
-    # PaddleOCR-GPU-v1.4.2-CUDA-11.8
-    # PaddleOCR-GPU-v1.4.2-CUDA-12.9
-    gpuEnv = OptionsConfigItem(
-        "OCR",
-        "GpuEnv",
-        "CPU-v1.4.0",
-        OptionsValidator(
-            ["CPU-v1.4.0", "GPU-v1.4.0-CUDA-11.8", "GPU-v1.4.0-CUDA-12.9"]
-        ),
-        restart=False,
-    )
 
     # 是否使用全帧OCR
     # 命令行使用：--use_fullframe
@@ -551,9 +522,7 @@ class Config(QConfig):
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
 
     # ffmpeg settings
-    ffmpegPath = ConfigItem(
-        "FFmpeg", "FFmpegPath", get_default_exe_path("ffmpeg")
-    )
+    ffmpegPath = ConfigItem("FFmpeg", "FFmpegPath", get_default_exe_path("ffmpeg"))
 
     # 并发数量，同时压制多个视频时的最大并行数
     concurrentEncodes = RangeConfigItem(

@@ -62,7 +62,6 @@ class OCRProcess(QObject):
         cmd_args.extend(["--time_start", args["time_start"]])
         if args["time_end"]:
             cmd_args.extend(["--time_end", args["time_end"]])
-        cmd_args.extend(["--conf_threshold", str(args["conf_threshold"])])
         cmd_args.extend(["--sim_threshold", str(args["sim_threshold"])])
         cmd_args.extend(["--max_merge_gap", str(args["max_merge_gap_sec"])])
         cmd_args.extend(["--use_fullframe", str(args["use_fullframe"]).lower()])

@@ -26,6 +26,8 @@ if sys.platform == "win32":
         "--include-data-files=Fairy-Kekkai-Workshop/tools/yt-dlp.exe=tools/yt-dlp.exe",
         "--include-data-files=Fairy-Kekkai-Workshop/tools/ffmpeg.exe=tools/ffmpeg.exe",
         "--include-data-files=Fairy-Kekkai-Workshop/tools/videocr-cli.exe=tools/videocr-cli.exe",
+        "--include-data-dir=Fairy-Kekkai-Workshop/tools/OCR.model=tools/OCR.model",
+        "--include-data-dir=Fairy-Kekkai-Workshop/tools/PaddleOCR=tools/PaddleOCR",
         "Fairy-Kekkai-Workshop/Fairy-Kekkai-Workshop.py",
     ]
 

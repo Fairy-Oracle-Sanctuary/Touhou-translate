@@ -97,6 +97,10 @@ This repository houses a collection of self-developed auxiliary scripts and tool
 *   **AI Translation:** Integrates with the Deepseek API to enable automatic translation (requires your own API Key).
 *   **Video Compression:** Incorporates ffmpeg tool to support video file compression.
 
+**Acknowledgments:**
+- videocli from [VideOCR](https://github.com/timminator/VideOCR)
+- OCR implementation inspired by [LunaTranslator](https://github.com/HIllya51/LunaTranslator)
+
 ![Fairy-Kekkai-Workshop\thumbnail.jpg](https://res.cloudinary.com/do6rggmy6/image/upload/v1770620997/thumbnail.png)
 
 ---

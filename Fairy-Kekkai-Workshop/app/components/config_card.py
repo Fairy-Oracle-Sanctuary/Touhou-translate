@@ -48,7 +48,6 @@ from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import SettingCardGroup as CardGroup
 
 from ..common.config import cfg
-from ..common.setting import PADDLEOCR_VERSION
 
 
 class CustomModelDetectionThread(QThread):
@@ -779,7 +778,7 @@ class OCRSettingInterface(ScrollArea):
         self.supportFilesPathCard = PushSettingCard(
             self.tr("选择文件夹"),
             ":/app/images/logo/Paddle.svg",
-            "请选择支持文件夹PaddleOCR.PP-OCRv5.support.files",
+            "请选择模型文件夹OCR.model",
             cfg.get(cfg.supportFilesPath),
             self.paddleocrPathGroup,
         )
@@ -819,17 +818,6 @@ class OCRSettingInterface(ScrollArea):
 
         # 阈值设置
         self.thresholdGroup = SettingCardGroup(self.tr("阈值设置"), self.scrollWidget)
-
-        # 置信度阈值 (0-100)
-        self.confThresholdCard = NumberLineEditSettingCard(
-            cfg.confThreshold,
-            FIF.CERTIFICATE,
-            self.tr("置信度阈值"),
-            self.tr("OCR识别结果的置信度阈值 (0-100)"),
-            placeholderText=str(cfg.confThreshold.value),
-            validator=QIntValidator(0, 100),
-            parent=self.thresholdGroup,
-        )
 
         # 相似度阈值 (0-100)
         self.simThresholdCard = NumberLineEditSettingCard(
@@ -920,18 +908,6 @@ class OCRSettingInterface(ScrollArea):
             configItem=cfg.useGpu,
             parent=self.featureGroup,
         )
-        self.gpuEnvCard = ComboBoxSettingCard(
-            configItem=cfg.gpuEnv,
-            icon=FIF.TILES,
-            title=self.tr("选择GPU环境"),
-            content=self.tr("请检查你的GPU环境并选择相应的配置"),
-            texts=[
-                self.tr("CPU-v1.4.0"),
-                self.tr("GPU-v1.4.0-CUDA-11.8"),
-                self.tr("GPU-v1.4.0-CUDA-12.9"),
-            ],
-            parent=self.featureGroup,
-        )
         # self.useFullframeCard = SwitchSettingCard(
         #     FIF.FULL_SCREEN,
         #     self.tr("使用全帧OCR"),
@@ -1000,7 +976,6 @@ class OCRSettingInterface(ScrollArea):
         self.timeGroup.addSettingCard(self.timeEndCard)
 
         # 阈值设置
-        self.thresholdGroup.addSettingCard(self.confThresholdCard)
         self.thresholdGroup.addSettingCard(self.simThresholdCard)
         # self.thresholdGroup.addSettingCard(self.brightnessThresholdCard)
         self.thresholdGroup.addSettingCard(self.ssimThresholdCard)
@@ -1013,7 +988,6 @@ class OCRSettingInterface(ScrollArea):
 
         # 功能开关
         self.featureGroup.addSettingCard(self.useGpuCard)
-        self.featureGroup.addSettingCard(self.gpuEnvCard)
         # self.featureGroup.addSettingCard(self.useFullframeCard)
         self.featureGroup.addSettingCard(self.useDualZoneCard)
         # self.featureGroup.addSettingCard(self.useAngleClsCard)
@@ -1053,9 +1027,7 @@ class OCRSettingInterface(ScrollArea):
         self.paddleocrPathCard.setContent(path)
 
     def _onSupportFilesPathCardClicked(self):
-        path = QFileDialog.getExistingDirectory(
-            self, self.tr("请选择PaddleOCR.PP-OCRv5.support.files")
-        )
+        path = QFileDialog.getExistingDirectory(self, self.tr("请选择OCR.model"))
 
         if not path or cfg.get(cfg.supportFilesPath) == path:
             return
@@ -1065,7 +1037,7 @@ class OCRSettingInterface(ScrollArea):
             print(path)
             dialog = Dialog(
                 self.tr("警告"),
-                self.tr("PaddleOCR.PP-OCRv5.support.files 路径不能包含中文字符"),
+                self.tr("OCR.model 路径不能包含中文字符"),
                 self.window(),
             )
             dialog.yesButton.setText("确认")
@@ -1126,14 +1098,6 @@ class OCRSettingInterface(ScrollArea):
         """更改框选设置"""
         self.changeSelectionSignal.emit(isUseDualZone)
 
-    def _gpuEnvCardChangeSelection(self, gpu_env):
-        """更改框选设置"""
-        if gpu_env == "CPU-v1.4.0" or gpu_env == "None":
-            self.useGpuCard.switchButton.setChecked(False)
-            self.useGpuCard.switchButton.setEnabled(False)
-        else:
-            self.useGpuCard.switchButton.setEnabled(True)
-
     def _connectSignalToSlot(self):
         """绑定信号"""
         # self.useFullframeCard.checkedChanged.connect(lambda: self._changeSelection(0))
@@ -1145,19 +1109,6 @@ class OCRSettingInterface(ScrollArea):
         self.useDualZoneCard.checkedChanged.connect(
             lambda v: self._useDualZoneCardChangeSelection(v)
         )
-        self.gpuEnvCard.comboBox.currentTextChanged.connect(
-            lambda v: self._gpuEnvCardChangeSelection(v)
-        )
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self._gpuEnvCardChangeSelection(PADDLEOCR_VERSION)
-        self.gpuEnvCard.comboBox.setCurrentText(PADDLEOCR_VERSION)
-        self.gpuEnvCard.comboBox.setEnabled(False)
-        if PADDLEOCR_VERSION == "None":
-            self.gpuEnvCard.comboBox.setVisible(False)
-        else:
-            self.gpuEnvCard.comboBox.setVisible(True)
 
 
 class TranslateSettingInterface(ScrollArea):
