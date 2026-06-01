@@ -148,6 +148,13 @@ class SettingInterface(ScrollArea):
             + VERSION,
             self.aboutGroup,
         )
+        self.teachingTipCard = PushSettingCard(
+            self.tr("查看新手引导"),
+            FIF.BOOK_SHELF,
+            self.tr("新手引导"),
+            self.tr("重新查看软件使用教程"),
+            self.aboutGroup,
+        )
 
         self.__initWidget()
 
@@ -186,6 +193,7 @@ class SettingInterface(ScrollArea):
         self.downloadGroup.addSettingCard(self.detectionCard)
 
         self.aboutGroup.addSettingCard(self.aboutCard)
+        self.aboutGroup.addSettingCard(self.teachingTipCard)
 
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
@@ -238,7 +246,7 @@ class SettingInterface(ScrollArea):
         if not exe_path.exists() and sys.platform == "darwin":
             brew_paths = [
                 f"/opt/homebrew/bin/{exe_name}",  # Apple Silicon
-                f"/usr/local/bin/{exe_name}",     # Intel Mac
+                f"/usr/local/bin/{exe_name}",  # Intel Mac
             ]
             for path in brew_paths:
                 if Path(path).exists():
@@ -287,6 +295,21 @@ class SettingInterface(ScrollArea):
             else:
                 setThemeColor(color, save=False)
 
+    def _onTeachingTipCardClicked(self):
+        """显示新手引导"""
+        from ..components.teaching_tips import TeachingTipManager
+
+        # 获取主窗口
+        main_window = self.window()
+
+        if main_window and main_window.__class__.__name__ == "MainWindow":
+            if hasattr(main_window, "teaching_tip_manager"):
+                main_window.teaching_tip_manager.restart_tour()
+            else:
+                teaching_tip_manager = TeachingTipManager(main_window)
+                main_window.teaching_tip_manager = teaching_tip_manager
+                teaching_tip_manager.show_teaching_tips()
+
     def _connectSignalToSlot(self):
         """绑定信号"""
         cfg.appRestartSig.connect(self._showRestartTooltip)
@@ -299,6 +322,10 @@ class SettingInterface(ScrollArea):
 
         # 下载
         self.ytdlpPathCard.clicked.connect(self._onYTDLPPathCardClicked)
+
+        # 新手引导
+        self.teachingTipCard.clicked.connect(self._onTeachingTipCardClicked)
+
         self.ffmpegPathCard.clicked.connect(self._onFFmpegPathCardClicked)
         self.detectionCard.openButton.clicked.connect(self._onDectectionCardClicked)
 

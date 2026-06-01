@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QRect, QSettings, Qt, QUrl
+from PySide6.QtCore import QRect, QSettings, Qt, QUrl, QTimer
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
@@ -72,6 +72,15 @@ class MainWindow(MSFluentWindow):
         QApplication.setQuitOnLastWindowClosed(False)
 
         self._connectSignalToSlot()
+
+        # 检查是否首次运行，显示新手引导
+        if cfg.get(cfg.isFirstRun):
+            from ..components.teaching_tips import TeachingTipManager
+
+            self.teaching_tip_manager = TeachingTipManager(self)
+
+            # 延迟显示，确保窗口完全加载
+            QTimer.singleShot(500, self.teaching_tip_manager.show_teaching_tips)
 
         self.show()
 
