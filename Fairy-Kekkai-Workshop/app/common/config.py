@@ -122,6 +122,10 @@ class Config(QConfig):
     backgroundRect = RangeConfigItem(
         "MainWindow", "BackgroundRect", 0, RangeValidator(0, 200)
     )
+    # 首次运行标记
+    isFirstRun = ConfigItem(
+        "MainWindow", "IsFirstRun", True, BoolValidator(), restart=False
+    )
 
     # project
     detailProjectItemNum = RangeConfigItem(
