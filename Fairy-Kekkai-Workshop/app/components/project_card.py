@@ -33,7 +33,6 @@ from ..common.logger import Logger
 from ..components.dialog import (
     AddProject,
     AddProjectFromPlaylist,
-    CustomDoubleMessageBox,
 )
 from ..resource import resource_rc  # noqa: F401
 from ..service.donwload_list_service import DownloadListThread
@@ -249,9 +248,9 @@ class ProjectInterface(ScrollArea):
         for project_num in range(len(project.project_title)):
             self.addProjectCard(
                 project,
-                ":/app/images/logo.ico",
+                project.project_icons[project_num],
                 project.project_name[project_num],
-                project.project_title[project_num],
+                str(project.project_path[card_id]),
                 card_id,
                 project.project_path[card_id],
                 isLink=project.isLink[card_id],
@@ -411,7 +410,7 @@ class ProjectCard(CardWidget):
         self.openProjectSignal.emit([self.path, self.card_id])
 
     def editProject(self):
-        """修改文件夹名和原标题"""
+        """修改文件夹名、原标题和图标"""
         # 获取应用程序的顶级窗口
         main_window = None
         for widget in QApplication.topLevelWidgets():
@@ -419,24 +418,20 @@ class ProjectCard(CardWidget):
                 main_window = widget
                 break
 
-        dialog = CustomDoubleMessageBox(
-            title="修改项目文件名和原标题",
-            input1="文件夹名:",
-            input2="原标题:",
-            text1=f"{project.project_name[self.card_id]}",
-            text2=f"{project.project_title[self.card_id]}",
-            error1="请输入文件夹名",
-            error2="请输入原标题",
+        from ..components.dialog import EditProjectDialog
+
+        dialog = EditProjectDialog(
+            current_name=project.project_name[self.card_id],
+            current_title=project.project_title[self.card_id],
+            current_icon=project.project_icons[self.card_id],
             parent=main_window if main_window else self.window(),
         )
-        dialog.LineEdit_1.setText(f"{project.project_name[self.card_id]}")
-        dialog.LineEdit_2.setText(f"{project.project_title[self.card_id]}")
 
         if dialog.exec():
             # 修改原标题
             isSuccess_1 = project.change_name(
                 f"{project.project_path[self.card_id]}/{project.project_title[self.card_id]}.txt",
-                dialog.LineEdit_2.text() + ".txt",
+                dialog.titleInput.text() + ".txt",
             )
             if not isSuccess_1[0]:
                 event_bus.notification_service.show_error("错误", isSuccess_1[-1])
@@ -449,7 +444,7 @@ class ProjectCard(CardWidget):
                     [
                         str(
                             Path(f"{project.project_path[self.card_id]}").with_name(
-                                dialog.LineEdit_1.text()
+                                dialog.nameInput.text()
                             )
                         )
                         if item == str(Path(f"{project.project_path[self.card_id]}"))
@@ -460,16 +455,19 @@ class ProjectCard(CardWidget):
 
             # 修改文件名
             isSuccess_2 = project.change_name(
-                f"{project.project_path[self.card_id]}", dialog.LineEdit_1.text()
+                f"{project.project_path[self.card_id]}", dialog.nameInput.text()
             )
             if not isSuccess_2[0]:
                 event_bus.notification_service.show_error("错误", isSuccess_2[-1])
 
+            # 修改图标
+            isSuccess_3 = project.change_icon(self.card_id, dialog.get_selected_icon())
+            if not isSuccess_3[0]:
+                event_bus.notification_service.show_error("错误", isSuccess_3[-1])
+
             self.refreshProject.emit(False)
-            if isSuccess_1[0] and isSuccess_2[0]:
-                event_bus.notification_service.show_success(
-                    "成功", "已修改项目文件名和原标题"
-                )
+            if isSuccess_1[0] and isSuccess_2[0] and isSuccess_3[0]:
+                event_bus.notification_service.show_success("成功", "已修改项目信息")
         else:
             pass
 

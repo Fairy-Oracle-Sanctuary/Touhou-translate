@@ -3,6 +3,7 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout
 from qfluentwidgets import (
+    ComboBox,
     LineEdit,
     MessageBoxBase,
     PillPushButton,
@@ -316,13 +317,87 @@ class CustomTripleMessageBox(BaseInputDialog):
             ]
         )
 
-    def getInputs(self):
-        """获取三个输入框的值"""
-        return (
-            self.LineEdit_1.text().strip(),
-            self.LineEdit_2.text().strip(),
-            self.LineEdit_3.text().strip(),
+
+class EditProjectDialog(BaseInputDialog):
+    """编辑项目对话框（包含图标选择）"""
+
+    def __init__(self, current_name, current_title, current_icon, parent=None):
+        super().__init__("修改项目", min_width=500, parent=parent)
+        self.current_name = current_name
+        self.current_title = current_title
+        self.current_icon = current_icon
+        self.setup_ui()
+
+    def setup_ui(self):
+        grid_layout = QGridLayout()
+        self.viewLayout.addLayout(grid_layout)
+
+        # 文件夹名
+        self.nameLabel = StrongBodyLabel("文件夹名:", self)
+        self.nameInput = LineEdit(self)
+        self.nameInput.setText(self.current_name)
+        self.nameInput.setClearButtonEnabled(True)
+
+        # 原标题
+        self.titleLabel = StrongBodyLabel("原标题:", self)
+        self.titleInput = LineEdit(self)
+        self.titleInput.setText(self.current_title)
+        self.titleInput.setClearButtonEnabled(True)
+
+        # 图标选择
+        self.iconLabel = StrongBodyLabel("图标:", self)
+        self.iconComboBox = ComboBox(self)
+
+        # 添加图标选项
+        icon_display_names = {
+            ":/app/images/icons/牛排.svg": "牛排",
+            ":/app/images/icons/牛油果.svg": "牛油果",
+            ":/app/images/icons/番茄.svg": "番茄",
+            ":/app/images/icons/豆腐.svg": "豆腐",
+            ":/app/images/icons/紫薯.svg": "紫薯",
+            ":/app/images/icons/生菜.svg": "生菜",
+            ":/app/images/logo.ico": "默认",
+        }
+
+        self.iconComboBox.addItems(list(icon_display_names.values()))
+        self.iconComboBox.setCurrentIndex(
+            list(icon_display_names.keys()).index(self.current_icon)
+            if self.current_icon in icon_display_names
+            else 0
         )
+
+        # 添加到布局
+        grid_layout.addWidget(self.nameLabel, 0, 0)
+        grid_layout.addWidget(self.nameInput, 0, 1)
+        grid_layout.addWidget(self.titleLabel, 1, 0)
+        grid_layout.addWidget(self.titleInput, 1, 1)
+        grid_layout.addWidget(self.iconLabel, 2, 0)
+        grid_layout.addWidget(self.iconComboBox, 2, 1)
+
+        # 设置列拉伸
+        grid_layout.setColumnStretch(1, 1)
+        grid_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+    def validateInput(self):
+        errors = []
+        if not self.nameInput.text().strip():
+            errors.append("请输入文件夹名")
+        if not self.titleInput.text().strip():
+            errors.append("请输入原标题")
+        return errors
+
+    def get_selected_icon(self):
+        """获取选中的图标路径"""
+        icon_display_names = {
+            "牛排": ":/app/images/icons/牛排.svg",
+            "牛油果": ":/app/images/icons/牛油果.svg",
+            "番茄": ":/app/images/icons/番茄.svg",
+            "豆腐": ":/app/images/icons/豆腐.svg",
+            "紫薯": ":/app/images/icons/紫薯.svg",
+            "生菜": ":/app/images/icons/生菜.svg",
+            "默认": ":/app/images/logo.ico",
+        }
+        return icon_display_names[self.iconComboBox.currentText()]
 
 
 class ProjectProgressDialog(MessageBoxBase):

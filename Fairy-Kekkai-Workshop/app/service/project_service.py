@@ -1,8 +1,19 @@
+import random
 import shutil
 from pathlib import Path
 
 
 class Project:
+    # 可用的图标列表
+    AVAILABLE_ICONS = [
+        ":/app/images/icons/牛排.svg",
+        ":/app/images/icons/牛油果.svg",
+        ":/app/images/icons/番茄.svg",
+        ":/app/images/icons/豆腐.svg",
+        ":/app/images/icons/紫薯.svg",
+        ":/app/images/icons/生菜.svg",
+    ]
+
     def __init__(self):
         self.isLink = []
         self.projects_location = Path.cwd()
@@ -13,6 +24,7 @@ class Project:
         self.project_name = self.get_project_names()
         self.project_title = self.get_project_titles()
         self.project_subtitle = self.get_project_subtitles()
+        self.project_icons = self.get_project_icons()
 
     def get_project_paths(self):
         """
@@ -93,6 +105,26 @@ class Project:
             subtitles = self.get_subtitle(self.project_path.index(path))
             project_subtitles.append(subtitles)
         return project_subtitles
+
+    def get_project_icons(self):
+        """获取项目图标"""
+        project_icons = []
+        for path in self.project_path:
+            icon = self.get_icon(self.project_path.index(path))
+            project_icons.append(icon)
+        return project_icons
+
+    def get_icon(self, id):
+        """获取单个项目的图标"""
+        icon_file = self.project_path[id] / "icon.txt"
+        if icon_file.exists():
+            with icon_file.open("r", encoding="utf-8") as f:
+                return f.read().strip()
+        # 如果没有图标文件，随机分配一个并保存
+        selected_icon = random.choice(self.AVAILABLE_ICONS)
+        with icon_file.open("w", encoding="utf-8") as f:
+            f.write(selected_icon)
+        return selected_icon
 
     def get_subtitle(self, id):
         """获取单个工程的标题"""
@@ -177,6 +209,12 @@ class Project:
         id_file = project_path / f"{label}.txt"
         id_file.touch()  # 创建空文件
 
+        # 随机选择图标并保存
+        selected_icon = random.choice(self.AVAILABLE_ICONS)
+        icon_file = project_path / "icon.txt"
+        with icon_file.open("w", encoding="utf-8") as f:
+            f.write(selected_icon)
+
     def delete_project(self, project_path):
         """删除项目并刷新变量"""
         try:
@@ -192,6 +230,17 @@ class Project:
             old_path = Path(path)
             new_path = old_path.parent / name
             old_path.rename(new_path)
+            self.__init__()
+            return [True, ""]
+        except Exception as e:
+            return [False, str(e)]
+
+    def change_icon(self, id, icon_path):
+        """更改项目图标"""
+        try:
+            icon_file = self.project_path[id] / "icon.txt"
+            with icon_file.open("w", encoding="utf-8") as f:
+                f.write(icon_path)
             self.__init__()
             return [True, ""]
         except Exception as e:

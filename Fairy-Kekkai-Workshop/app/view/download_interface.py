@@ -1,6 +1,8 @@
 # coding:utf-8
+import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import urllib.request
@@ -470,7 +472,20 @@ class UpdateYtDlpThread(QThread):
             url = self.YTDLP_URLS.get(self.source, self.YTDLP_URLS["GitHub"])
             target_path = cfg.ytdlpPath.value
 
-            self.progress_signal.emit(0, f"从yt-dlp下载从 {self.source}开始下载...")
+            # Check current version
+            self.progress_signal.emit(0, "正在检查 yt-dlp 版本...")
+            current_version = self._get_current_version(target_path)
+            latest_version = self._get_latest_version()
+
+            if current_version and current_version == latest_version:
+                self.finished_signal.emit(
+                    True, f"yt-dlp 已是最新版本 ({latest_version})"
+                )
+                return
+
+            self.progress_signal.emit(
+                0, f"从 {self.source} 下载 yt-dlp {latest_version}..."
+            )
 
             # Create temp file for download
             temp_dir = tempfile.gettempdir()
@@ -524,3 +539,32 @@ class UpdateYtDlpThread(QThread):
     def cancel(self):
         """Cancel the download"""
         self._is_cancelled = True
+
+    def _get_current_version(self, target_path: str) -> str:
+        """Get current yt-dlp version"""
+        if not os.path.exists(target_path):
+            return None
+        try:
+            result = subprocess.run(
+                [target_path, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except Exception:
+            pass
+        return None
+
+    def _get_latest_version(self) -> str:
+        """Get latest yt-dlp version from GitHub API"""
+        try:
+            response = urllib.request.urlopen(
+                "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest",
+                timeout=10,
+            )
+            data = json.loads(response.read().decode())
+            return data.get("tag_name", "").lstrip("v")
+        except Exception:
+            return None

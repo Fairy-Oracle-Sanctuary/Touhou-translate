@@ -176,14 +176,6 @@ class TranslationInterface(BaseFunctionInterface):
             self.show_error_message("请先填写您的Spark-Lite API Key")
             return
 
-        elif cfg.get(cfg.ai_model) == "Spark-Lite" and not cfg.get(cfg.sparkAppId):
-            self.show_error_message("请先填写您的Spark-Lite App ID")
-            return
-
-        elif cfg.get(cfg.ai_model) == "Spark-Lite" and not cfg.get(cfg.sparkApiSecret):
-            self.show_error_message("请先填写您的Spark-Lite API Secret")
-            return
-
         elif cfg.get(cfg.ai_model) == "腾讯混元" and not cfg.get(cfg.hunyuanApiKey):
             self.show_error_message("请先填写您的腾讯混元 API Key")
             return

@@ -6,15 +6,45 @@ from urllib.parse import urlparse
 
 from openai import OpenAI
 from PySide6.QtCore import QThread, Signal
-from sparkai.llm.llm import (
-    ChatSparkLLM,
-    ChunkPrintHandler,
-)
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.logger import Logger
 from ..common.setting import AI_ERROR_MAP
+
+
+def parse_srt(srt_content: str) -> list[dict]:
+    """解析 SRT 文件，提取纯文本和元数据"""
+    items = []
+    blocks = re.split(r"\n\s*\n", srt_content.strip())
+
+    for block in blocks:
+        lines = block.strip().split("\n")
+        if len(lines) < 3:
+            continue
+
+        # 第一行是序号
+        index = lines[0].strip()
+
+        # 第二行是时间轴
+        time = lines[1].strip()
+
+        # 剩余行是文本
+        text = "\n".join(lines[2:]).strip()
+
+        items.append({"index": index, "time": time, "text": text})
+
+    return items
+
+
+def assemble_srt(items: list[dict]) -> str:
+    """将解析后的 SRT 项目重新组装为 SRT 格式"""
+    blocks = []
+    for item in items:
+        block = f"{item['index']}\n{item['time']}\n{item['text']}"
+        blocks.append(block)
+
+    return "\n\n".join(blocks)
 
 
 def remove_thinking_content(text: str) -> str:
@@ -73,31 +103,35 @@ class BaseTranslateService(ABC):
             content=content,
         )
         print(prompt)
-        model = self.get_model_name()
-        if model == "spark-lite":
-            try:
-                response = self.get_client()
-                messages = [{"role": "user", "content": prompt}]
-                handler = ChunkPrintHandler()
-                a = response.stream(messages, callbacks=[handler])
-                for chunk in a:
-                    yield chunk.content
-            except Exception as e:
-                print(e)
-                raise e
-        else:
-            try:
-                response = self.get_client().chat.completions.create(
-                    model=self.get_model_name(),
-                    messages=[{"role": "user", "content": prompt}],
-                    stream=True,
-                    temperature=temperature,
-                )
-                for chunk in response:
-                    if content_piece := chunk.choices[0].delta.content:
-                        yield content_piece
-            except Exception as e:
-                raise e
+        try:
+            response = self.get_client().chat.completions.create(
+                model=self.get_model_name(),
+                messages=[{"role": "user", "content": prompt}],
+                stream=True,
+                temperature=temperature,
+            )
+            for chunk in response:
+                if content_piece := chunk.choices[0].delta.content:
+                    yield content_piece
+        except Exception as e:
+            raise e
+
+    def translate_with_context(
+        self, origin_lang: str, target_lang: str, messages: list, temperature: float
+    ) -> Generator[str, None, None]:
+        """使用多轮对话进行翻译"""
+        try:
+            response = self.get_client().chat.completions.create(
+                model=self.get_model_name(),
+                messages=messages,
+                stream=True,
+                temperature=temperature,
+            )
+            for chunk in response:
+                if content_piece := chunk.choices[0].delta.content:
+                    yield content_piece
+        except Exception as e:
+            raise e
 
     @classmethod
     def analysis_error(cls, error_str: str) -> str:
@@ -168,17 +202,13 @@ class GLMService(BaseTranslateService):
 
 class SparkLiteService(BaseTranslateService):
     def get_client(self):
-        return ChatSparkLLM(
-            spark_api_url="wss://spark-api.xf-yun.com/v1.1/chat",
-            spark_app_id=cfg.get(cfg.sparkAppId),
-            spark_api_key=cfg.get(cfg.sparkApiKey),
-            spark_api_secret=cfg.get(cfg.sparkApiSecret),
-            spark_llm_domain="lite",
-            streaming=True,
+        return OpenAI(
+            api_key=cfg.get(cfg.sparkApiKey),
+            base_url="https://spark-api-open.xf-yun.com/v1",
         )
 
     def get_model_name(self):
-        return "spark-lite"
+        return "generalv3.5"
 
 
 class HunyuanService(BaseTranslateService):
@@ -304,29 +334,72 @@ class TranslateThread(QThread):
                 if service_cls == DeepseekService
                 else service_cls()
             )
-            chunks_to_translate = self.task.raw_content.split("\n\n")
-            batch_size = 50
 
-            with open(self.task.output_file, "w", encoding="utf-8") as f:
-                for i in range(0, len(chunks_to_translate), batch_size):
-                    # 检查状态
+            # 解析 SRT 文件
+            srt_items = parse_srt(self.task.raw_content)
+            batch_size = 100
+
+            # 构建系统提示
+            system_prompt = cfg.get(cfg.promptTemplate).format(
+                origin_lang=self.task.origin_lang,
+                target_lang=self.task.target_lang,
+            )
+
+            # 初始化对话历史
+            messages = [{"role": "system", "content": system_prompt}]
+
+            # 分批翻译
+            for i in range(0, len(srt_items), batch_size):
+                # 检查状态
+                if not self._is_running:
+                    break
+
+                batch = srt_items[i : i + batch_size]
+                batch_texts = [
+                    f"{j + 1}. {item['text']}" for j, item in enumerate(batch)
+                ]
+                user_content = f"请翻译以下{len(batch)}句：\n" + "\n".join(batch_texts)
+
+                # 添加用户消息
+                messages.append({"role": "user", "content": user_content})
+
+                # 调用翻译
+                full_response = ""
+                for text_piece in service.translate_with_context(
+                    self.task.origin_lang,
+                    self.task.target_lang,
+                    messages,
+                    self.task.temperature,
+                ):
                     if not self._is_running:
                         break
+                    full_response += text_piece
 
-                    batch_content = "\n\n".join(chunks_to_translate[i : i + batch_size])
+                # 添加助手回复到对话历史
+                messages.append({"role": "assistant", "content": full_response})
 
-                    # 传递运行状态检查
-                    for text_piece in service.translate(
-                        self.task.origin_lang,
-                        self.task.target_lang,
-                        batch_content,
-                        self.task.temperature,
-                    ):
-                        if not self._is_running:
-                            break
-                        self._write_and_notify(text_piece, f)
+                # 解析翻译结果
+                translated_texts = self._parse_translation_response(
+                    full_response, len(batch)
+                )
 
-                    f.write("\n\n")
+                # 更新 SRT 项目
+                for j, item in enumerate(batch):
+                    if j < len(translated_texts):
+                        item["text"] = translated_texts[j]
+
+                # 更新进度
+                progress = int((i + batch_size) / len(srt_items) * 100)
+                event_bus.translate_update_signal.emit(
+                    str(self.task.id), f"翻译进度: {min(progress, 100)}%"
+                )
+
+            # 组装最终的 SRT
+            final_srt = assemble_srt(srt_items)
+
+            # 写入文件
+            with open(self.task.output_file, "w", encoding="utf-8") as f:
+                f.write(final_srt)
 
             # 正常运行结束或被拦截后的信号处理
             if not self._is_running:
@@ -356,6 +429,38 @@ class TranslateThread(QThread):
             self.finished_signal.emit(False, f"翻译失败: {error_msg}")
             event_bus.translate_finished_signal.emit(False, [error_msg])
             self.logger.error(f"翻译任务失败: {self.task.input_file} - {error_msg}")
+
+    def _parse_translation_response(
+        self, response: str, expected_count: int
+    ) -> list[str]:
+        """解析 AI 的翻译响应，提取翻译文本"""
+        # 按行分割
+        lines = response.strip().split("\n")
+
+        # 过滤空行
+        lines = [line.strip() for line in lines if line.strip()]
+
+        # 尝试匹配 "1. 翻译文本" 格式
+        translations = []
+        for line in lines:
+            # 移除序号前缀（如 "1. ", "2. " 等）
+            match = re.match(r"^\d+\.\s*(.+)$", line)
+            if match:
+                translations.append(match.group(1))
+            else:
+                # 如果没有序号，直接使用
+                translations.append(line)
+
+        # 如果数量不匹配，尝试其他解析方式
+        if len(translations) != expected_count:
+            # 尝试按行直接分割
+            translations = lines[:expected_count]
+
+        # 确保数量匹配
+        while len(translations) < expected_count:
+            translations.append("***")
+
+        return translations[:expected_count]
 
     def _post_process_translation(self):
         """翻译后处理：去除思考内容"""
