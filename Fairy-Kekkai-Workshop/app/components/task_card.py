@@ -1,7 +1,12 @@
 from PySide6.QtGui import QIcon
 
 from .base_task_card import BaseItemWidget
-from .dialog import FFmpegProgressDialog, ReleaseProgressDialog, TranslateProgressDialog
+from .dialog import (
+    FFmpegProgressDialog,
+    ReleaseProgressDialog,
+    TranslateProgressDialog,
+    WhisperProgressDialog,
+)
 
 
 class OcrItemWidget(BaseItemWidget):
@@ -67,4 +72,17 @@ class ReleaseItemWidget(BaseItemWidget):
     def handleClick(self):
         """处理点击事件"""
         dialog = ReleaseProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog.exec()
+
+
+class WhisperItemWidget(BaseItemWidget):
+    """语音识别任务项组件"""
+
+    def __init__(self, task, progressBar_type="common", task_type="识别", parent=None):
+        super().__init__(task, progressBar_type, task_type, parent)
+        self.clicked.connect(self.handleClick)
+
+    def handleClick(self):
+        """处理点击事件"""
+        dialog = WhisperProgressDialog(task=self.task, parent=self.parent().parent())
         dialog.exec()

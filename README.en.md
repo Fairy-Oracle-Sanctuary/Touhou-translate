@@ -94,8 +94,11 @@ This repository houses a collection of self-developed auxiliary scripts and tool
 *   **Project Management:** Easily manage the progress, resources, and metadata of various translation projects.
 *   **Resource Download:** Built-in YouTube video downloader, supporting batch downloading from playlists.
 *   **Subtitle Extraction:** Utilizes OCR technology to quickly identify and extract hardcoded subtitles from videos and generate SRT subtitle files.
-*   **AI Translation:** Integrates with the Deepseek API to enable automatic translation (requires your own API Key).
+*   **Speech Recognition:** Based on WhisperNet, supports multi-language speech-to-subtitle conversion with real-time progress display (Windows only).
+*   **AI Translation:** Integrates with multiple AI models (Deepseek, Tencent Hunyuan, ERNIE, Gemini, InternLM, etc.) to enable automatic translation (requires your own API Key).
 *   **Video Compression:** Incorporates ffmpeg tool to support video file compression.
+*   **Theme Toggle:** Quick theme toggle button in title bar, supporting dark/light mode.
+*   **Splash Screen:** Startup screen with progress bar and status text.
 
 **Acknowledgments:**
 - videocli from [VideOCR](https://github.com/timminator/VideOCR)

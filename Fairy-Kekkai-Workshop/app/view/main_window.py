@@ -2,16 +2,23 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QRect, QSettings, Qt, QTimer, QUrl
+from PySide6.QtCore import QRect, QSettings, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
+    BodyLabel,
     InfoBarPosition,
     MessageBox,
     MSFluentWindow,
     NavigationItemPosition,
+    ProgressBar,
+    SplashScreen,
+    Theme,
+    TransparentToolButton,
+    isDarkTheme,
+    setTheme,
 )
+from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -27,16 +34,73 @@ from .project_interface import ProjectStackedInterface
 # from .release_interface import ReleaseStackedInterfaces
 from .setting_interface import SettingInterface
 from .translate_interface import TranslateStackedInterfaces
+from .whisper_interface import WhisperStackedInterfaces
 
 if sys.platform == "win32":
     from .videocr_interface import VideocrStackedInterfaces
 
 
+class LoadingSplashScreen(SplashScreen):
+    """带加载进度条与状态文字的启动页"""
+
+    def __init__(self, icon, parent=None):
+        super().__init__(icon, parent)
+
+        # 进度条（禁用动画，使同步初始化期间能即时显示进度）
+        self.progressBar = ProgressBar(self, useAni=False)
+        self.progressBar.setFixedWidth(320)
+        self.progressBar.setValue(0)
+
+        # 状态文字
+        self.statusLabel = BodyLabel("正在启动...", self)
+        self.statusLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self._repositionExtras()
+
+    def setProgress(self, value: int, text: str = None):
+        """更新加载进度和状态文字"""
+        self.progressBar.setValue(value)
+        if text is not None:
+            self.statusLabel.setText(text)
+            self.statusLabel.adjustSize()
+            self._repositionExtras()
+        QApplication.processEvents()
+
+    def _repositionExtras(self):
+        """将进度条与状态文字放置在图标下方居中"""
+        if not hasattr(self, "progressBar"):
+            return
+        ih = self.iconSize().height()
+        cx = self.width() // 2
+        cy = self.height() // 2
+        py = cy + ih // 2 + 40
+        self.progressBar.move(cx - self.progressBar.width() // 2, py)
+        self.statusLabel.adjustSize()
+        self.statusLabel.move(cx - self.statusLabel.width() // 2, py + 24)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self._repositionExtras()
+
+
 class MainWindow(MSFluentWindow):
     def __init__(self):
         super().__init__()
+        # 提前初始化背景标志，避免 paintEvent 在显示时访问未定义属性而崩溃
+        self.isShowBackground = False
 
+        # 先设置窗口图标/尺寸，再创建启动页
         self._initWindow()
+
+        # 创建启动页面（在加载界面前显示 Logo 与加载进度）
+        self.splashScreen = LoadingSplashScreen(self.windowIcon(), self)
+        self.splashScreen.setIconSize(QSize(120, 120))
+        self.splashScreen.raise_()
+
+        # 显示主窗口，使作为其子控件的启动页可见，并立即绘制
+        self.show()
+        QApplication.processEvents()
+        self.splashScreen.setProgress(10, "正在初始化服务...")
 
         # 初始化版本服务
         self.versionManager = VersionService()
@@ -48,12 +112,12 @@ class MainWindow(MSFluentWindow):
         self.notification_service.set_default_duration(3000)
         self.notification_service.set_position(InfoBarPosition.BOTTOM_RIGHT)
         event_bus.notification_service = self.notification_service
+        self.splashScreen.setProgress(30, "正在读取设置...")
 
         # 读取设置
         self.settings = QSettings("Fairy-Kekkai-Workshop", "Settings")
 
         # 背景图片
-        self.isShowBackground = False
         if cfg.get(cfg.showBackground):
             if Path(cfg.get(cfg.backgroundPath)).exists():
                 self.isShowBackground = True
@@ -63,7 +127,9 @@ class MainWindow(MSFluentWindow):
                     "背景图片错误", "请检查图片是否存在"
                 )
 
+        self.splashScreen.setProgress(50, "正在加载界面...")
         self._initNavigation()
+        self.splashScreen.setProgress(80, "正在初始化系统托盘...")
 
         # 初始化系统托盘
         self.system_tray = SystemTray(self)
@@ -72,6 +138,8 @@ class MainWindow(MSFluentWindow):
         QApplication.setQuitOnLastWindowClosed(False)
 
         self._connectSignalToSlot()
+        self._initThemeButton()
+        self.splashScreen.setProgress(100, "启动完成")
 
         # 检查是否首次运行，显示新手引导
         if cfg.get(cfg.isFirstRun):
@@ -82,7 +150,8 @@ class MainWindow(MSFluentWindow):
             # 延迟显示，确保窗口完全加载
             QTimer.singleShot(500, self.teaching_tip_manager.show_teaching_tips)
 
-        self.show()
+        # 关闭启动页面
+        self.splashScreen.finish()
 
     def paintEvent(self, event):
         """重绘事件，绘制背景图片"""
@@ -182,6 +251,30 @@ class MainWindow(MSFluentWindow):
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
+    def _initThemeButton(self):
+        """在标题栏最小化按钮左侧添加主题切换按钮"""
+        self.themeButton = TransparentToolButton(self.titleBar)
+        # 与最小化按钮尺寸保持一致
+        self.themeButton.setFixedSize(self.titleBar.minBtn.size())
+        self._updateThemeButtonIcon()
+        self.themeButton.clicked.connect(self._toggleTheme)
+        # 插入到最小化按钮左侧（buttonLayout: minBtn, maxBtn, closeBtn）
+        self.titleBar.buttonLayout.insertWidget(
+            0, self.themeButton, 0, Qt.AlignmentFlag.AlignTop
+        )
+
+    def _updateThemeButtonIcon(self):
+        """根据当前主题更新按钮图标"""
+        # 深色模式显示太阳（切到浅色），浅色模式显示月亮（切到深色）
+        self.themeButton.setIcon(FIF.BRIGHTNESS if isDarkTheme() else FIF.QUIET_HOURS)
+
+    def _toggleTheme(self):
+        """切换浅色/深色主题"""
+        theme = Theme.LIGHT if isDarkTheme() else Theme.DARK
+        cfg.set(cfg.themeMode, theme)
+        setTheme(theme)
+        self._updateThemeButtonIcon()
+
     def _initNavigation(self):
         """创建页面"""
         self.homeInterface = HomeInterface(self)
@@ -191,6 +284,7 @@ class MainWindow(MSFluentWindow):
             self.videoCRInterface = VideocrStackedInterfaces(self)
         self.translateInterface = TranslateStackedInterfaces(self)
         self.ffmpegInterface = FFmpegStackedInterfaces(self)
+        self.whisperInterface = WhisperStackedInterfaces(self)
         # self.releaseInterface = ReleaseStackedInterfaces(self)
         self.settingInterface = SettingInterface(self)
 
@@ -200,6 +294,7 @@ class MainWindow(MSFluentWindow):
                 self.projectInterface,
                 self.downloadInterface,
                 self.videoCRInterface,
+                self.whisperInterface,
                 self.translateInterface,
                 self.ffmpegInterface,
                 # self.releaseInterface,
@@ -221,8 +316,10 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.downloadInterface, FIF.DOWNLOAD, "下载")
         if sys.platform == "win32":
             self.addSubInterface(self.videoCRInterface, FIF.VIDEO, "字幕")
+            self.addSubInterface(self.whisperInterface, FIF.MICROPHONE, "识别")
         self.addSubInterface(self.translateInterface, FIF.MESSAGE, "翻译")
         self.addSubInterface(self.ffmpegInterface, FIF.ZIP_FOLDER, "压制")
+
         # self.addSubInterface(self.releaseInterface, FIF.IMAGE_EXPORT, "发布")
 
         # 添加自定义导航组件
@@ -265,6 +362,9 @@ class MainWindow(MSFluentWindow):
         )
         event_bus.release_finished_signal.connect(
             self.show_system_tray_message_release_finished
+        )
+        event_bus.whisper_finished_signal.connect(
+            self.show_system_tray_message_whisper_finished
         )
 
     def showHelpBox(self):
@@ -425,6 +525,31 @@ class MainWindow(MSFluentWindow):
                     if hasattr(thread, "wait"):
                         thread.wait(1000)
 
+        # 停止Whisper任务
+        if hasattr(self, "whisperInterface"):
+            whisper_interface = getattr(self.whisperInterface, "taskInterface", None)
+            if whisper_interface and hasattr(whisper_interface, "active_threads"):
+                from PySide6.QtCore import QProcess
+
+                for thread in whisper_interface.active_threads[:]:
+                    # 断开信号连接
+                    if hasattr(thread, "finished_signal"):
+                        try:
+                            thread.finished_signal.disconnect()
+                        except Exception:
+                            pass
+                    if hasattr(thread, "_is_running"):
+                        thread._is_running = False
+                    # 标记任务为已取消
+                    if hasattr(thread, "task"):
+                        thread.task.status = "已取消"
+                    if hasattr(thread, "process") and thread.process:
+                        if thread.process.state() == QProcess.ProcessState.Running:
+                            thread.process.kill()
+                            thread.process.waitForFinished(1000)
+                    if hasattr(thread, "wait"):
+                        thread.wait(1000)
+
     def check_running_tasks(self):
         """检查是否有运行中的任务"""
         running_tasks = []
@@ -464,6 +589,14 @@ class MainWindow(MSFluentWindow):
                 active_count = len(ffmpeg_interface.active_threads)
                 if active_count > 0:
                     running_tasks.append(f"压制任务: {active_count} 个")
+
+        # 检查Whisper任务
+        if hasattr(self, "whisperInterface"):
+            whisper_interface = getattr(self.whisperInterface, "taskInterface", None)
+            if whisper_interface and hasattr(whisper_interface, "active_threads"):
+                active_count = len(whisper_interface.active_threads)
+                if active_count > 0:
+                    running_tasks.append(f"识别任务: {active_count} 个")
 
         return "\n".join(running_tasks) if running_tasks else None
 
@@ -654,3 +787,25 @@ class MainWindow(MSFluentWindow):
                 3000,
             )
             print(message)
+
+    def show_system_tray_message_whisper_finished(self, success, message):
+        """通过系统托盘显示语音识别完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
+        if success:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"语音识别完成 -{message}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )
+        else:
+            self.system_tray.showMessage(
+                "Fairy-Kekkai-Workshop",
+                f"语音识别失败 -{message}-",
+                QIcon(":/app/images/logo.png"),
+                3000,
+            )

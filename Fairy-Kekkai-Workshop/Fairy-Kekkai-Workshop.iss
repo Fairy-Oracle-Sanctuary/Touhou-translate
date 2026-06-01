@@ -46,6 +46,10 @@ Name: "chinesesimp"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+[InstallDelete]
+; 安装前删除旧版本的所有文件和子目录
+Type: filesandordirs; Name: "{app}\*"
+
 [Files]
 Source: "C:\Users\ZHANGBaoHang\Desktop\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\Touhou-project\projects\Fairy-Kekkai-Workshop\dist\Fairy-Kekkai-Workshop.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

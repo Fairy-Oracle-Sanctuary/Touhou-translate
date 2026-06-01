@@ -72,19 +72,26 @@ class HomeInterface(ScrollArea):
                 routeKey="DownloadStackedInterfaces",
                 index=3,
             )
+            basicInputView.addSampleCard(
+                icon=QIcon(":/app/images/controls/whisper.svg"),
+                title="语音识别",
+                content=self.tr("提取视频内的人声"),
+                routeKey="WhisperStackedInterfaces",
+                index=4,
+            )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/translate.svg"),
             title="翻译字幕",
             content=self.tr("翻译提取出的字幕文件"),
             routeKey="TranslationStackedInterface",
-            index=4 if sys.platform != "darwin" else 3,
+            index=5 if sys.platform != "darwin" else 3,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/video.svg"),
             title="视频压制",
             content=self.tr("压制烤制好的视频"),
             routeKey="FFmpegStackedInterface",
-            index=5 if sys.platform != "darwin" else 4,
+            index=6 if sys.platform != "darwin" else 4,
         )
         basicInputView.addSampleCard(
             icon=QIcon(":/app/images/controls/setting.svg"),
@@ -108,6 +115,13 @@ class HomeInterface(ScrollArea):
             content="yt-dlp下载地址，下载后可在设置里设定路径",
             url="https://github.com/yt-dlp/yt-dlp/releases/latest",
         )
+        if sys.platform == "win32":
+            urlSamepleView.addOpenUrlCard(
+                icon=FIF.LIBRARY_FILL,
+                title="Whisper模型 (未内置)",
+                content="Whisper模型下载地址，下载后可在设置里设定\n路径",
+                url="https://pan.xunlei.com/s/VOu1R3aOfz05uqcbNUBSnEFSA1?pwd=62cr#",
+            )          
         # urlSamepleView.addOpenUrlCard(
         #     icon=QIcon(":/app/images/logo/Paddle.svg"),
         #     title="PaddleOCR (已内置)",

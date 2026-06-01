@@ -630,3 +630,49 @@ class ReleaseProgressDialog(MessageBoxBase):
         """重写接受方法，断开信号连接"""
         event_bus.release_update_signal.disconnect(self.on_release_update)
         super().accept()
+
+
+class WhisperProgressDialog(MessageBoxBase):
+    """Whisper语音识别进度对话框"""
+
+    def __init__(self, task=None, parent=None):
+        super().__init__(parent)
+        self.task = task
+        self.current_content = ""
+        self.setup_ui()
+        if task:
+            self.connect_signals()
+
+    def setup_ui(self):
+        self.titleLabel = SubtitleLabel("语音识别进度")
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.textEdit = PlainTextEdit(self)
+        self.textEdit.setReadOnly(True)
+        self.textEdit.setPlaceholderText("输出将在这里显示...")
+        self.viewLayout.addWidget(self.textEdit)
+
+        self.yesButton.setText("关闭")
+        self.cancelButton.setVisible(False)
+
+        # 设置对话框大小
+        self.widget.setMinimumWidth(600)
+        self.widget.setMinimumHeight(500)
+
+    def connect_signals(self):
+        """连接实时Whisper输出信号"""
+        event_bus.whisper_update_signal.connect(self.on_whisper_update)
+
+    def on_whisper_update(self, task_id, output_chunk):
+        """处理实时Whisper输出更新"""
+        # 只处理当前任务的更新
+        if self.task and str(self.task.id) == task_id:
+            self.current_content += output_chunk
+            self.textEdit.setPlainText(self.current_content)
+            scrollbar = self.textEdit.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+    def accept(self):
+        """重写接受方法，断开信号连接"""
+        event_bus.whisper_update_signal.disconnect(self.on_whisper_update)
+        super().accept()
