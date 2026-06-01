@@ -17,6 +17,14 @@
 # Python 字节码缓存目录
 __pycache__/
 
+# ===================
+# .NET / C# 相关
+# ===================
+
+# .NET 构建输出目录
+bin/
+obj/
+
 # python venv 目录
 project-x/
 .venv/

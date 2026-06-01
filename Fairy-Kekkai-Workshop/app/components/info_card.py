@@ -1,5 +1,8 @@
 # coding:utf-8
-from PySide6.QtCore import QSize, Qt, QUrl
+import os
+import sys
+
+from PySide6.QtCore import QProcess, QSize, Qt, QUrl
 from PySide6.QtGui import QColor, QDesktopServices, QIcon
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
@@ -7,6 +10,7 @@ from qfluentwidgets import (
     FluentIcon,
     HyperlinkLabel,
     ImageLabel,
+    MessageBox,
     PrimaryPushButton,
     SimpleCardWidget,
     TitleLabel,
@@ -16,7 +20,7 @@ from qfluentwidgets import (
 )
 
 from ..common.event_bus import event_bus
-from ..common.setting import GITHUB_URL, UPDATE_TIME, VERSION
+from ..common.setting import CONFIG_FILE, GITHUB_URL, UPDATE_TIME, VERSION
 from ..resource import resource_rc  # noqa: F401
 from ..view.log_interface import LogWindow
 from .statistic_widget import StatisticsWidget
@@ -54,6 +58,10 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         )
 
         self.logButton = PrimaryPushButton(FluentIcon.BOOK_SHELF, self.tr("Log"))
+        self.clearLogButton = TransparentToolButton(FluentIcon.DELETE, self)
+        self.clearLogButton.setToolTip(self.tr("清空所有日志"))
+        self.resetButton = TransparentToolButton(FluentIcon.SYNC, self)
+        self.resetButton.setToolTip(self.tr("重置所有设置并重启"))
 
         self.hBoxLayout = QHBoxLayout(self)
         self.vBoxLayout = QVBoxLayout()
@@ -80,6 +88,11 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
 
         self.githubButton.setFixedSize(32, 32)
         self.githubButton.setIconSize(QSize(14, 14))
+
+        self.clearLogButton.setFixedSize(32, 32)
+        self.clearLogButton.setIconSize(QSize(14, 14))
+        self.resetButton.setFixedSize(32, 32)
+        self.resetButton.setIconSize(QSize(14, 14))
 
         setFont(self.logButton, 12)
         self.logButton.setFixedSize(80, 32)
@@ -126,10 +139,15 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
         self.vBoxLayout.addLayout(self.buttonLayout)
         self.buttonLayout.addWidget(self.logButton, 0, Qt.AlignLeft)
+        self.buttonLayout.addStretch(1)
+        self.buttonLayout.addWidget(self.clearLogButton, 0, Qt.AlignRight)
+        self.buttonLayout.addWidget(self.resetButton, 0, Qt.AlignRight)
         self.buttonLayout.addWidget(self.githubButton, 0, Qt.AlignRight)
 
     def __connectSignalToSlot(self):
         self.logButton.clicked.connect(self.__onLogButtonClicked)
+        self.clearLogButton.clicked.connect(self.__onClearLogClicked)
+        self.resetButton.clicked.connect(self.__onResetClicked)
         event_bus.log_window_closed.connect(lambda: self.logButton.setEnabled(True))
         event_bus.log_message.connect(self.appendLog)
 
@@ -153,6 +171,91 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
             self.aiLogs,
             self.ffmpegLogs,
         )
+
+    def __onClearLogClicked(self):
+        """清空所有日志"""
+        box = MessageBox(
+            self.tr("清空所有日志"),
+            self.tr("确定要清空所有日志文件吗？此操作不可恢复。"),
+            self.window(),
+        )
+        box.yesButton.setText(self.tr("确定"))
+        box.cancelButton.setText(self.tr("取消"))
+        if not box.exec():
+            return
+
+        from ..common.logger import LOG_FOLDER
+
+        deleted = 0
+        if LOG_FOLDER.exists():
+            for log_file in LOG_FOLDER.glob("*.log"):
+                try:
+                    log_file.unlink()
+                    deleted += 1
+                except Exception:
+                    pass
+
+        # 清空内存中的日志
+        self.__initLog()
+        try:
+            self.logWindow.setLog("", "", "", "", "", "")
+        except Exception:
+            pass
+
+        event_bus.notification_service.show_success(
+            self.tr("清空成功"), self.tr(f"已清空 {deleted} 个日志文件")
+        )
+
+    def __onResetClicked(self):
+        """重置所有设置并重启"""
+        box = MessageBox(
+            self.tr("重置所有设置"),
+            self.tr("确定要重置软件所有设置吗？软件将会重启，此操作不可恢复。"),
+            self.window(),
+        )
+        box.yesButton.setText(self.tr("确定"))
+        box.cancelButton.setText(self.tr("取消"))
+        if not box.exec():
+            return
+
+        # 删除配置文件
+        try:
+            if CONFIG_FILE.exists():
+                CONFIG_FILE.unlink()
+        except Exception as e:
+            event_bus.notification_service.show_error(self.tr("重置失败"), str(e))
+            return
+
+        self.__restartApplication()
+
+    def __restartApplication(self):
+        """重启应用程序"""
+        from PySide6.QtWidgets import QApplication
+
+        # 标记主窗口真正退出，避免最小化到托盘
+        main_window = self.window()
+        if main_window is not None and hasattr(main_window, "_really_quit"):
+            main_window._really_quit = True
+        if main_window is not None and hasattr(main_window, "system_tray"):
+            try:
+                main_window.system_tray.hide()
+            except Exception:
+                pass
+
+        # 在应用退出后启动新实例，避免单例共享内存冲突
+        QApplication.instance().aboutToQuit.connect(self.__spawnNewInstance)
+        QApplication.instance().exit(0)
+
+    def __spawnNewInstance(self):
+        """启动新的应用实例"""
+        program = sys.executable
+        if getattr(sys, "frozen", False):
+            # 打包后的可执行文件
+            args = sys.argv[1:]
+        else:
+            # 脚本运行
+            args = [os.path.abspath(sys.argv[0])] + sys.argv[1:]
+        QProcess.startDetached(program, args)
 
     def appendLog(self, log_name, message):
         """追加日志到日志窗口"""

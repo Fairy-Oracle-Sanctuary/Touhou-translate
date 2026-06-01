@@ -521,6 +521,57 @@ class Config(QConfig):
     # AI温度 (0-2)
     aiTemperature = ConfigItem("Translate", "AiTemperature", "0.7", restart=False)
 
+    # Whisper settings
+    whisperModelPath = ConfigItem(
+        "Whisper",
+        "ModelPath",
+        str(Path("tools/Whisper.model").absolute()),
+    )
+    whisperCliPath = ConfigItem(
+        "Whisper",
+        "CliPath",
+        str(Path(f"tools/Whisper/WhisperNetCLI{EXE_SUFFIX}").absolute()),
+    )
+    whisperLanguage = OptionsConfigItem(
+        "Whisper",
+        "Language",
+        "auto",
+        OptionsValidator(["auto", "zh", "ja", "en", "ko", "fr", "de", "es"]),
+        restart=False,
+    )
+    whisperOutputFormat = OptionsConfigItem(
+        "Whisper",
+        "OutputFormat",
+        "srt",
+        OptionsValidator(["srt", "txt", "json"]),
+        restart=False,
+    )
+    whisperUseGpu = ConfigItem(
+        "Whisper", "UseGpu", False, BoolValidator(), restart=False
+    )
+    whisperGpu = OptionsConfigItem(
+        "Whisper",
+        "Gpu",
+        "自动检测",
+        OptionsValidator(
+            [
+                "自动检测",
+                "NVIDIA GeForce RTX 4090",
+                "NVIDIA GeForce RTX 4080",
+                "NVIDIA GeForce RTX 4070",
+                "NVIDIA GeForce RTX 4060",
+                "NVIDIA GeForce RTX 3060",
+                "NVIDIA GeForce RTX 3050",
+                "NVIDIA GeForce RTX 2080",
+                "NVIDIA GeForce RTX 2070",
+                "NVIDIA GeForce RTX 2060",
+                "NVIDIA GeForce GTX 1660",
+                "NVIDIA GeForce GTX 1060",
+            ]
+        ),
+        restart=False,
+    )
+
     # ffmpeg settings
     ffmpegPath = ConfigItem("FFmpeg", "FFmpegPath", get_default_exe_path("ffmpeg"))
 

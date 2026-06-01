@@ -1,6 +1,7 @@
 # coding:utf-8
 import re
 import urllib.parse
+from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, Signal
@@ -1430,6 +1431,188 @@ class TranslateSettingInterface(ScrollArea):
             isClosable=True,
             aniType=FlyoutAnimationType.PULL_UP,
         )
+
+
+class WhisperSettingInterface(ScrollArea):
+    """Whisper 语音识别设置界面"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.scrollWidget = QWidget()
+        self.expandLayout = ExpandLayout(self.scrollWidget)
+
+        # setting label
+        self.settingLabel = TitleLabel(self.tr("Whisper 语音识别设置"), self)
+
+        # 模型路径
+        self.modelPathGroup = SettingCardGroup(self.tr("模型路径"), self.scrollWidget)
+        self.modelPathCard = PushSettingCard(
+            self.tr("选择模型文件"),
+            FIF.DOCUMENT,
+            "模型文件",
+            cfg.get(cfg.whisperModelPath),
+            self.modelPathGroup,
+        )
+
+        # CLI 程序路径
+        self.cliPathGroup = SettingCardGroup(self.tr("程序路径"), self.scrollWidget)
+        self.cliPathCard = PushSettingCard(
+            self.tr("选择程序"),
+            FIF.APPLICATION,
+            "WhisperNetCLI",
+            cfg.get(cfg.whisperCliPath),
+            self.cliPathGroup,
+        )
+
+        # 语言设置
+        self.languageGroup = SettingCardGroup(self.tr("语言设置"), self.scrollWidget)
+        self.languageCard = ComboBoxSettingCard(
+            cfg.whisperLanguage,
+            FIF.LANGUAGE,
+            self.tr("识别语言"),
+            self.tr("选择要识别的语言"),
+            texts=[
+                "自动检测",
+                "中文",
+                "日语",
+                "英语",
+                "韩语",
+                "法语",
+                "德语",
+                "西班牙语",
+            ],
+            parent=self.languageGroup,
+        )
+
+        # 输出格式
+        self.formatGroup = SettingCardGroup(self.tr("输出格式"), self.scrollWidget)
+        self.formatCard = ComboBoxSettingCard(
+            cfg.whisperOutputFormat,
+            FIF.DOCUMENT,
+            self.tr("输出格式"),
+            self.tr("选择字幕输出格式"),
+            texts=["SRT", "TXT", "JSON"],
+            parent=self.formatGroup,
+        )
+
+        # GPU 设置
+        self.gpuGroup = SettingCardGroup(self.tr("GPU 加速"), self.scrollWidget)
+        self.useGpuCard = SwitchSettingCard(
+            FIF.GAME,
+            self.tr("启用 GPU 加速"),
+            self.tr("使用 GPU 加速语音识别"),
+            cfg.whisperUseGpu,
+            parent=self.gpuGroup,
+        )
+        self.gpuCard = ComboBoxSettingCard(
+            cfg.whisperGpu,
+            FIF.GAME,
+            self.tr("GPU 适配器"),
+            self.tr("选择 GPU 适配器"),
+            texts=[
+                self.tr("自动检测"),
+                "NVIDIA GeForce RTX 4090",
+                "NVIDIA GeForce RTX 4080",
+                "NVIDIA GeForce RTX 4070",
+                "NVIDIA GeForce RTX 4060",
+                "NVIDIA GeForce RTX 3060",
+                "NVIDIA GeForce RTX 3050",
+                "NVIDIA GeForce RTX 2080",
+                "NVIDIA GeForce RTX 2070",
+                "NVIDIA GeForce RTX 2060",
+                "NVIDIA GeForce GTX 1660",
+                "NVIDIA GeForce GTX 1060",
+                self.tr("自定义"),
+            ],
+            parent=self.gpuGroup,
+        )
+
+        # 初始化界面
+        self.__initWidget()
+
+    def enterEvent(self, event):
+        self.modelPathCard.setContent(cfg.get(cfg.whisperModelPath))
+        return super().enterEvent(event)
+
+    def __initWidget(self):
+        self.resize(1000, 800)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setViewportMargins(0, 90, 0, 20)
+        self.setWidget(self.scrollWidget)
+        self.setWidgetResizable(True)
+        self.setObjectName("whisperSettingInterface")
+
+        # initialize style sheet
+        setFont(self.settingLabel, 23, QFont.Weight.DemiBold)
+        self.enableTransparentBackground()
+
+        # initialize layout
+        self.__initLayout()
+        self._connectSignalToSlot()
+
+    def __initLayout(self):
+        self.settingLabel.move(36, 40)
+
+        # 程序路径
+        self.cliPathGroup.addSettingCard(self.cliPathCard)
+
+        # 模型路径
+        self.modelPathGroup.addSettingCard(self.modelPathCard)
+
+        # 语言设置
+        self.languageGroup.addSettingCard(self.languageCard)
+
+        # 输出格式
+        self.formatGroup.addSettingCard(self.formatCard)
+
+        # GPU 设置
+        self.gpuGroup.addSettingCard(self.useGpuCard)
+        self.gpuGroup.addSettingCard(self.gpuCard)
+
+        # add setting card group to layout
+        self.expandLayout.setSpacing(26)
+        self.expandLayout.setContentsMargins(36, 10, 36, 0)
+        self.expandLayout.addWidget(self.cliPathGroup)
+        self.expandLayout.addWidget(self.modelPathGroup)
+        self.expandLayout.addWidget(self.languageGroup)
+        self.expandLayout.addWidget(self.formatGroup)
+        self.expandLayout.addWidget(self.gpuGroup)
+
+    def _connectSignalToSlot(self):
+        self.modelPathCard.clicked.connect(self._onModelPathClicked)
+        self.cliPathCard.clicked.connect(self._onCliPathClicked)
+
+    def _onModelPathClicked(self):
+        """选择模型文件"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("选择 Whisper 模型文件"),
+            cfg.get(cfg.lastOpenPath)
+            if cfg.get(cfg.lastOpenPath)
+            else str(Path.home()),
+            "模型文件 (*.bin);;所有文件 (*.*)",
+        )
+
+        if file_path:
+            self.modelPathCard.setValue(file_path)
+            cfg.set(cfg.whisperModelPath, file_path)
+            cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
+
+    def _onCliPathClicked(self):
+        """选择 WhisperNetCLI 程序"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("选择 WhisperNetCLI 程序"),
+            cfg.get(cfg.lastOpenPath)
+            if cfg.get(cfg.lastOpenPath)
+            else str(Path.home()),
+            "可执行文件 (*.exe);;所有文件 (*.*)",
+        )
+
+        if file_path:
+            self.cliPathCard.setValue(file_path)
+            cfg.set(cfg.whisperCliPath, file_path)
+            cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
 
 
 class FFmpegSettingInterface(ScrollArea):

@@ -55,6 +55,13 @@ class GlobalEventBus(QObject):
         str, str
     )  # 实时上传输出更新信号 (task_id, output_chunk)
 
+    # Whisper语音识别相关事件
+    whisper_finished_signal = Signal(bool, str)
+    whisper_requested = Signal(str, str)
+    whisper_update_signal = Signal(
+        str, str
+    )  # 实时Whisper输出更新信号 (task_id, output_chunk)
+
     # 项目相关事件
     project_created = Signal(dict)  # {"name": "...", "path": "..."}
     project_deleted = Signal(dict)  # {"path": "..."}

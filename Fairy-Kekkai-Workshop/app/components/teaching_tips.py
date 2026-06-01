@@ -22,13 +22,21 @@ class TeachingTipManager:
         self.setup_tips()
 
     def setup_tips(self):
-        """设置引导步骤"""
+        """设置引导步骤
+
+        不同平台的界面顺序不同：
+        - Windows: 主页(0) 项目(1) 下载(2) 字幕(3) 识别(4) 翻译(5) 压制(6) 设置(-1)
+        - macOS:   主页(0) 项目(1) 下载(2) 翻译(3) 压制(4) 设置(-1)
+        macOS 不包含「字幕(OCR)」与「识别(Whisper)」功能，因此这两步会被跳过。
+        """
         import sys
+
+        is_win = sys.platform == "win32"
 
         self.tips_data = [
             {
                 "title": "欢迎使用 Fairy Kekkai Workshop",
-                "content": "这是一个专为东方Project视频翻译设计的工具，支持视频下载、OCR识别、AI翻译等功能。",
+                "content": "这是一个专为东方Project视频翻译设计的工具，支持视频下载、OCR识别、语音识别、AI翻译、视频压制等功能。主页的「关于」卡片中还可以查看日志、一键清空日志或重置所有设置。",
                 "interface_index": 0,  # 主页
             },
             {
@@ -41,24 +49,50 @@ class TeachingTipManager:
                 "content": "在下载界面输入视频URL，支持YouTube、Bilibili等平台。可选择清晰度和下载格式。",
                 "interface_index": 2,  # 下载界面
             },
-            {
-                "title": "OCR识别",
-                "content": "在字幕界面选择视频文件，点击「开始OCR」进行字幕识别。需要配置PaddleOCR模型路径。",
-                "interface_index": 3
-                if sys.platform == "win32"
-                else None,  # 字幕界面（仅Windows）
-            },
+        ]
+
+        # 字幕(OCR) 与 识别(Whisper) 仅 Windows 平台提供
+        if is_win:
+            self.tips_data.append(
+                {
+                    "title": "OCR识别",
+                    "content": "在字幕界面选择视频文件，点击「开始OCR」进行字幕识别。需要配置PaddleOCR模型路径。",
+                    "interface_index": 3,  # 字幕界面（仅Windows）
+                }
+            )
+            self.tips_data.append(
+                {
+                    "title": "语音识别",
+                    "content": "在识别界面选择视频或音频文件，使用 Whisper 模型将语音转写为字幕。可在设置中选择模型、语言、输出格式与 GPU 加速。",
+                    "interface_index": 4,  # 识别界面（仅Windows）
+                }
+            )
+
+        # 翻译界面：Windows 为索引5，macOS 为索引3
+        self.tips_data.append(
             {
                 "title": "AI翻译",
                 "content": "在翻译界面选择SRT文件，配置AI模型和API Key，点击「开始翻译」进行翻译。支持多轮对话保持上下文。",
-                "interface_index": 4 if sys.platform == "win32" else 3,  # 翻译界面
-            },
+                "interface_index": 5 if is_win else 3,  # 翻译界面
+            }
+        )
+
+        # 压制界面：Windows 为索引6，macOS 为索引4
+        self.tips_data.append(
+            {
+                "title": "视频压制",
+                "content": "在压制界面选择视频文件，将字幕烤制进视频并压制输出。可在设置中调整编码器、CRF、分辨率等参数。",
+                "interface_index": 6 if is_win else 4,  # 压制界面
+            }
+        )
+
+        self.tips_data.append(
             {
                 "title": "设置配置",
-                "content": "在设置界面配置各种API Key、OCR模型路径、下载参数等。首次使用请先完成基础配置。",
+                "content": "在设置界面配置各种API Key、模型路径、下载参数等。首次使用请先完成基础配置。",
                 "interface_index": -1,  # 设置界面（最后一个）
-            },
-        ]
+            }
+        )
 
     def show_teaching_tips(self):
         """显示新手引导"""
@@ -174,6 +208,9 @@ class TeachingTipManager:
                 pass
         # 标记已完成首次运行
         cfg.set(cfg.isFirstRun, False)
+        # 切换回主页
+        if hasattr(self.parent, "interface") and len(self.parent.interface) > 0:
+            self.parent.switchTo(self.parent.interface[0])
 
     def restart_tour(self):
         """重新开始引导"""

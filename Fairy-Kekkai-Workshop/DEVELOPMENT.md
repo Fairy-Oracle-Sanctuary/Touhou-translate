@@ -7,9 +7,12 @@
 ### 核心特性
 - 📥 **视频下载**：基于 yt-dlp，支持 YouTube 等多个视频平台
 - 🔤 **字幕提取**：集成 paddleocr，支持自定义 OCR 参数和模型路径
-- 🌐 **智能翻译**：支持多个 AI 模型（OpenAI、Deepseek、腾讯混元、ERNIE、Gemini、书生等）
+- �️ **语音识别**：基于 WhisperNet，支持多语言语音转字幕，带实时进度显示
+- �🌐 **智能翻译**：支持多个 AI 模型（OpenAI、Deepseek、腾讯混元、ERNIE、Gemini、书生等）
 - 🎬 **视频压制**：基于 FFmpeg，支持自定义编码参数
 - 💾 **项目管理**：完整的项目文件系统管理，支持导入/链接外部项目
+- 🎨 **主题切换**：标题栏快捷主题切换按钮，支持深色/浅色模式
+- 🚀 **启动页**：带进度条和状态文字的启动页面
 
 ---
 
@@ -48,25 +51,29 @@ Fairy-Kekkai-Workshop/
 │   │   ├── srt_service.py         # 字幕文件处理
 │   │   ├── version_service.py     # 版本更新检查
 │   │   └── CLI/                   # CLI 工具模块
-│   │       ├── videocr_cli.py     # videocr CLI 入口
-│   │       ├── deploy.py          # CLI 打包脚本
 │   │       ├── videocr/           # videocr 核心模块
+│   │       │   ├── videocr_cli.py # videocr CLI 入口
+│   │       │   ├── deploy.py      # CLI 打包脚本
 │   │       │   ├── api.py         # OCR API
 │   │       │   ├── video.py       # 视频处理
 │   │       │   ├── models.py      # 数据模型
 │   │       │   └── utils.py       # 工具函数
+│   │       ├── whispernet/         # WhisperNet CLI (C#)
+│   │       │   ├── Program.cs     # CLI 入口，支持进度输出
+│   │       │   └── WhisperNetCLI.csproj
 │   │       └── paddleocr/         # paddleocr 源码
 │   │           └── main.cpp       # C++ CLI 实现
 │   │
 │   ├── view/                      # UI 视图层
-│   │   ├── main_window.py         # 主窗口
-│   │   ├── home_interface.py      # 主页
+│   │   ├── main_window.py         # 主窗口（含启动页、主题切换按钮）
+│   │   ├── home_interface.py      # 主页（含关于卡片、清空日志/重置设置按钮）
 │   │   ├── project_interface.py   # 项目管理页
 │   │   ├── download_interface.py  # 下载页
 │   │   ├── translate_interface.py # 翻译页
 │   │   ├── ffmpeg_interface.py    # 压制页
 │   │   ├── videocr_interface.py   # OCR 页
-│   │   ├── setting_interface.py   # 设置页
+│   │   ├── whisper_interface.py   # 语音识别页
+│   │   ├── setting_interface.py   # 设置页（含 Whisper CLI/模型路径配置）
 │   │   └── *_task_interface.py    # 任务进度页
 │   │
 │   └── resource/                  # 资源文件
@@ -81,6 +88,13 @@ Fairy-Kekkai-Workshop/
 │   │   ├── paddleocr.exe
 │   │   ├── CVUtils.dll
 │   │   ├── onnxruntime.dll
+│   │   └── ...
+│   ├── Whisper.model/             # Whisper 模型文件（ggml 格式）
+│   ├── Whisper/                   # WhisperNet CLI 及依赖
+│   │   ├── WhisperNetCLI.exe
+│   │   ├── Whisper.dll
+│   │   ├── WhisperNet.dll
+│   │   ├── ComLight.dll
 │   │   └── ...
 │   ├── videocr-cli.exe            # videocr CLI 可执行文件
 │   ├── yt-dlp.exe                 # 视频下载工具
@@ -125,6 +139,11 @@ Fairy-Kekkai-Workshop/
    - 下载 paddleocr 放到 `tools/PaddleOCR/` 目录
    - 下载 OCR 模型文件放到 `tools/OCR.model/` 目录
    - 编译 videocr CLI: `cd app/service/CLI && python deploy.py`
+
+5. **准备 Whisper 工具**（仅 Windows）
+   - 下载 Whisper 模型文件（ggml 格式）放到 `tools/Whisper.model/` 目录
+   - 编译 WhisperNet CLI: `cd app/service/CLI/whispernet && dotnet publish -c Release -r win-x64 --self-contained`
+   - 复制发布文件夹内容到 `tools/Whisper/` 目录
 
 5. **运行应用**
    ```bash
@@ -184,6 +203,8 @@ cfg.set(cfg.dpiScale, 1.5)
 - `downloadFormat`：视频格式
 - `downloadQuality`：视频质量
 - `promptTemplate`：翻译提示词模板
+- `whisperCliPath`：WhisperNetCLI.exe 路径
+- `whisperModelPath`：Whisper 模型路径
 - AI 模型的 API Key（OpenAI、Deepseek、腾讯混元等）
 
 ### 2. 事件总线（`app/common/event_bus.py`）
@@ -293,9 +314,37 @@ process.start()
 3. 文本识别（OCR）
 4. 字幕生成和合并
 
-### 6. 日志系统（`app/common/logger.py`）
+### 6. Whisper 语音识别服务（`app/service/whisper_service.py`）
 
-结构化日志，自动保存到 AppData。
+基于 WhisperNet 的语音转字幕服务，支持实时进度显示。
+
+```python
+from app.service.whisper_service import WhisperProcess, WhisperTask
+
+# 创建 Whisper 任务
+task = WhisperTask(args={
+    "video_path": "/path/to/video.mp4",
+    "output_path": "/path/to/output.srt",
+    "model": "tools/Whisper.model/ggml-model-whisper-large.bin",
+    "language": "auto",  # auto 表示自动检测，或指定 zh/ja/en
+    "format": "srt",
+    "gpu": "自动检测",
+})
+
+# 执行识别
+process = WhisperProcess(task)
+process.finished_signal.connect(on_finished)
+process.start()
+```
+
+**Whisper CLI 进度输出格式**：
+- CLI 输出 `PROGRESS:XX` 表示识别进度（XX 为百分比）
+- 服务层解析进度并更新 UI 进度条
+- 语言为 `auto` 时不传 `--language` 参数，让 Whisper 自动检测
+
+### 7. 日志系统（`app/common/logger.py`）
+
+结构化日志，自动保存到 AppData。支持在主页「关于」卡片中清空日志。
 
 ```python
 from app.common.logger import Logger
@@ -305,6 +354,56 @@ logger.info("消息")
 logger.warning("警告")
 logger.error("错误信息")
 ```
+
+**日志位置**：`AppData/Log/`
+
+### 8. 启动页（`app/view/main_window.py`）
+
+带进度条和状态文字的启动页面，在应用初始化时显示。
+
+```python
+class LoadingSplashScreen(SplashScreen):
+    def __init__(self, icon, parent=None):
+        super().__init__(icon, parent)
+        self.progressBar = ProgressBar(self, useAni=False)  # 禁用动画以支持同步进度
+        self.statusLabel = BodyLabel("正在启动...", self)
+
+    def setProgress(self, value: int, text: str = None):
+        self.progressBar.setValue(value)
+        if text:
+            self.statusLabel.setText(text)
+        QApplication.processEvents()
+```
+
+**加载阶段**：
+- 10%: 初始化服务
+- 30%: 读取设置
+- 50%: 加载界面
+- 80%: 初始化系统托盘
+- 100%: 启动完成
+
+### 9. 主题切换（`app/view/main_window.py`）
+
+标题栏最小化按钮左侧的主题切换按钮。
+
+```python
+def _initThemeButton(self):
+    self.themeButton = TransparentToolButton(self.titleBar)
+    self.themeButton.setFixedSize(self.titleBar.minBtn.size())
+    self._updateThemeButtonIcon()
+    self.themeButton.clicked.connect(self._toggleTheme)
+    self.titleBar.buttonLayout.insertWidget(0, self.themeButton, 0, Qt.AlignTop)
+
+def _toggleTheme(self):
+    theme = Theme.LIGHT if isDarkTheme() else Theme.DARK
+    cfg.set(cfg.themeMode, theme)
+    setTheme(theme)
+    self._updateThemeButtonIcon()
+```
+
+**图标逻辑**：
+- 深色模式：显示太阳图标（切到浅色）
+- 浅色模式：显示月亮图标（切到深色）
 
 ---
 
@@ -381,6 +480,15 @@ myNewModelApiKey = ConfigItem(
 - 部分 AI 模型（Spark、GLM）因 SDK 不兼容已禁用
 - 推荐使用 Deepseek 或腾讯混元（支持较好）
 
+### Q: Whisper 语音识别失败
+
+**A**:
+1. 确保 WhisperNetCLI.exe 存在于 `tools/Whisper/` 目录
+2. 确保所有依赖 DLL（Whisper.dll、WhisperNet.dll、ComLight.dll）在同一目录
+3. 确保 Whisper 模型文件存在于 `tools/Whisper.model/` 目录
+4. 语言设置为 `auto` 时，CLI 会自动检测语言
+5. 检查 GPU 驱动是否支持 DirectML（如使用 GPU）
+
 ### Q: 视频压制很慢
 
 **A**:
@@ -403,6 +511,7 @@ myNewModelApiKey = ConfigItem(
 |------|------|------|
 | 视频下载 | ✅ | 基于 yt-dlp，支持大多数平台 |
 | 字幕提取 | ✅ | PaddleOCR，需手动安装模型 |
+| 语音识别 | ✅ | WhisperNet，仅 Windows，支持实时进度 |
 | 翻译 | ⚠️ | 部分 AI 模型 SDK 不兼容 |
 | 视频压制 | ✅ | 基于 FFmpeg，支持多种编码器 |
 | 实时预览 | ❌ | 当前不支持 |
@@ -447,6 +556,7 @@ myNewModelApiKey = ConfigItem(
 - **UI 框架**：PySide6 + QFluentWidgets (Modern UI)
 - **视频处理**：FFmpeg + yt-dlp
 - **字幕识别**：paddleocr
+- **语音识别**：WhisperNet (C# .NET 6)
 - **翻译**：多个云 API（OpenAI、Deepseek、腾讯混元等）
 - **B 站上传**：Bilibili API
 - **配置存储**：JSON + SQLite
@@ -455,5 +565,5 @@ myNewModelApiKey = ConfigItem(
 
 ---
 
-**最后更新**：2026 年 1 月 31 日  
+**最后更新**：2026 年 6 月 1 日  
 **维护者**：`Baby2016` `镀铬酸钾`
