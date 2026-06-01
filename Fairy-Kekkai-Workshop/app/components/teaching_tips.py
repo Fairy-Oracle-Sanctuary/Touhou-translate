@@ -3,9 +3,9 @@ from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
 from qfluentwidgets import (
     BodyLabel,
     PillPushButton,
+    PopupTeachingTip,
     SimpleCardWidget,
     StrongBodyLabel,
-    TeachingTip,
     TransparentPushButton,
 )
 
@@ -137,7 +137,7 @@ class TeachingTipManager:
 
         layout.addLayout(button_layout)
 
-        self.teaching_tip = TeachingTip(
+        self.teaching_tip = PopupTeachingTip(
             view=view,
             target=self.parent,
             duration=-1,  # 不自动关闭

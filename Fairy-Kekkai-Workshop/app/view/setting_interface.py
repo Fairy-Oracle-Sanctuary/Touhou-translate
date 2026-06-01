@@ -241,9 +241,13 @@ class SettingInterface(ScrollArea):
     def _detectExe(self, exe_name, url, cfg_item, path_card):
         exe_path = Path(f"tools/{exe_name}{EXE_SUFFIX}").absolute()
         if not exe_path.exists() and sys.platform == "win32":
-            exe_path = shutil.which(exe_name)
+            exe_path_str = shutil.which(exe_name)
+            if exe_path_str:
+                exe_path = Path(exe_path_str)
+            else:
+                exe_path = None
         # macOS: check Homebrew paths
-        if not exe_path.exists() and sys.platform == "darwin":
+        if exe_path is not None and not exe_path.exists() and sys.platform == "darwin":
             brew_paths = [
                 f"/opt/homebrew/bin/{exe_name}",  # Apple Silicon
                 f"/usr/local/bin/{exe_name}",  # Intel Mac
@@ -255,11 +259,11 @@ class SettingInterface(ScrollArea):
                 else:
                     exe_path = None
         if exe_path is not None:
-            cfg.set(cfg_item, exe_path)
+            cfg.set(cfg_item, str(exe_path))
             event_bus.notification_service.show_success(
-                "检测成功", f"{exe_name}路径已设置为" + exe_path
+                "检测成功", f"{exe_name}路径已设置为" + str(exe_path)
             )
-            path_card.setContent(exe_path)
+            path_card.setContent(str(exe_path))
         else:
             dialog = Dialog("检测失败", f"未检测到{exe_name}程序，是否要下载", self)
             dialog.yesButton.setText("前往下载")

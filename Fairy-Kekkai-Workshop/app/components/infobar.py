@@ -3,6 +3,8 @@ from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import InfoBar, InfoBarPosition
 
+from ..common.event_bus import event_bus
+
 
 class NotificationService(QObject):
     """统一的通知服务"""
@@ -48,6 +50,11 @@ class NotificationService(QObject):
         duration: int = None,
     ):
         """显示通知的内部方法"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         parent_widget = parent or self.default_parent
         if not parent_widget:
             # 如果没有指定父组件，尝试查找可用的窗口

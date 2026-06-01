@@ -108,19 +108,19 @@ class HomeInterface(ScrollArea):
             content="yt-dlp下载地址，下载后可在设置里设定路径",
             url="https://github.com/yt-dlp/yt-dlp/releases/latest",
         )
-        urlSamepleView.addOpenUrlCard(
-            icon=QIcon(":/app/images/logo/Paddle.svg"),
-            title="PaddleOCR (已内置)",
-            content="PaddleOCR下载地址，根据您的硬件下载\n对应版本后设置其路径",
-            url="https://github.com/timminator/PaddleOCR-Standalone/releases/latest",
-        )
+        # urlSamepleView.addOpenUrlCard(
+        #     icon=QIcon(":/app/images/logo/Paddle.svg"),
+        #     title="PaddleOCR (已内置)",
+        #     content="PaddleOCR下载地址，根据您的硬件下载\n对应版本后设置其路径",
+        #     url="https://github.com/timminator/PaddleOCR-Standalone/releases/latest",
+        # )
 
-        urlSamepleView.addOpenUrlCard(
-            icon=QIcon(":/app/images/logo/Paddle.svg"),
-            title="PaddleOCRv5.support.files (已内置)",
-            content="PaddleOCR支持文件下载地址\n下载后设置其路径",
-            url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.4.0/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
-        )
+        # urlSamepleView.addOpenUrlCard(
+        #     icon=QIcon(":/app/images/logo/Paddle.svg"),
+        #     title="PaddleOCRv5.support.files (已内置)",
+        #     content="PaddleOCR支持文件下载地址\n下载后设置其路径",
+        #     url="https://github.com/timminator/PaddleOCR-Standalone/releases/download/v1.4.0/PaddleOCR.PP-OCRv5.support.files.VideOCR.7z",
+        # )
 
         """
         AI_model_dict = {
