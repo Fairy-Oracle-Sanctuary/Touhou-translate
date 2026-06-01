@@ -1181,30 +1181,12 @@ class TranslateSettingInterface(ScrollArea):
         self.SparkApiKeyCard = PasswordLineEditSettingCard(
             cfg.sparkApiKey,
             QIcon(":/app/images/icons/spark-lite.svg"),
-            self.tr("讯飞 Spark Lite Api Key"),
-            self.tr("设置你的讯飞 Spark Lite Api Key"),
+            self.tr("讯飞 Spark Lite Api Password"),
+            self.tr("设置你的讯飞 Spark Lite Api Password"),
             placeholderText="",
             parent=self.sparkGroup,
         )
         self.SparkApiKeyCard.lineEdit.setFixedWidth(350)
-        self.SparkAppIdCard = PasswordLineEditSettingCard(
-            cfg.sparkAppId,
-            QIcon(":/app/images/icons/spark-lite.svg"),
-            self.tr("讯飞 Spark Lite App ID"),
-            self.tr("设置你的讯飞 Spark Lite App ID"),
-            placeholderText="",
-            parent=self.sparkGroup,
-        )
-        self.SparkAppIdCard.lineEdit.setFixedWidth(350)
-        self.SparkApiSecretCard = PasswordLineEditSettingCard(
-            cfg.sparkApiSecret,
-            QIcon(":/app/images/icons/spark-lite.svg"),
-            self.tr("讯飞 Spark Lite API Secret"),
-            self.tr("设置你的讯飞 Spark Lite API Secret"),
-            placeholderText="",
-            parent=self.sparkGroup,
-        )
-        self.SparkApiSecretCard.lineEdit.setFixedWidth(350)
 
         # 腾讯混元
         self.hunyuanGroup = SettingCardGroup(
@@ -1352,8 +1334,6 @@ class TranslateSettingInterface(ScrollArea):
 
         # Spark Lite
         self.sparkGroup.addSettingCard(self.SparkApiKeyCard)
-        self.sparkGroup.addSettingCard(self.SparkAppIdCard)
-        self.sparkGroup.addSettingCard(self.SparkApiSecretCard)
 
         # 腾讯混元
         self.hunyuanGroup.addSettingCard(self.HunyuanApiKeyCard)

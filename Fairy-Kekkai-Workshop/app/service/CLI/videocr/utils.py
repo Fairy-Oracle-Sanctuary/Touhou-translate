@@ -161,12 +161,21 @@ def resolve_model_dirs(
     else:
         base_path = model_base_path
 
-    quality = "high" if use_server_model else "std"
     pack = LUNA_LANG_MAP.get(lang, "cjk_mobile")
 
-    model_dir = os.path.join(base_path, quality, pack)
-    if not os.path.isdir(model_dir):
-        model_dir = os.path.join(base_path, "std", pack)
+    # high/cjk_mobile for CJK, other/* for other languages
+    if pack == "cjk_mobile":
+        quality = "high" if use_server_model else "std"
+        model_dir = os.path.join(base_path, quality, pack)
+        if not os.path.isdir(model_dir):
+            model_dir = os.path.join(base_path, "std", pack)
+    else:
+        # Other languages are in other/ directory
+        model_dir = os.path.join(base_path, "other", pack)
+        if not os.path.isdir(model_dir):
+            # Fallback to old structure
+            quality = "high" if use_server_model else "std"
+            model_dir = os.path.join(base_path, quality, pack)
 
     # Return (det_dir, rec_dir, cls_dir); Luna keeps det+rec+dict in one folder
     return (model_dir, model_dir, "")
