@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QRect, QSettings, Qt, QUrl, QTimer
+from PySide6.QtCore import QRect, QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon as FIF
@@ -294,27 +294,178 @@ class MainWindow(MSFluentWindow):
 
     def closeEvent(self, event):
         """重写关闭事件"""
-        # 检查是否真的需要退出（例如通过托盘菜单的退出选项）
-        if (hasattr(self, "_really_quit") and self._really_quit) or cfg.get(
-            cfg.closeDirectly
-        ):
-            # 保存窗口状态
-            self.save_window_state()
-            # 执行真正的退出
-            super().closeEvent(event)
-            QApplication.instance().exit(0)
-        else:
-            # 最小化到托盘
-            event.ignore()
-            self.hide()
+        # 标记应用正在关闭，阻止通知显示
+        from ..common.event_bus import event_bus
 
-            # 显示通知
-            self.system_tray.showMessage(
-                "Fairy-Kekkai-Workshop",
-                "程序已最小化到系统托盘\n右键点击托盘图标可显示菜单",
-                QIcon(":/app/images/logo.png"),
-                3000,
+        event_bus.is_shutting_down = True
+
+        # 检查是否有运行中的任务
+        running_tasks = self.check_running_tasks()
+
+        if running_tasks:
+            # 显示确认对话框
+            from qfluentwidgets import MessageBox
+
+            message = f"有以下任务正在运行，确定要关闭吗？\n\n{running_tasks}"
+            dialog = MessageBox("确认关闭", message, self)
+            dialog.yesButton.setText("关闭")
+            dialog.cancelButton.setText("取消")
+
+            if dialog.exec():
+                # 用户确认关闭，先停止所有运行中的任务
+                self.stop_all_tasks()
+                # 保存窗口状态
+                self.save_window_state()
+                # 执行真正的退出
+                super().closeEvent(event)
+                QApplication.instance().exit(0)
+            else:
+                # 用户取消关闭
+                event_bus.is_shutting_down = False
+                event.ignore()
+        else:
+            # 没有运行中的任务，正常处理
+            if (hasattr(self, "_really_quit") and self._really_quit) or cfg.get(
+                cfg.closeDirectly
+            ):
+                # 保存窗口状态
+                self.save_window_state()
+                # 执行真正的退出
+                super().closeEvent(event)
+                QApplication.instance().exit(0)
+            else:
+                # 最小化到托盘
+                event_bus.is_shutting_down = False
+                event.ignore()
+                self.hide()
+
+    def stop_all_tasks(self):
+        """停止所有运行中的任务"""
+        # 停止下载任务
+        if hasattr(self, "downloadInterface"):
+            download_interface = getattr(
+                self.downloadInterface, "downloadInterface", None
             )
+            if download_interface and hasattr(download_interface, "active_downloads"):
+                for thread in download_interface.active_downloads[:]:
+                    # 断开信号连接，避免关闭时弹出通知
+                    if hasattr(thread, "finished_signal"):
+                        try:
+                            thread.finished_signal.disconnect()
+                        except Exception:
+                            pass
+                    if hasattr(thread, "cancel"):
+                        thread.cancel()
+                    # 标记任务为已取消
+                    if hasattr(thread, "task"):
+                        thread.task.status = "已取消"
+
+        # 停止翻译任务
+        if hasattr(self, "translateInterface"):
+            translate_interface = getattr(
+                self.translateInterface, "taskInterface", None
+            )
+            if translate_interface and hasattr(translate_interface, "active_threads"):
+                for thread in translate_interface.active_threads[:]:
+                    # 断开信号连接
+                    if hasattr(thread, "finished_signal"):
+                        try:
+                            thread.finished_signal.disconnect()
+                        except Exception:
+                            pass
+                    if hasattr(thread, "_is_running"):
+                        thread._is_running = False
+                    # 标记任务为已取消
+                    if hasattr(thread, "task"):
+                        thread.task.status = "已取消"
+                    if hasattr(thread, "wait"):
+                        thread.wait(1000)
+
+        # 停止OCR任务
+        if hasattr(self, "videoCRInterface"):
+            ocr_interface = getattr(self.videoCRInterface, "taskInterface", None)
+            if ocr_interface and hasattr(ocr_interface, "active_threads"):
+                for thread in ocr_interface.active_threads[:]:
+                    # 断开信号连接
+                    if hasattr(thread, "finished_signal"):
+                        try:
+                            thread.finished_signal.disconnect()
+                        except Exception:
+                            pass
+                    if hasattr(thread, "_is_running"):
+                        thread._is_running = False
+                    # 标记任务为已取消
+                    if hasattr(thread, "task"):
+                        thread.task.status = "已取消"
+                    if hasattr(thread, "wait"):
+                        thread.wait(1000)
+
+        # 停止FFmpeg任务
+        if hasattr(self, "ffmpegInterface"):
+            ffmpeg_interface = getattr(self.ffmpegInterface, "taskInterface", None)
+            if ffmpeg_interface and hasattr(ffmpeg_interface, "active_threads"):
+                from PySide6.QtCore import QProcess
+
+                for thread in ffmpeg_interface.active_threads[:]:
+                    # 断开信号连接
+                    if hasattr(thread, "finished_signal"):
+                        try:
+                            thread.finished_signal.disconnect()
+                        except Exception:
+                            pass
+                    if hasattr(thread, "_is_running"):
+                        thread._is_running = False
+                    # 标记任务为已取消
+                    if hasattr(thread, "task"):
+                        thread.task.status = "已取消"
+                    if hasattr(thread, "process") and thread.process:
+                        if thread.process.state() == QProcess.ProcessState.Running:
+                            thread.process.kill()
+                            thread.process.waitForFinished(1000)
+                    if hasattr(thread, "wait"):
+                        thread.wait(1000)
+
+    def check_running_tasks(self):
+        """检查是否有运行中的任务"""
+        running_tasks = []
+
+        # 检查下载任务
+        if hasattr(self, "downloadInterface"):
+            download_interface = getattr(
+                self.downloadInterface, "downloadInterface", None
+            )
+            if download_interface and hasattr(download_interface, "active_downloads"):
+                active_count = len(download_interface.active_downloads)
+                if active_count > 0:
+                    running_tasks.append(f"下载任务: {active_count} 个")
+
+        # 检查翻译任务
+        if hasattr(self, "translateInterface"):
+            translate_interface = getattr(
+                self.translateInterface, "taskInterface", None
+            )
+            if translate_interface and hasattr(translate_interface, "active_threads"):
+                active_count = len(translate_interface.active_threads)
+                if active_count > 0:
+                    running_tasks.append(f"翻译任务: {active_count} 个")
+
+        # 检查OCR任务
+        if hasattr(self, "videoCRInterface"):
+            ocr_interface = getattr(self.videoCRInterface, "taskInterface", None)
+            if ocr_interface and hasattr(ocr_interface, "active_threads"):
+                active_count = len(ocr_interface.active_threads)
+                if active_count > 0:
+                    running_tasks.append(f"OCR任务: {active_count} 个")
+
+        # 检查FFmpeg任务
+        if hasattr(self, "ffmpegInterface"):
+            ffmpeg_interface = getattr(self.ffmpegInterface, "taskInterface", None)
+            if ffmpeg_interface and hasattr(ffmpeg_interface, "active_threads"):
+                active_count = len(ffmpeg_interface.active_threads)
+                if active_count > 0:
+                    running_tasks.append(f"压制任务: {active_count} 个")
+
+        return "\n".join(running_tasks) if running_tasks else None
 
     def checkUpdate(self):
         if self.versionManager.hasNewVersion():
@@ -373,6 +524,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_download_finished(self, success, message):
         """通过系统托盘显示下载完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
@@ -390,6 +546,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_videocr_finished(self, success, message):
         """通过系统托盘显示视频字幕识别完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
@@ -407,6 +568,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_translate_finished(self, success, message):
         """通过系统托盘显示翻译完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
@@ -424,6 +590,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_download_list_finished(self, success, message):
         """通过系统托盘显示翻译完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
@@ -441,6 +612,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_ffmpeg_finished(self, success, message):
         """通过系统托盘显示翻译完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
@@ -458,6 +634,11 @@ class MainWindow(MSFluentWindow):
 
     def show_system_tray_message_release_finished(self, success, message):
         """通过系统托盘显示B站上传完成消息"""
+        # 检查应用是否正在关闭
+
+        if hasattr(event_bus, "is_shutting_down") and event_bus.is_shutting_down:
+            return
+
         if success:
             self.system_tray.showMessage(
                 "Fairy-Kekkai-Workshop",
