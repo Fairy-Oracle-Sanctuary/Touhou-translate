@@ -56,8 +56,8 @@ class DownloadItemWidget(SimpleCardWidget):
         # 显示文件名（若有）或默认标题
         self.titleLabel = StrongBodyLabel(self.task.filename or "视频下载", self)
         # 路径或项目信息用较小的说明文本
-        projectInfo = CaptionLabel(self.task.download_path, self)
-        projectInfo.setToolTip(self.task.download_path)
+        projectInfo = CaptionLabel(str(self.task.download_path))
+        projectInfo.setToolTip(str(self.task.download_path))
 
         titleInfoLayout.addWidget(self.titleLabel)
         titleInfoLayout.addWidget(projectInfo)
@@ -83,7 +83,7 @@ class DownloadItemWidget(SimpleCardWidget):
         self.progressBar.setValue(self.task.progress)
         self.progressBar.setFixedHeight(8)
 
-        self.speedLabel = CaptionLabel(self.task.speed or "初始化中", self)
+        self.speedLabel = CaptionLabel(self.task.speed or "初始化中")
         self.speedLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         progressLayout.addWidget(self.progressBar, 4)
@@ -98,7 +98,7 @@ class DownloadItemWidget(SimpleCardWidget):
             if len(self.task.url) > 50
             else f"URL: {self.task.url}"
         )
-        urlLabel = CaptionLabel(short_url, self)
+        urlLabel = CaptionLabel(short_url)
         urlLabel.setToolTip(self.task.url)
         urlLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
@@ -200,7 +200,7 @@ class DownloadItemWidget(SimpleCardWidget):
     def openFolder(self):
         """打开文件夹"""
         if os.path.exists(self.task.download_path):
-            QDesktopServices.openUrl(QUrl.fromLocalFile(self.task.download_path))
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.task.download_path)))
 
     def cancelDownload(self):
         """取消下载 - 异步版本"""
