@@ -29,6 +29,7 @@ class LogWindow(FluentWindow):
         self.projectLogInterface = LogInterface("projectLog", self)
         self.downloadLogInterface = LogInterface("downloadLog", self)
         self.videocrLogInterface = LogInterface("videocrLog", self)
+        self.whisperLogInterface = LogInterface("whisperLog", self)
         self.aiLogInterface = LogInterface("aiLog", self)
         self.ffmpegLogInterface = LogInterface("ffmpegLog", self)
 
@@ -36,6 +37,7 @@ class LogWindow(FluentWindow):
         self.addSubInterface(self.projectLogInterface, FIF.FOLDER, "项目日志")
         self.addSubInterface(self.downloadLogInterface, FIF.DOWNLOAD, "下载日志")
         self.addSubInterface(self.videocrLogInterface, FIF.VIDEO, "字幕提取日志")
+        self.addSubInterface(self.whisperLogInterface, FIF.MICROPHONE, "语音识别日志")
         self.addSubInterface(self.aiLogInterface, FIF.MESSAGE, "AI翻译日志")
         self.addSubInterface(self.ffmpegLogInterface, FIF.ZIP_FOLDER, "FFmpeg压制日志")
 
@@ -45,6 +47,7 @@ class LogWindow(FluentWindow):
         projectLogs,
         downloadLogs,
         videocrLogs,
+        whisperLogs,
         aiLogs,
         ffmpegLogs,
     ):
@@ -52,6 +55,7 @@ class LogWindow(FluentWindow):
         self.projectLogInterface.setLog(projectLogs)
         self.downloadLogInterface.setLog(downloadLogs)
         self.videocrLogInterface.setLog(videocrLogs)
+        self.whisperLogInterface.setLog(whisperLogs)
         self.aiLogInterface.setLog(aiLogs)
         self.ffmpegLogInterface.setLog(ffmpegLogs)
 

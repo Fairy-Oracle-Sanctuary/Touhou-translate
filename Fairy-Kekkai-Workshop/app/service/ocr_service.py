@@ -2,7 +2,7 @@
 
 import os
 
-from PySide6.QtCore import QObject, QProcess, QTimer, Signal
+from PySide6.QtCore import QObject, QProcess, Signal
 
 from ..common.config import cfg
 from ..common.event_bus import event_bus
@@ -107,6 +107,18 @@ class OCRProcess(QObject):
         self.task.status = "提取中"
 
         try:
+            # 清理临时目录
+            if self.task.temp_dir and os.path.exists(self.task.temp_dir):
+                import shutil
+
+                try:
+                    shutil.rmtree(self.task.temp_dir)
+                    self.log_signal.emit(
+                        f"已清理临时目录: {self.task.temp_dir}\n", False, False
+                    )
+                except Exception as e:
+                    self.log_signal.emit(f"清理临时目录失败: {str(e)}\n", True, False)
+
             # 获取videocr-cli.exe路径
             cmd_path, cmd_args = self.build_ocr_command()
 
@@ -128,9 +140,11 @@ class OCRProcess(QObject):
             # 创建QProcess
             self.process = QProcess()
 
+            # 合并 stdout 和 stderr 到一个通道，确保所有输出都能被实时捕获
+            self.process.setProcessChannelMode(QProcess.MergedChannels)
+
             # 连接信号
             self.process.readyReadStandardOutput.connect(self.handle_stdout)
-            self.process.readyReadStandardError.connect(self.handle_stderr)
             self.process.finished.connect(self.handle_finished)
             self.process.errorOccurred.connect(self.handle_error)
 
@@ -161,7 +175,7 @@ class OCRProcess(QObject):
         data = (
             self.process.readAllStandardOutput().data().decode("utf-8", errors="ignore")
         )
-        lines = data.split("\n")
+        lines = data.replace("\r\n", "\n").replace("\r", "\n").split("\n")
 
         for line in lines:
             line = line.strip()
@@ -169,6 +183,10 @@ class OCRProcess(QObject):
                 continue
 
             self.output_lines.append(line)
+
+            # 如果已取消，不再发送print信号
+            if self.is_cancelled:
+                continue
 
             # 发射print信号，由videocr_task_interface.py中的onPrintOutput处理
             self.print_signal.emit(line)
@@ -181,7 +199,7 @@ class OCRProcess(QObject):
         data = (
             self.process.readAllStandardError().data().decode("utf-8", errors="ignore")
         )
-        lines = data.split("\n")
+        lines = data.replace("\r\n", "\n").replace("\r", "\n").split("\n")
 
         for line in lines:
             line = line.strip()
@@ -189,6 +207,10 @@ class OCRProcess(QObject):
                 continue
 
             self.output_lines.append(line)
+
+            # 如果已取消，不再发送print信号
+            if self.is_cancelled:
+                continue
 
             # 发射print信号，由videocr_task_interface.py中的onPrintOutput处理
             self.print_signal.emit(line)
@@ -262,37 +284,29 @@ class OCRProcess(QObject):
         self.log_signal.emit("正在取消OCR处理...\n", False, False)
 
         if self.process and self.process.state() == QProcess.Running:
-            # 先尝试优雅地终止
-            self.process.terminate()
+            # 获取进程ID
+            pid = self.process.processId()
 
-            # 使用定时器异步检查进程状态，避免阻塞
-            self._cancellation_timer = QTimer()
-            self._cancellation_timer.timeout.connect(self._checkCancellationStatus)
-            self._cancellation_timer.start(100)  # 每100ms检查一次
+            # 使用taskkill强制终止进程树（包括子进程）
+            import subprocess
 
-            # 设置超时保护，5秒后强制终止
-            QTimer.singleShot(5000, self._forceTerminateIfNeeded)
+            try:
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/PID", str(pid)],
+                    capture_output=True,
+                    timeout=2,
+                )
+                self.log_signal.emit("已强制终止OCR进程及其子进程", False, False)
+            except Exception as e:
+                self.log_signal.emit(f"终止进程失败: {str(e)}", True, False)
+                # 如果taskkill失败，尝试使用QProcess的kill
+                self.process.kill()
+
+            # 等待进程结束
+            if self.process.waitForFinished(2000):
+                self.cancelled_signal.emit()
+            else:
+                self.cancelled_signal.emit()
         else:
             # 如果没有进程在运行，直接发送取消完成信号
             self.cancelled_signal.emit()
-
-    def _checkCancellationStatus(self):
-        """检查取消状态"""
-        if not self.process or self.process.state() != QProcess.Running:
-            # 进程已结束
-            if self._cancellation_timer:
-                self._cancellation_timer.stop()
-            self.cancelled_signal.emit()
-
-    def _forceTerminateIfNeeded(self):
-        """如果需要，强制终止进程"""
-        if self.process and self.process.state() == QProcess.Running:
-            self.log_signal.emit("强制终止OCR处理...", False, False)
-            self.process.kill()
-            # 等待一小段时间让进程终止
-            if self.process.waitForFinished(1000):
-                self.log_signal.emit("OCR处理已强制终止", False, False)
-                self.cancelled_signal.emit()
-            else:
-                self.log_signal.emit("警告: 进程终止可能未完成", True, False)
-                self.cancelled_signal.emit()

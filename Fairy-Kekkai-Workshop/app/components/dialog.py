@@ -496,8 +496,11 @@ class TranslateProgressDialog(MessageBoxBase):
         self.setup_ui()
         if task:
             self.connect_signals()
-            # 如果文件已存在，先加载初始内容
-            if self.task.output_file and os.path.exists(self.task.output_file):
+            # 优先使用output_history，如果为空则从文件读取
+            if hasattr(task, "output_history") and task.output_history:
+                self.current_content = task.output_history
+                self.textEdit.setPlainText(self.current_content)
+            elif self.task.output_file and os.path.exists(self.task.output_file):
                 try:
                     with open(self.task.output_file, "r", encoding="utf-8") as f:
                         self.current_content = f.read()
@@ -549,6 +552,10 @@ class FFmpegProgressDialog(MessageBoxBase):
         self.current_content = ""  # 存储当前输出内容
         self.setup_ui()
         if task:
+            # 加载已有的输出历史
+            if hasattr(task, "output_history"):
+                self.current_content = task.output_history
+                self.textEdit.setPlainText(self.current_content)
             self.connect_signals()
 
     def setup_ui(self):
@@ -595,6 +602,10 @@ class ReleaseProgressDialog(MessageBoxBase):
         self.current_content = ""  # 存储当前输出内容
         self.setup_ui()
         if task:
+            # 加载已有的输出历史
+            if hasattr(task, "output_history"):
+                self.current_content = task.output_history
+                self.textEdit.setPlainText(self.current_content)
             self.connect_signals()
 
     def setup_ui(self):
@@ -641,6 +652,10 @@ class WhisperProgressDialog(MessageBoxBase):
         self.current_content = ""
         self.setup_ui()
         if task:
+            # 加载已有的输出历史
+            if hasattr(task, "output_history"):
+                self.current_content = task.output_history
+                self.textEdit.setPlainText(self.current_content)
             self.connect_signals()
 
     def setup_ui(self):

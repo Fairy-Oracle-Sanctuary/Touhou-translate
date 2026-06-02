@@ -530,7 +530,7 @@ class Config(QConfig):
     whisperCliPath = ConfigItem(
         "Whisper",
         "CliPath",
-        str(Path(f"tools/Whisper/WhisperNetCLI{EXE_SUFFIX}").absolute()),
+        str(Path(f"tools/whisper/main{EXE_SUFFIX}").absolute()),
     )
     whisperLanguage = OptionsConfigItem(
         "Whisper",

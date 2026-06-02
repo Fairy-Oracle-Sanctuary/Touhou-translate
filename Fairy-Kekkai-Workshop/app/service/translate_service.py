@@ -63,6 +63,7 @@ class TranslateTask:
     status: str = "等待中"
     progress: int = 0
     error_message: str = ""
+    output_history: str = ""  # 存储完整输出历史
 
     _id_counter = 0
 
@@ -390,9 +391,9 @@ class TranslateThread(QThread):
 
                 # 更新进度
                 progress = int((i + batch_size) / len(srt_items) * 100)
-                event_bus.translate_update_signal.emit(
-                    str(self.task.id), f"翻译进度: {min(progress, 100)}%"
-                )
+                progress_msg = f"翻译进度: {min(progress, 100)}%"
+                self.task.output_history += progress_msg + "\n"
+                event_bus.translate_update_signal.emit(str(self.task.id), progress_msg)
 
             # 组装最终的 SRT
             final_srt = assemble_srt(srt_items)
@@ -476,6 +477,7 @@ class TranslateThread(QThread):
             with open(self.task.output_file, "w", encoding="utf-8") as f:
                 f.write(cleaned_content)
             self.logger.info(f"已去除思考内容，文件已更新: {self.task.output_file}")
+            self.task.output_history = cleaned_content
             event_bus.translate_update_signal.emit(str(self.task.id), cleaned_content)
         else:
             self.logger.info(f"未检测到思考内容，文件保持不变: {self.task.output_file}")
@@ -483,6 +485,7 @@ class TranslateThread(QThread):
     def _write_and_notify(self, chunk: str, file_handle):
         file_handle.write(chunk)
         file_handle.flush()
+        self.task.output_history += chunk
         event_bus.translate_update_signal.emit(str(self.task.id), chunk)
 
     def cancel(self):

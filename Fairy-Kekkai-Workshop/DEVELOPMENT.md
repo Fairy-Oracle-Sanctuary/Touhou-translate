@@ -7,7 +7,7 @@
 ### 核心特性
 - 📥 **视频下载**：基于 yt-dlp，支持 YouTube 等多个视频平台
 - 🔤 **字幕提取**：集成 paddleocr，支持自定义 OCR 参数和模型路径
-- �️ **语音识别**：基于 WhisperNet，支持多语言语音转字幕，带实时进度显示
+- �️ **语音识别**：基于 [Const-me/Whisper](https://github.com/Const-me/Whisper)，支持多语言语音转字幕，带实时进度显示
 - �🌐 **智能翻译**：支持多个 AI 模型（OpenAI、Deepseek、腾讯混元、ERNIE、Gemini、书生等）
 - 🎬 **视频压制**：基于 FFmpeg，支持自定义编码参数
 - 💾 **项目管理**：完整的项目文件系统管理，支持导入/链接外部项目
@@ -316,7 +316,7 @@ process.start()
 
 ### 6. Whisper 语音识别服务（`app/service/whisper_service.py`）
 
-基于 WhisperNet 的语音转字幕服务，支持实时进度显示。
+基于 [Const-me/Whisper](https://github.com/Const-me/Whisper) 的语音转字幕服务，支持实时进度显示。
 
 ```python
 from app.service.whisper_service import WhisperProcess, WhisperTask
@@ -511,7 +511,7 @@ myNewModelApiKey = ConfigItem(
 |------|------|------|
 | 视频下载 | ✅ | 基于 yt-dlp，支持大多数平台 |
 | 字幕提取 | ✅ | PaddleOCR，需手动安装模型 |
-| 语音识别 | ✅ | WhisperNet，仅 Windows，支持实时进度 |
+| 语音识别 | ✅ | [Const-me/Whisper](https://github.com/Const-me/Whisper)，仅 Windows，支持实时进度 |
 | 翻译 | ⚠️ | 部分 AI 模型 SDK 不兼容 |
 | 视频压制 | ✅ | 基于 FFmpeg，支持多种编码器 |
 | 实时预览 | ❌ | 当前不支持 |
@@ -556,7 +556,7 @@ myNewModelApiKey = ConfigItem(
 - **UI 框架**：PySide6 + QFluentWidgets (Modern UI)
 - **视频处理**：FFmpeg + yt-dlp
 - **字幕识别**：paddleocr
-- **语音识别**：WhisperNet (C# .NET 6)
+- **语音识别**：[Const-me/Whisper](https://github.com/Const-me/Whisper)
 - **翻译**：多个云 API（OpenAI、Deepseek、腾讯混元等）
 - **B 站上传**：Bilibili API
 - **配置存储**：JSON + SQLite

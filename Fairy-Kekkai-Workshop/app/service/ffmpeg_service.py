@@ -24,6 +24,7 @@ class FFmpegTask:
         self.error_message = ""
         self.duration = 0  # 视频总时长（秒）
         self.current_time = 0  # 当前处理时间（秒）
+        self.output_history = ""  # 存储完整输出历史
 
         FFmpegTask._id_counter += 1
         self.id = FFmpegTask._id_counter
@@ -282,6 +283,8 @@ class FFmpegProcess(QObject):
         data = (
             self.process.readAllStandardOutput().data().decode("utf-8", errors="ignore")
         )
+        # 存储到任务输出历史
+        self.task.output_history += data
         # 这里把data合并为一行发送
         event_bus.ffmpeg_update_signal.emit(str(self.task.id), data.replace("\n", "-"))
         lines = data.split("\n")

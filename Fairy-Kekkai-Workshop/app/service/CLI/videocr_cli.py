@@ -14,6 +14,7 @@
 #     nuitka-project: --copyright="timminator"
 
 import argparse
+import os
 import sys
 from contextlib import nullcontext
 
@@ -71,6 +72,13 @@ def valid_time_string(arg):
 
 
 def main():
+    """强制 stdout/stderr 无缓冲，确保 Nuitka onefile 模式下进度实时输出"""
+    os.environ["PYTHONUNBUFFERED"] = "1"
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(line_buffering=True)
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(line_buffering=True)
+
     parser = argparse.ArgumentParser(
         description="Extract subtitles from video using PaddleOCR."
     )

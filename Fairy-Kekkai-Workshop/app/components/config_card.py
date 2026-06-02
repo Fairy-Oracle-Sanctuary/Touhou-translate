@@ -1459,7 +1459,7 @@ class WhisperSettingInterface(ScrollArea):
         self.cliPathCard = PushSettingCard(
             self.tr("选择程序"),
             FIF.APPLICATION,
-            "WhisperNetCLI",
+            "main.exe",
             cfg.get(cfg.whisperCliPath),
             self.cliPathGroup,
         )
@@ -1504,28 +1504,28 @@ class WhisperSettingInterface(ScrollArea):
             cfg.whisperUseGpu,
             parent=self.gpuGroup,
         )
-        self.gpuCard = ComboBoxSettingCard(
-            cfg.whisperGpu,
-            FIF.GAME,
-            self.tr("GPU 适配器"),
-            self.tr("选择 GPU 适配器"),
-            texts=[
-                self.tr("自动检测"),
-                "NVIDIA GeForce RTX 4090",
-                "NVIDIA GeForce RTX 4080",
-                "NVIDIA GeForce RTX 4070",
-                "NVIDIA GeForce RTX 4060",
-                "NVIDIA GeForce RTX 3060",
-                "NVIDIA GeForce RTX 3050",
-                "NVIDIA GeForce RTX 2080",
-                "NVIDIA GeForce RTX 2070",
-                "NVIDIA GeForce RTX 2060",
-                "NVIDIA GeForce GTX 1660",
-                "NVIDIA GeForce GTX 1060",
-                self.tr("自定义"),
-            ],
-            parent=self.gpuGroup,
-        )
+        # self.gpuCard = ComboBoxSettingCard(
+        #     cfg.whisperGpu,
+        #     FIF.GAME,
+        #     self.tr("GPU 适配器"),
+        #     self.tr("选择 GPU 适配器"),
+        #     texts=[
+        #         self.tr("自动检测"),
+        #         "NVIDIA GeForce RTX 4090",
+        #         "NVIDIA GeForce RTX 4080",
+        #         "NVIDIA GeForce RTX 4070",
+        #         "NVIDIA GeForce RTX 4060",
+        #         "NVIDIA GeForce RTX 3060",
+        #         "NVIDIA GeForce RTX 3050",
+        #         "NVIDIA GeForce RTX 2080",
+        #         "NVIDIA GeForce RTX 2070",
+        #         "NVIDIA GeForce RTX 2060",
+        #         "NVIDIA GeForce GTX 1660",
+        #         "NVIDIA GeForce GTX 1060",
+        #         self.tr("自定义"),
+        #     ],
+        #     parent=self.gpuGroup,
+        # )
 
         # 初始化界面
         self.__initWidget()
@@ -1567,7 +1567,7 @@ class WhisperSettingInterface(ScrollArea):
 
         # GPU 设置
         self.gpuGroup.addSettingCard(self.useGpuCard)
-        self.gpuGroup.addSettingCard(self.gpuCard)
+        # self.gpuGroup.addSettingCard(self.gpuCard)
 
         # add setting card group to layout
         self.expandLayout.setSpacing(26)
@@ -1599,10 +1599,10 @@ class WhisperSettingInterface(ScrollArea):
             cfg.set(cfg.lastOpenPath, str(Path(file_path).parent))
 
     def _onCliPathClicked(self):
-        """选择 WhisperNetCLI 程序"""
+        """选择 main.exe 程序"""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            self.tr("选择 WhisperNetCLI 程序"),
+            self.tr("选择 Whisper main.exe 程序"),
             cfg.get(cfg.lastOpenPath)
             if cfg.get(cfg.lastOpenPath)
             else str(Path.home()),

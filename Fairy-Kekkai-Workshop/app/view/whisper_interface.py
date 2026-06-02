@@ -1,5 +1,6 @@
 # coding:utf-8
 
+from qfluentwidgets import ComboBoxSettingCard
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
@@ -44,14 +45,38 @@ class WhisperInterface(BaseFunctionInterface):
 
         self.logger = Logger("WhisperInterface", "whisper")
 
-        self.settingsGroup.setVisible(False)
-
     def get_input_icon(self):
         return FIF.MICROPHONE
 
     def _create_settings_cards(self):
-        """创建基础设置卡片"""
-        pass
+        """创建语言与格式设置卡片"""
+        self.languageCard = ComboBoxSettingCard(
+            cfg.whisperLanguage,
+            FIF.LANGUAGE,
+            "识别语言",
+            "选择要识别的语言",
+            texts=[
+                "自动检测",
+                "中文",
+                "日语",
+                "英语",
+                "韩语",
+                "法语",
+                "德语",
+                "西班牙语",
+            ],
+            parent=self.settingsGroup,
+        )
+        self.formatCard = ComboBoxSettingCard(
+            cfg.whisperOutputFormat,
+            FIF.DOCUMENT,
+            "输出格式",
+            "选择字幕输出格式",
+            texts=["srt", "txt", "vtt"],
+            parent=self.settingsGroup,
+        )
+        self.settingsGroup.addSettingCard(self.languageCard)
+        self.settingsGroup.addSettingCard(self.formatCard)
 
     def _connect_signals(self):
         """连接信号槽"""
@@ -72,6 +97,7 @@ class WhisperInterface(BaseFunctionInterface):
         args["video_path"] = self.inputFileCard.lineEdit.text()
         args["output_path"] = self.outputFileCard.lineEdit.text()
         args["model"] = cfg.get(cfg.whisperModelPath)
+        # 从主界面卡片读取当前设置值
         args["language"] = cfg.get(cfg.whisperLanguage)
         args["format"] = cfg.get(cfg.whisperOutputFormat)
         args["gpu"] = cfg.get(cfg.whisperGpu) if cfg.get(cfg.whisperUseGpu) else ""
