@@ -543,7 +543,7 @@ class CustomFlyoutView(FlyoutViewBase):
 
         if os.path.exists(self.path):
             # 使用系统默认的文件管理器打开路径
-            QDesktopServices.openUrl(QUrl.fromLocalFile(self.path))
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.path)))
         else:
             # 如果路径不存在，显示错误信息
             event_bus.notification_service.show_success(

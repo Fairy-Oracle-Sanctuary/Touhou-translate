@@ -52,7 +52,7 @@ class BaseItemWidget(CardWidget):
 
         self.imageLabel = ImageLabel()
         self.imageLabel.setImage(
-            QFileIconProvider().icon(QFileInfo(self.task.input_file)).pixmap(32, 32)
+            QFileIconProvider().icon(QFileInfo(str(self.task.input_file))).pixmap(32, 32)
         )
 
         self.filePathLabel = BodyLabel(str(self.task.input_file))

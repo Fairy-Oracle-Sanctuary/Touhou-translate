@@ -3,6 +3,7 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import requests
@@ -276,8 +277,9 @@ class ProjectDetailInterface(ScrollArea):
             addButtonBottom = PrimaryToolButton(FIF.ADD)
             addButtonBottom.setToolTip("插入新的一集")
             addButtonBottom.clicked.connect(
-                lambda checked,
-                fn=len(project.project_subtitle[self.card_id]) + 1: self.addEpisode(fn)
+                lambda checked, fn=len(project.project_subtitle[self.card_id]) + 1: (
+                    self.addEpisode(fn)
+                )
             )
             hBoxLayout.addWidget(addButtonBottom)
 
@@ -357,9 +359,8 @@ class ProjectDetailInterface(ScrollArea):
             f"打开本集链接: {project.project_video_url[self.card_id][folder_num - 1]}"
         )
         openurlButton.clicked.connect(
-            lambda checked,
-            url=project.project_video_url[self.card_id][folder_num - 1]: self.openUrl(
-                url
+            lambda checked, url=project.project_video_url[self.card_id][folder_num - 1]: (
+                self.openUrl(url)
             )
         )
 
@@ -723,7 +724,12 @@ class FileItemWidget(SimpleCardWidget):
             buttonLayout.addWidget(self.downloadBtn)
 
         # 提取字幕按钮 (当有生肉视频但是无原文.srt时显示)
-        if self.extract_need and not self.file_exists and self.other_exists[1]:
+        if (
+            self.extract_need
+            and not self.file_exists
+            and self.other_exists[1]
+            and sys.platform == "win32"
+        ):
             self.extractBtn = TransparentToolButton(FIF.ALIGNMENT, self)
             self.extractBtn.setToolTip("提取字幕")
             self.extractBtn.setFixedSize(32, 32)

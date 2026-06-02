@@ -138,7 +138,8 @@ class MainWindow(MSFluentWindow):
         QApplication.setQuitOnLastWindowClosed(False)
 
         self._connectSignalToSlot()
-        self._initThemeButton()
+        if sys.platform == "win32":
+            self._initThemeButton()
         self.splashScreen.setProgress(100, "启动完成")
 
         # 检查是否首次运行，显示新手引导

@@ -265,5 +265,7 @@ class TranslationInterface(BaseFunctionInterface):
         args["origin_lang"] = cfg.get(cfg.origin_lang)
         args["target_lang"] = cfg.get(cfg.target_lang)
         args["raw_content"] = srt_file.raw_content
+        ai_model_display = cfg.get(cfg.ai_model)
+        args["AI"] = AI_model_dict.get(ai_model_display, ai_model_display)
 
         self.addTask.emit(args)
