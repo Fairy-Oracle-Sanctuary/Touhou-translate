@@ -30,6 +30,7 @@ class ReleaseTask:
         self.status = "等待中"  # 等待中, 上传中, 已完成, 失败
         self.progress = 0
         self.error_message = ""
+        self.output_history = ""  # 存储完整输出历史
 
         ReleaseTask._id_counter += 1
         self.id = ReleaseTask._id_counter
@@ -138,6 +139,8 @@ class ReleaseProcess(QObject):
 
                 data = data_bytes.decode(sys.getdefaultencoding(), errors="replace")
 
+            # 存储到任务输出历史
+            self.task.output_history += data
             event_bus.ffmpeg_update_signal.emit(str(self.task.id), data)
             lines = data.split("\n")
             for line in lines:

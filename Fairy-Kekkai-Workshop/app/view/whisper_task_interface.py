@@ -33,6 +33,14 @@ class WhisperTaskInterface(BaseTaskInterface):
     def getTaskPath(self, task: WhisperTask):
         return task.input_file
 
+    def onPrintLog(self, task_id, message, is_error, is_flush):
+        """处理日志输出"""
+        self.log_signal.emit(message, is_error, is_flush)
+
+    def onPrintOutput(self, task_id, message):
+        """处理print输出"""
+        pass
+
     def addWhisperTask(self, args):
         self.addTask(args)
 

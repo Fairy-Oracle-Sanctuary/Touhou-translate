@@ -156,6 +156,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         self.projectLogs = ""
         self.downloadLogs = ""
         self.videoLogs = ""
+        self.whisperLogs = ""
         self.aiLogs = ""
         self.ffmpegLogs = ""
 
@@ -168,6 +169,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
             self.projectLogs,
             self.downloadLogs,
             self.videoLogs,
+            self.whisperLogs,
             self.aiLogs,
             self.ffmpegLogs,
         )
@@ -198,7 +200,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
         # 清空内存中的日志
         self.__initLog()
         try:
-            self.logWindow.setLog("", "", "", "", "", "")
+            self.logWindow.setLog("", "", "", "", "", "", "")
         except Exception:
             pass
 
@@ -266,6 +268,8 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
             self.downloadLogs += message
         elif log_name == "videocr":
             self.videoLogs += message
+        elif log_name == "whisper":
+            self.whisperLogs += message
         elif log_name == "ai":
             self.aiLogs += message
         elif log_name == "ffmpeg":
@@ -277,6 +281,7 @@ class FairyKekkaiWorkshopInfoCard(SimpleCardWidget):
                 self.projectLogs,
                 self.downloadLogs,
                 self.videoLogs,
+                self.whisperLogs,
                 self.aiLogs,
                 self.ffmpegLogs,
             )
