@@ -206,24 +206,64 @@ cfg.set(cfg.dpiScale, 1.5)
 - `whisperCliPath`：WhisperNetCLI.exe 路径
 - `whisperModelPath`：Whisper 模型路径
 - AI 模型的 API Key（OpenAI、Deepseek、腾讯混元等）
+- `deepseekModel`：Deepseek 模型选择（deepseek-v4-flash/deepseek-v4-pro）
+- `deepseekReasoning`：Deepseek 深度思考模式开关
+- `concurrentDownloads`：最大并发下载数
 
 ### 2. 事件总线（`app/common/event_bus.py`）
 
-全局事件分发机制，用于组件间通信。
+全局事件分发机制，用于组件间解耦通信。这是整个应用的核心架构组件。
 
 ```python
 from app.common.event_bus import event_bus
 
-# 发送事件
+# 发送通知
 event_bus.notification_service.show_success("标题", "消息内容")
 
 # 监听事件
 event_bus.download_requested.connect(on_download_started)
 ```
 
+**核心事件信号**：
+- `download_requested`：从项目触发下载任务
+- `whisper_requested`：从项目触发语音识别任务
+- `translate_requested`：从项目触发翻译任务
+- `ffmpeg_requested`：从项目触发压制任务
+- `add_video_signal`：加载视频到OCR界面
+- `whisper_video_load_signal`：加载视频到Whisper界面
+- `translate_update_signal`：翻译实时进度更新
+- `ffmpeg_update_signal`：压制实时输出更新
+- `whisper_update_signal`：语音识别实时输出更新
+- `release_update_signal`：上传实时输出更新
+- `download_finished_signal`：下载完成通知
+
+**事件数据结构**（`app/common/events.py`）：
+```python
+@dataclass
+class DownloadRequest:
+    type: DownloadType
+    url: str
+    save_path: str
+    quality: str = "best"
+    project_name: str = ""
+    episode_num: int = 0
+    metadata: Optional[Dict] = None
+```
+
+**使用示例**：
+```python
+# 从项目详情页触发下载
+event_bus.download_requested.emit(
+    EventBuilder.download_video(video_url, episode_folder_path)
+)
+
+# 翻译界面监听项目请求
+event_bus.translate_requested.connect(self.addTranslateFromProject)
+```
+
 ### 3. 项目管理（`app/service/project_service.py`）
 
-管理本地项目文件结构，支持多格式字幕和视频。
+管理本地项目文件结构，支持多格式字幕和视频。这是整个应用的核心数据管理层。
 
 ```python
 from app.service.project_service import project
@@ -236,21 +276,63 @@ project.delete_project("/path/to/project")
 
 # 获取项目信息
 progress = project.get_project_progress(project_id)
+
+# 添加新集
+project.addEpisode(card_id, episode_num, origin_title, trans_title, video_url, isTranslated)
+
+# 删除集
+project.deleteEpisode(card_id, episode_num)
+
+# 修改集标题
+project.change_subtitle(card_id, num, text, offset=0)
+
+# 获取相邻文件路径
+Project.get_previous_path(file_path)
+Project.get_next_path(file_path)
 ```
 
 **项目文件结构**：
 ```
 项目名/
-├── 标题.txt          # 集中存储所有元数据
-├── 原标题.txt        # 原标题文件
-└── 1-12/             # 分集目录
-    ├── 原视频.mp4
-    ├── 翻译后的视频.mp4
-    ├── 原文.srt
-    ├── 译文.srt
-    ├── 生肉.srt
-    └── 封面.jpg
+├── 标题.txt          # 存储项目元数据、每集标题、视频URL
+├── icon.txt          # 项目图标路径
+├── {原名}.txt        # 项目标识文件
+└── 1/                # 第1集文件夹
+    ├── 封面.jpg          # 从YouTube自动下载
+    ├── 生肉.mp4          # 原始视频（下载）
+    ├── 熟肉.mp4          # 嵌入字幕的视频（压制）
+    ├── 原文.srt          # 原文字幕（手动/下载）
+    ├── 原文_OCR.srt      # OCR提取的字幕
+    ├── 原文_Whisper.srt  # 语音识别的字幕
+    └── 译文.srt          # AI翻译的字幕
 ```
+
+**标题.txt 格式**：
+```
+1
+2
+3
+...
+12
+
+1
+第1集标题
+https://www.youtube.com/watch?v=xxx
+
+2
+第2集标题
+https://www.youtube.com/watch?v=yyy
+
+---
+```
+
+**项目进度追踪**：
+- 返回5个维度的完成百分比：[封面, 原视频, 熟肉, 原字幕, 译文]
+- 自动扫描所有集文件夹统计文件存在情况
+
+**外部项目链接**：
+- 支持链接外部目录作为项目
+- 通过 `cfg.linkProject` 配置
 
 ### 4. 翻译服务（`app/service/translate_service.py`）
 
@@ -276,7 +358,7 @@ thread.start()
 ```
 
 **支持的 AI 模型**：
-- ✅ Deepseek（最推荐）
+- ✅ Deepseek（最推荐，支持 v4-flash/v4-pro 模型切换和深度思考模式）
 - ✅ 腾讯混元（HunyuanTurbos）
 - ✅ 百度 ERNIE Speed 128K
 - ✅ 书生（InternLM）
@@ -284,6 +366,10 @@ thread.start()
 - ✅ 讯飞 Spark Lite（SDK 不兼容）
 - ✅ GLM-4.5 Flash（SDK 不兼容）
 - ✅ 自定义模型（兼容 OpenAI API 格式）
+
+**Deepseek 专属功能**：
+- 模型选择：`deepseek-v4-flash`（快速）或 `deepseek-v4-pro`（高质量）
+- 深度思考模式：启用后模型会进行更深入的推理
 
 ### 5. OCR 服务（`app/service/ocr_service.py`）
 
@@ -341,6 +427,14 @@ process.start()
 - CLI 输出 `PROGRESS:XX` 表示识别进度（XX 为百分比）
 - 服务层解析进度并更新 UI 进度条
 - 语言为 `auto` 时不传 `--language` 参数，让 Whisper 自动检测
+
+**支持的语言**：
+- 自动检测、中文、日语、英语、韩语、法语、德语、西班牙语
+
+**输出格式**：
+- SRT（字幕文件）
+- TXT（纯文本）
+- VTT（WebVTT格式）
 
 ### 7. 日志系统（`app/common/logger.py`）
 
@@ -405,6 +499,131 @@ def _toggleTheme(self):
 - 深色模式：显示太阳图标（切到浅色）
 - 浅色模式：显示月亮图标（切到深色）
 
+### 10. 批量任务系统（`app/components/dialog.py`）
+
+批量任务对话框支持一次性为多集添加相同类型的任务。
+
+**支持的批量任务类型**：
+- 下载：有URL且无生肉.mp4的集
+- 语音识别：有生肉.mp4且无原文_Whisper.srt的集
+- 翻译：有原文字幕且无译文.srt的集
+- 压制：有熟肉.mp4的集
+
+**智能筛选机制**：
+```python
+def _check_eligible(self, task_type, folder_num, folder_path):
+    """检查某集是否可添加该类型任务"""
+    if task_type == "下载":
+        video_url = project.project_video_url[self.card_id][idx]
+        has_raw = os.path.exists(os.path.join(raw, "生肉.mp4"))
+        return video_url and not has_raw
+    elif task_type == "翻译":
+        for src_name in ("原文.srt", "原文_OCR.srt", "原文_Whisper.srt"):
+            if os.path.exists(os.path.join(raw, src_name)):
+                return not os.path.exists(os.path.join(raw, "译文.srt"))
+```
+
+**使用流程**：
+1. 在项目详情页点击"批量任务"按钮
+2. 选择任务类型（下载/语音识别/翻译/压制）
+3. 系统自动筛选符合条件的剧集
+4. 勾选需要处理的剧集（支持全选/取消全选）
+5. 点击"添加任务"，系统通过event_bus派发任务
+
+### 11. 文件映射系统（`app/components/base_function_interface.py`）
+
+自动识别输入文件类型，生成对应的输出文件名。
+
+**特殊文件名映射**：
+```python
+self.special_filename_mapping = {
+    "生肉.mp4": "原文_OCR.srt",      # OCR界面
+    "生肉.mp4": "原文_Whisper.srt",   # Whisper界面
+    "原文.srt": "译文.srt",           # 翻译界面
+    "熟肉.mp4": "封面.jpg",          # 上传界面
+}
+```
+
+**相邻文件导航**：
+- 支持快速访问上一集/下一集的相同类型文件
+- 用于批量处理时的快速切换
+
+---
+
+## 架构设计
+
+### 整体架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    主窗口 (MainWindow)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │  启动页       │  │  导航栏       │  │  主题切换     │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│                    功能界面层 (View)                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ 项目管理  │ │ 视频下载  │ │ 字幕提取  │ │ 语音识别  │ │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ 智能翻译  │ │ 视频压制  │ │ 设置页面  │ │ 主页      │ │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+├─────────────────────────────────────────────────────────┤
+│                    业务逻辑层 (Service)                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ 项目服务  │ │ 下载服务  │ │ 翻译服务  │ │ OCR服务   │ │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐               │
+│  │ Whisper   │ │ FFmpeg    │ │ SRT处理   │               │
+│  └──────────┘ └──────────┘ └──────────┘               │
+├─────────────────────────────────────────────────────────┤
+│                    事件总线 (EventBus)                   │
+│           组件间解耦通信的核心协调层                      │
+├─────────────────────────────────────────────────────────┤
+│                    公共模块 (Common)                     │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│  │ 配置管理  │ │ 日志系统  │ │ 事件定义  │ │ 样式表    │ │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 核心设计模式
+
+**1. 事件驱动架构**
+- 使用 PySide6 的 Signal/Slot 机制
+- 通过 event_bus 实现全局事件分发
+- 模块间完全解耦，易于扩展
+
+**2. 异步处理模式**
+- 所有耗时操作使用 QThread 异步执行
+- 避免阻塞 UI 线程
+- 支持任务取消和进度更新
+
+**3. 单例模式**
+- 项目管理服务使用单例
+- 配置管理使用单例
+- 事件总线使用单例
+
+**4. 模板方法模式**
+- BaseFunctionInterface 定义功能界面模板
+- BaseStackedInterfaces 定义堆叠界面模板
+- 子类实现具体功能
+
+### 数据流
+
+**典型工作流数据流**：
+```
+项目详情页 → event_bus.download_requested → 下载界面 → DownloadService → yt-dlp
+     ↓
+文件生成 → 项目进度自动更新 → UI刷新
+     ↓
+用户点击"语音识别" → event_bus.whisper_requested → Whisper界面 → WhisperService → Whisper CLI
+     ↓
+字幕生成 → event_bus.translate_requested → 翻译界面 → TranslateService → AI API
+     ↓
+译文生成 → event_bus.ffmpeg_requested → 压制界面 → FFmpegService → FFmpeg
+```
+
 ---
 
 ## 开发指南
@@ -450,6 +669,104 @@ myNewModelApiKey = ConfigItem(
 2. **在 `app/view/` 中创建对应的 UI 界面**
 3. **通过 `event_bus` 连接服务与 UI**
 
+**示例：添加新的功能界面**
+
+```python
+# 1. 创建功能界面类（继承 BaseFunctionInterface）
+class MyFunctionInterface(BaseFunctionInterface):
+    def __init__(self, parent=None):
+        super().__init__(parent, "功能名称")
+        self.file_extension = "*.mp4"
+        self.default_output_suffix = "_output.mp4"
+
+    def get_input_icon(self):
+        return FIF.VIDEO
+
+    def _create_settings_cards(self):
+        # 添加设置卡片
+        pass
+
+    def _start_processing(self):
+        # 处理逻辑
+        args = self._get_args()
+        self.addTask.emit(args)
+
+    def _get_args(self):
+        # 获取参数
+        return {}
+
+# 2. 创建堆叠界面类（继承 BaseStackedInterfaces）
+class MyFunctionStackedInterfaces(BaseStackedInterfaces):
+    def __init__(self, parent=None):
+        super().__init__(
+            parent=parent,
+            main_interface_class=MyFunctionInterface,
+            task_interface_class=MyTaskInterface,
+            setting_interface_class=MySettingInterface,
+            interface_name="功能名称",
+        )
+
+# 3. 在主窗口中注册
+# 在 main_window.py 的导航栏中添加新的导航项
+```
+
+### 从项目触发功能
+
+如果新功能需要从项目详情页触发：
+
+1. **在事件总线中添加信号**（`app/common/event_bus.py`）：
+```python
+my_function_requested = Signal(str, str)  # input_path, output_path
+```
+
+2. **在项目详情页中添加触发逻辑**（`app/view/project_detail_interface.py`）：
+```python
+def _dispatch_task(self, task_type, folder_num, folder_path):
+    if task_type == "我的功能":
+        input_path = os.path.join(raw, "生肉.mp4")
+        output_path = os.path.join(raw, "输出.mp4")
+        event_bus.my_function_requested.emit(input_path, output_path)
+```
+
+3. **在功能界面中监听事件**：
+```python
+def _connect_signals(self):
+    super()._connect_signals()
+    event_bus.my_function_requested.connect(self.addTaskFromProject)
+
+def addTaskFromProject(self, input_path, output_path):
+    self.file_path = input_path
+    self.inputFileCard.lineEdit.setText(input_path)
+    self.outputFileCard.lineEdit.setText(output_path)
+```
+
+### 添加批量任务支持
+
+如果新功能需要批量任务支持：
+
+1. **在 BatchTaskDialog 中添加任务类型**（`app/components/dialog.py`）：
+```python
+TASK_TYPES = ["下载", "语音识别", "翻译", "压制", "我的功能"]
+```
+
+2. **添加筛选逻辑**：
+```python
+def _check_eligible(self, task_type, folder_num, folder_path):
+    if task_type == "我的功能":
+        has_input = os.path.exists(os.path.join(raw, "生肉.mp4"))
+        has_output = os.path.exists(os.path.join(raw, "输出.mp4"))
+        return has_input and not has_output
+```
+
+3. **添加派发逻辑**（`app/view/project_detail_interface.py`）：
+```python
+def _dispatch_task(self, task_type, folder_num, folder_path):
+    elif task_type == "我的功能":
+        input_path = os.path.join(raw, "生肉.mp4")
+        output_path = os.path.join(raw, "输出.mp4")
+        event_bus.my_function_requested.emit(input_path, output_path)
+```
+
 ### 跨平台注意事项
 
 - ✅ 使用 `pathlib.Path` 处理路径（自动适配 Windows/Unix）
@@ -472,6 +789,7 @@ myNewModelApiKey = ConfigItem(
 2. 确保 OCR 模型文件存在于 `tools/OCR.model/` 目录
 3. 检查 VC++ 运行时是否已安装（需要 MSVCP140.dll 和 VCRUNTIME140.dll）
 4. 检查 GPU 驱动是否支持 DirectML（如使用 GPU）
+5. **OpenCC 字典文件问题**：如果打包后出现 `t2s.json not found` 错误，需要确保 OpenCC 字典文件正确打包到可执行文件中
 
 ### Q: 翻译功能不可用
 
@@ -479,6 +797,7 @@ myNewModelApiKey = ConfigItem(
 - 确保已配置相应 AI 服务的 API Key（在设置页面）
 - 部分 AI 模型（Spark、GLM）因 SDK 不兼容已禁用
 - 推荐使用 Deepseek 或腾讯混元（支持较好）
+- Deepseek 深度思考模式会增加推理时间，但翻译质量更高
 
 ### Q: Whisper 语音识别失败
 
@@ -496,12 +815,26 @@ myNewModelApiKey = ConfigItem(
 2. 降低视频质量或分辨率
 3. 使用更快的编码器（`libx264` → `libx265` 或 `av1`）
 
-### Q: B 站上传失败
+### Q: 批量任务添加失败
 
 **A**:
-1. 检查登录 Cookie 是否有效（每 3 个月需要更新）
-2. 确保视频符合 B 站审核要求
-3. 检查网络连接和代理设置
+1. 检查项目文件结构是否完整（标题.txt、集文件夹）
+2. 确保筛选条件正确（如下载任务需要视频URL）
+3. 检查文件路径是否包含中文字符（某些工具不支持）
+
+### Q: 项目进度显示不正确
+
+**A**:
+1. 刷新项目列表（点击"刷新项目列表"按钮）
+2. 检查文件命名是否符合规范（生肉.mp4、译文.srt等）
+3. 确保文件在正确的集文件夹中
+
+### Q: 从项目触发任务没有反应
+
+**A**:
+1. 检查 event_bus 信号是否正确连接
+2. 确保目标界面已初始化
+3. 查看日志文件（AppData/Log/）获取详细错误信息
 
 ---
 
@@ -510,12 +843,13 @@ myNewModelApiKey = ConfigItem(
 | 功能 | 状态 | 备注 |
 |------|------|------|
 | 视频下载 | ✅ | 基于 yt-dlp，支持大多数平台 |
-| 字幕提取 | ✅ | PaddleOCR，需手动安装模型 |
+| 字幕提取 | ✅ | PaddleOCR，需手动安装模型，仅 Windows |
 | 语音识别 | ✅ | [Const-me/Whisper](https://github.com/Const-me/Whisper)，仅 Windows，支持实时进度 |
-| 翻译 | ⚠️ | 部分 AI 模型 SDK 不兼容 |
+| 翻译 | ✅ | 多 AI 模型支持，部分 SDK 不兼容 |
 | 视频压制 | ✅ | 基于 FFmpeg，支持多种编码器 |
+| B站上传 | ⚠️ | 功能已实现但因 API 版权问题未正式启用 |
 | 实时预览 | ❌ | 当前不支持 |
-| 批量处理 | ⚠️ | 需要后台优化 |
+| 批量处理 | ✅ | 支持批量任务，智能筛选
 
 ---
 
@@ -565,5 +899,5 @@ myNewModelApiKey = ConfigItem(
 
 ---
 
-**最后更新**：2026 年 6 月 1 日  
+**最后更新**：2026 年 6 月 3 日  
 **维护者**：`Baby2016` `镀铬酸钾`

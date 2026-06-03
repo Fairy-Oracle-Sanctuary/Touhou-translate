@@ -17,10 +17,6 @@
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
   </a>
-
-  <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Version-1.17.1-blue.svg" alt="Version 1.17.1"/>
-  </a>
 </p>
 
 
@@ -88,6 +84,10 @@ If you have any suggestions, found translation errors, or are the original autho
 This repository houses a collection of self-developed auxiliary scripts and tools designed to enhance the efficiency of the translation, organization, and publication workflow.
 
 ### Fairy-Kekkai-Workshop
+
+> **📢 Important Notice**: Fairy-Kekkai-Workshop has been migrated to a separate repository. The code in this repository is no longer maintained. Please visit the new repository for the latest version and development documentation.
+
+**Independent Repository**: [https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop](https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop)
 
 `Fairy-Kekkai-Workshop` is a self-developed Python integrated tool for this project, featuring the following core functions:
 

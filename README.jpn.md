@@ -17,10 +17,6 @@
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
   </a>
-
-  <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Version-1.17.1-blue.svg" alt="Version 1.17.1"/>
-  </a>
 </p>
 
 
@@ -88,6 +84,10 @@
 このリポジトリは、翻訳、整理、公開のワークフロー効率を向上させるために設計された、一連の自主開発補助スクリプトとツールを提供します。
 
 ### Fairy-Kekkai-Workshop
+
+> **📢 重要なお知らせ**: Fairy-Kekkai-Workshopは独立したリポジトリに移行しました。このリポジトリのコードは保守されていません。最新バージョンと開発ドキュメントについては、新しいリポジトリをご覧ください。
+
+**独立リポジトリ**: [https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop](https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop)
 
 `Fairy-Kekkai-Workshop`は、本项目が独自開発したPython統合ツールであり、以下のコア機能を備えています：
 
