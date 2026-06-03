@@ -5,13 +5,11 @@ import math
 import cv2
 from PySide6.QtCore import QRect, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QVBoxLayout,
-)
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
+    FlowLayout,
     FluentIcon,
     PushButton,
     SimpleCardWidget,
@@ -32,7 +30,10 @@ class VideoPreview(SimpleCardWidget):
         self.vBoxLayout = QVBoxLayout(self)
         self.previewLabel = BodyLabel()
         self.previewLabel.setAlignment(Qt.AlignCenter)
-        self.previewLabel.setMinimumSize(640, 360)
+        self.previewLabel.setMinimumHeight(240)
+        self.previewLabel.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        )
         self.previewLabel.setText("视频预览区域\n\n点击浏览按钮选择视频文件")
 
         # 框选相关变量
@@ -555,8 +556,11 @@ class VideoPreview(SimpleCardWidget):
         self._update_coords_display()
 
     def _create_coord_edit_widget(self, zone_index):
-        """创建坐标编辑组件"""
+        """创建坐标编辑组件（使用FlowLayout自适应换行）"""
         widget = SimpleCardWidget()
+        widget.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        )
         layout = QVBoxLayout(widget)
 
         # 标题
@@ -565,58 +569,42 @@ class VideoPreview(SimpleCardWidget):
         title_layout.addWidget(title_label)
         title_layout.addStretch()
 
-        # 坐标输入框
-        coords_input_layout = QHBoxLayout()
+        # 坐标输入框（FlowLayout 自适应换行）
+        coords_flow_layout = FlowLayout()
 
-        # X坐标
-        x_layout = QVBoxLayout()
-        x_label = CaptionLabel("X:")
-        x_input = SpinBox()
-        x_input.setMinimum(0)
-        x_input.setMaximum(9999)
-        x_layout.addWidget(x_label)
-        x_layout.addWidget(x_input)
+        def _make_spin_group(label_text):
+            """创建 label + SpinBox 的组合 widget"""
+            g = QWidget()
+            gl = QVBoxLayout(g)
+            gl.setContentsMargins(0, 0, 0, 0)
+            gl.setSpacing(2)
+            lbl = CaptionLabel(label_text)
+            spin = SpinBox()
+            spin.setMinimum(0)
+            spin.setMaximum(9999)
+            spin.setMinimumWidth(60)
+            gl.addWidget(lbl)
+            gl.addWidget(spin)
+            return g, spin
 
-        # Y坐标
-        y_layout = QVBoxLayout()
-        y_label = CaptionLabel("Y:")
-        y_input = SpinBox()
-        y_input.setMinimum(0)
-        y_input.setMaximum(9999)
-        y_layout.addWidget(y_label)
-        y_layout.addWidget(y_input)
-
-        # 宽度
-        w_layout = QVBoxLayout()
-        w_label = CaptionLabel("宽度:")
-        w_input = SpinBox()
+        x_widget, x_input = _make_spin_group("X:")
+        y_widget, y_input = _make_spin_group("Y:")
+        w_widget, w_input = _make_spin_group("宽度:")
         w_input.setMinimum(1)
-        w_input.setMaximum(9999)
-        w_layout.addWidget(w_label)
-        w_layout.addWidget(w_input)
-
-        # 高度
-        h_layout = QVBoxLayout()
-        h_label = CaptionLabel("高度:")
-        h_input = SpinBox()
+        h_widget, h_input = _make_spin_group("高度:")
         h_input.setMinimum(1)
-        h_input.setMaximum(9999)
-        h_layout.addWidget(h_label)
-        h_layout.addWidget(h_input)
 
-        coords_input_layout.addLayout(x_layout)
-        coords_input_layout.addLayout(y_layout)
-        coords_input_layout.addLayout(w_layout)
-        coords_input_layout.addLayout(h_layout)
-        coords_input_layout.addStretch()
+        coords_flow_layout.addWidget(x_widget)
+        coords_flow_layout.addWidget(y_widget)
+        coords_flow_layout.addWidget(w_widget)
+        coords_flow_layout.addWidget(h_widget)
 
         # 应用按钮
         apply_btn = PushButton(FluentIcon.ACCEPT, "应用")
-        coords_input_layout.addWidget(apply_btn)
-        coords_input_layout.addSpacing(12)
+        coords_flow_layout.addWidget(apply_btn)
 
         layout.addLayout(title_layout)
-        layout.addLayout(coords_input_layout)
+        layout.addLayout(coords_flow_layout)
 
         # 保存输入框引用
         coord_inputs = {

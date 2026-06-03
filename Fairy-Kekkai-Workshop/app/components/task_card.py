@@ -40,7 +40,7 @@ class TranslateItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = TranslateProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = TranslateProgressDialog(task=self.task, parent=self.window())
         dialog.exec()
 
 
@@ -53,7 +53,7 @@ class FFmpegItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = FFmpegProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = FFmpegProgressDialog(task=self.task, parent=self.window())
         dialog.exec()
 
 
@@ -71,7 +71,7 @@ class ReleaseItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = ReleaseProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = ReleaseProgressDialog(task=self.task, parent=self.window())
         dialog.exec()
 
 
@@ -84,5 +84,5 @@ class WhisperItemWidget(BaseItemWidget):
 
     def handleClick(self):
         """处理点击事件"""
-        dialog = WhisperProgressDialog(task=self.task, parent=self.parent().parent())
+        dialog = WhisperProgressDialog(task=self.task, parent=self.window())
         dialog.exec()
