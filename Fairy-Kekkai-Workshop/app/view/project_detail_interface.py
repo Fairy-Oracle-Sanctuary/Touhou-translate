@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -25,10 +26,12 @@ from qfluentwidgets import (
     PipsScrollButtonDisplayMode,
     PrimaryPushButton,
     PrimaryToolButton,
+    ProgressRing,
     PushButton,
     ScrollArea,
     SimpleCardWidget,
     StrongBodyLabel,
+    SubtitleLabel,
     TitleLabel,
     TransparentToolButton,
     isDarkTheme,
@@ -47,12 +50,53 @@ from ..components.pager import Pager
 from ..service.project_service import project
 
 
+class FileOperationWorker(QThread):
+    """通用文件操作异步线程，避免阻塞 UI"""
+
+    finished = Signal(bool, str, dict)  # success, message, result
+
+    def __init__(self, op_name: str, op_func, on_done=None, *args, **kwargs):
+        """
+        op_name: 操作名称（用于日志）
+        op_func: 可调用对象
+        on_done: 完成后回调 (success, message, result) -> None
+        """
+        super().__init__()
+        self.op_name = op_name
+        self.op_func = op_func
+        self.on_done = on_done
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        try:
+            result = self.op_func(*self.args, **self.kwargs)
+            self.finished.emit(True, "", {"result": result})
+        except Exception as e:
+            self.finished.emit(False, str(e), {})
+
+    @staticmethod
+    def run_async(parent, op_name: str, op_func, on_done=None, *args, **kwargs):
+        """创建并启动一个异步操作，返回 worker 供调用方持有引用"""
+        worker = FileOperationWorker(op_name, op_func, on_done, *args, **kwargs)
+        if on_done:
+            worker.finished.connect(on_done)
+        # 完成后自动清理
+        worker.finished.connect(worker.deleteLater)
+        # 保持引用避免被 GC
+        if hasattr(parent, "_pending_workers"):
+            parent._pending_workers.append(worker)
+        worker.start()
+        return worker
+
+
 class LoadProjectThread(QThread):
     """异步加载项目详情"""
 
     finished = Signal(
         list, int, int, int
     )  # subfolders, total_episodes, total_pages, current_page
+    progress = Signal(int, str)  # value, status_text
 
     def __init__(self, project_path, card_id, items_per_page, current_page):
         super().__init__()
@@ -63,11 +107,18 @@ class LoadProjectThread(QThread):
 
     def run(self):
         """执行耗时的数据准备"""
+        self.progress.emit(10, "正在刷新项目信息...")
         project.refresh_project(self.card_id)
+
+        self.progress.emit(40, "正在扫描剧集文件夹...")
         subfolders = self.get_subfolders(self.project_path)
+
+        self.progress.emit(70, "正在计算分页...")
         total_episodes = len(subfolders)
         total_pages = (total_episodes + self.items_per_page - 1) // self.items_per_page
         current_page = min(self.current_page, total_pages) if total_pages > 0 else 1
+
+        self.progress.emit(100, "加载完成")
         self.finished.emit(subfolders, total_episodes, total_pages, current_page)
 
     def get_subfolders(self, project_path):
@@ -103,6 +154,8 @@ class ProjectDetailInterface(ScrollArea):
         # 分页相关变量
         self.current_page = 1
         self.items_per_page = cfg.get(cfg.detailProjectItemNum)
+        self._pending_workers = []  # 持有异步 worker 引用防 GC
+        self._episode_labels = []  # (label, full_title)，用于自适应截断
         self.total_episodes = 0
         self.subfolders = []
         self.topPipsPager = None
@@ -121,6 +174,106 @@ class ProjectDetailInterface(ScrollArea):
         self.downloadPic.connect(
             lambda pic_url, save_path: self.downloadPicture(pic_url, save_path)
         )
+
+    def _show_loading_view(self, project_path):
+        """显示加载视图"""
+        # 清空旧集标题引用
+        self._episode_labels.clear()
+
+        # 清空当前布局
+        self._clearLayout(self.vBoxLayout)
+
+        # 创建居中容器
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(20)
+
+        # 图标
+        self.loading_icon = IconWidget(FIF.FOLDER, self.view)
+        self.loading_icon.setFixedSize(80, 80)
+        layout.addWidget(self.loading_icon, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 项目名称
+        project_name = os.path.basename(project_path)
+        self.loading_title = SubtitleLabel(project_name, self.view)
+        self.loading_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.loading_title, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 项目路径
+        self.loading_path = BodyLabel(str(project_path), self.view)
+        self.loading_path.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.loading_path.setMaximumWidth(400)
+        self.loading_path.setWordWrap(True)
+        layout.addWidget(self.loading_path, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 进度环
+        self.progress_ring = ProgressRing(self.view, useAni=False)
+        self.progress_ring.setFixedSize(64, 64)
+        self.progress_ring.setTextVisible(True)
+        self.progress_ring.setRange(0, 100)
+        self.progress_ring.setValue(0)
+        layout.addWidget(self.progress_ring, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 状态标签
+        self.loading_status = BodyLabel("正在加载项目...", self.view)
+        self.loading_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.loading_status, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 加载项目图标
+        self._load_project_icon_for_loading(project_path)
+
+        # 添加到主布局
+        self.vBoxLayout.addWidget(container, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def _load_project_icon_for_loading(self, project_path):
+        """为加载视图加载项目图标"""
+        try:
+            icon_file = Path(project_path) / "icon.txt"
+            if icon_file.exists():
+                with open(icon_file, "r", encoding="utf-8") as f:
+                    icon_path = f.read().strip()
+                if icon_path and hasattr(self, "loading_icon"):
+                    if icon_path.startswith(":/"):
+                        from PySide6.QtGui import QIcon
+
+                        self.loading_icon.setIcon(QIcon(icon_path))
+                    else:
+                        from PySide6.QtGui import QIcon
+
+                        if Path(icon_path).exists():
+                            self.loading_icon.setIcon(QIcon(icon_path))
+        except Exception:
+            pass
+
+    def update_loading_progress(self, value: int, status: str = None):
+        """更新加载进度"""
+        if hasattr(self, "progress_ring") and self.progress_ring:
+            self.progress_ring.setValue(value)
+        if status and hasattr(self, "loading_status") and self.loading_status:
+            self.loading_status.setText(status)
+
+    def resizeEvent(self, event):
+        """窗口大小改变时自适应截断集标题"""
+        super().resizeEvent(event)
+        self._update_episode_labels()
+
+    def _update_episode_labels(self):
+        """根据窗口宽度自适应截断集标题"""
+        if not self._episode_labels:
+            return
+        # 估算按钮区宽度：4个ToolButton(36px) + 间距
+        button_area_width = 180
+        available_width = self.view.width() - 40  # 预留边距
+        target_width = max(available_width - button_area_width, 80)
+
+        for label, full_title in self._episode_labels:
+            fm = label.fontMetrics()
+            elided = fm.elidedText(
+                full_title, Qt.TextElideMode.ElideRight, target_width
+            )
+            label.setText(elided)
+            label.setToolTip(full_title if elided != full_title else "")
 
     def downloadPicture(self, pic_url, save_path):
         # https://i.ytimg.com/vi/4r2guMZPVJw/maxresdefault.jpg
@@ -183,10 +336,14 @@ class ProjectDetailInterface(ScrollArea):
         self.card_id = id
         self.isMessage = isMessage
 
+        # 先显示加载视图（在页面内显示）
+        self._show_loading_view(project_path)
+
         # 启动异步加载线程
         self.load_thread = LoadProjectThread(
             project_path, id, self.items_per_page, self.current_page
         )
+        self.load_thread.progress.connect(self.update_loading_progress)
         self.load_thread.finished.connect(self.on_load_finished)
         self.load_thread.start()
 
@@ -194,11 +351,20 @@ class ProjectDetailInterface(ScrollArea):
         """异步加载完成后的UI更新"""
         # 断开信号连接并清理线程引用
         self.load_thread.finished.disconnect(self.on_load_finished)
+        if hasattr(self.load_thread, "progress"):
+            try:
+                self.load_thread.progress.disconnect(self.update_loading_progress)
+            except Exception:
+                pass
         del self.load_thread
 
         self.subfolders = subfolders
         self.total_episodes = total_episodes
         self.current_page = current_page
+
+        # 清空旧分页控件引用，避免 _clearLayout 后指向已销毁的 C++ 对象
+        self.topPipsPager = None
+        self.bottomPipsPager = None
 
         # 清空当前布局
         try:
@@ -311,6 +477,9 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addStretch(1)
         event_bus.project_detail_interface = self.view
 
+        # 初始触发一次自适应截断
+        self._update_episode_labels()
+
         if self.isMessage:
             event_bus.notification_service.show_success("成功", "已刷新文件列表")
 
@@ -321,14 +490,16 @@ class ProjectDetailInterface(ScrollArea):
         folderTitleLayout = QHBoxLayout(folderTitleWidget)
         folderTitleLayout.setContentsMargins(0, 0, 0, 0)
 
-        # 文件夹标题
-        folderLabel = StrongBodyLabel(
-            f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num - 1]}",
-            folderTitleWidget,
-        )
+        # 文件夹标题（存储完整标题用于自适应截断）
+        full_title = f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num - 1]}"
+        folderLabel = StrongBodyLabel(full_title, folderTitleWidget)
         folderLabel.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
+        folderLabel.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        self._episode_labels.append((folderLabel, full_title))
 
         # 插入按钮
         addEpisodeButton = TransparentToolButton(FIF.ADD, folderTitleWidget)
@@ -378,11 +549,13 @@ class ProjectDetailInterface(ScrollArea):
 
         # 定义期望的文件
         expected_files = [
-            ("封面.jpg", FIF.PHOTO, True, False, False, False),
-            ("生肉.mp4", FIF.VIDEO, True, False, False, False),
-            ("熟肉.mp4", FIF.VIDEO, False, False, False, True),
-            ("原文.srt", FIF.DOCUMENT, False, True, False, False),
-            ("译文.srt", FIF.DOCUMENT, False, False, True, False),
+            ("封面.jpg", FIF.PHOTO, True, False, False, False, None),
+            ("生肉.mp4", FIF.VIDEO, True, True, False, False, None),
+            ("熟肉.mp4", FIF.VIDEO, False, False, False, True, None),
+            ("原文.srt", FIF.DOCUMENT, False, False, False, False, None),
+            ("原文_OCR.srt", FIF.DOCUMENT, False, False, False, False, "原文.srt"),
+            ("原文_Whisper.srt", FIF.DOCUMENT, False, False, False, False, "原文.srt"),
+            ("译文.srt", FIF.DOCUMENT, False, False, True, False, None),
         ]
 
         # 检查文件是否存在并添加到列表
@@ -393,6 +566,7 @@ class ProjectDetailInterface(ScrollArea):
             extract_need,
             translate_need,
             ffmpeg_need,
+            archive_target,
         ) in expected_files:
             file_path = os.path.join(folder_path, file_name)
             file_exists = os.path.exists(file_path)
@@ -405,6 +579,7 @@ class ProjectDetailInterface(ScrollArea):
                 extract_need,
                 translate_need,
                 ffmpeg_need,
+                archive_target,
             )
 
         parent_layout.addWidget(fileListWidget)
@@ -461,41 +636,46 @@ class ProjectDetailInterface(ScrollArea):
             )
 
         if dialog.exec():
+            card_id = self.card_id
+            project_path = self.current_project_path
+            # 提前捕获对话框值（注意：保持与原代码相同的参数映射）
             if subtitle_isTranslated:
-                result = project.addEpisode(
-                    self.card_id,
-                    folder_num,
-                    dialog.LineEdit_3.text().strip(),
-                    dialog.LineEdit_2.text().strip(),
-                    dialog.LineEdit_1.text().strip(),
-                    isTranslated=True,
-                )
+                _e1 = dialog.LineEdit_1.text().strip()  # 原标题
+                _e2 = dialog.LineEdit_2.text().strip()  # 翻译后标题
+                _e3 = dialog.LineEdit_3.text().strip()  # 视频URL
+                _args = (card_id, folder_num, _e3, _e2, _e1, True)
             else:
-                result = project.addEpisode(
-                    self.card_id,
-                    folder_num,
-                    dialog.LineEdit_2.text().strip(),
-                    "",
-                    dialog.LineEdit_1.text().strip(),
-                    isTranslated=False,
-                )
+                _e1 = dialog.LineEdit_1.text().strip()  # 原标题
+                _e2 = dialog.LineEdit_2.text().strip()  # 视频URL
+                _args = (card_id, folder_num, _e2, "", _e1, False)
 
-            if result[0]:
-                self.loadProject(
-                    self.current_project_path, self.card_id, isMessage=False
-                )
-                event_bus.notification_service.show_success("成功", "已插入新的一集")
-            else:
-                event_bus.notification_service.show_error("错误", result[-1])
-        else:
-            pass
+            def _do_add():
+                return project.addEpisode(*_args)
+
+            def _on_done(success, message, _result):
+                if success:
+                    data = _result.get("result", ())
+                    if data and data[0]:
+                        self.loadProject(project_path, card_id, isMessage=False)
+                        event_bus.notification_service.show_success(
+                            "成功", "已插入新的一集"
+                        )
+                    else:
+                        event_bus.notification_service.show_error(
+                            "错误", data[-1] if data else "未知错误"
+                        )
+                else:
+                    event_bus.notification_service.show_error(
+                        "错误", f"添加失败: {message}"
+                    )
+
+            FileOperationWorker.run_async(self, "add_episode", _do_add, _on_done)
 
     def deleteEpisode(self, folder_num):
-        """删除一集"""
+        """删除一集（异步）"""
         title = "确认删除"
         content = "确定要删除这一集吗？此操作不可撤销。"
 
-        # 获取应用程序的顶级窗口
         main_window = None
         for widget in QApplication.topLevelWidgets():
             if widget.isWindow() and widget.isVisible():
@@ -506,18 +686,33 @@ class ProjectDetailInterface(ScrollArea):
         dialog.yesButton.setText("确定")
         dialog.cancelButton.setText("取消")
         if dialog.exec():
-            result = project.deleteEpisode(self.card_id, folder_num)
-            if result[0]:
-                self.loadProject(
-                    self.current_project_path, self.card_id, isMessage=False
-                )
-                event_bus.notification_service.show_success(
-                    "成功", f"已删除第 {folder_num} 集"
-                )
-            else:
-                event_bus.notification_service.show_error("错误", result[-1])
-        else:
-            pass
+            event_bus.notification_service.show_info(
+                "处理中", f"正在删除第 {folder_num} 集..."
+            )
+
+            def _do_delete():
+                return project.deleteEpisode(self.card_id, folder_num)
+
+            def _on_done(success, message, _result):
+                if success:
+                    data = _result.get("result", ())
+                    if data and data[0]:
+                        self.loadProject(
+                            self.current_project_path, self.card_id, isMessage=False
+                        )
+                        event_bus.notification_service.show_success(
+                            "成功", f"已删除第 {folder_num} 集"
+                        )
+                    else:
+                        event_bus.notification_service.show_error(
+                            "错误", data[-1] if data else "未知错误"
+                        )
+                else:
+                    event_bus.notification_service.show_error(
+                        "错误", f"删除失败: {message}"
+                    )
+
+            FileOperationWorker.run_async(self, "delete_episode", _do_delete, _on_done)
 
     def editEpisodeTitle(self, folder_num):
         """编辑指定集的标题"""
@@ -559,21 +754,28 @@ class ProjectDetailInterface(ScrollArea):
             pass
 
     def copyFileToFolder(self, source_path, folder_path, file_name):
-        """复制文件到指定文件夹"""
-        destination_path = os.path.join(folder_path, file_name)
+        """复制文件到指定文件夹（异步）"""
+        event_bus.notification_service.show_info(
+            "处理中", f"正在复制文件 {file_name}..."
+        )
 
-        try:
-            # 复制文件到目标位置
+        def _do_copy():
+            destination_path = os.path.join(folder_path, file_name)
             shutil.copy2(source_path, destination_path)
+            return destination_path
 
-            # 使用定时器延迟刷新界面
-            QTimer.singleShot(100, self.delayedRefreshProject)
+        def _on_done(success, message, result):
+            if success:
+                QTimer.singleShot(100, self.delayedRefreshProject)
+                event_bus.notification_service.show_success(
+                    "成功", f"已上传文件到: {os.path.basename(folder_path)}/{file_name}"
+                )
+            else:
+                event_bus.notification_service.show_error(
+                    "错误", f"上传文件失败: {message}"
+                )
 
-            event_bus.notification_service.show_success(
-                "成功", f"已上传文件到: {os.path.basename(folder_path)}/{file_name}"
-            )
-        except Exception as e:
-            event_bus.notification_service.show_error("错误", f"上传文件失败: {str(e)}")
+        FileOperationWorker.run_async(self, "copy_file", _do_copy, _on_done)
 
     def openUrl(self, url):
         QDesktopServices.openUrl(QUrl(url))
@@ -636,6 +838,7 @@ class FileItemWidget(SimpleCardWidget):
         extract_need=False,
         translate_need=False,
         ffmpeg_need=False,
+        archive_target=None,
         parent=None,
     ):
         super().__init__(parent)
@@ -650,6 +853,7 @@ class FileItemWidget(SimpleCardWidget):
         self.extract_need = extract_need
         self.translate_need = translate_need
         self.ffmpeg_need = ffmpeg_need
+        self.archive_target = archive_target or ""
 
         self.setFixedHeight(50)
         self.setObjectName("fileItemCard")
@@ -723,21 +927,34 @@ class FileItemWidget(SimpleCardWidget):
             self.downloadBtn.clicked.connect(self.donwloadFile)
             buttonLayout.addWidget(self.downloadBtn)
 
-        # 提取字幕按钮 (当有生肉视频但是无原文.srt时显示)
-        if (
-            self.extract_need
-            and not self.file_exists
-            and self.other_exists[1]
-            and sys.platform == "win32"
-        ):
+        # 提取字幕按钮 (生肉.mp4 卡片上，始终显示)
+        if self.extract_need and self.file_exists and sys.platform == "win32":
             self.extractBtn = TransparentToolButton(FIF.ALIGNMENT, self)
-            self.extractBtn.setToolTip("提取字幕")
+            self.extractBtn.setToolTip("OCR提取字幕")
             self.extractBtn.setFixedSize(32, 32)
             self.extractBtn.clicked.connect(self.extractSubtitle)
             buttonLayout.addWidget(self.extractBtn)
 
-        # 翻译字幕按钮 (当有原文.srt但是无译文.srt时显示)
-        if self.translate_need and not self.file_exists and self.other_exists[3]:
+            self.whisperBtn = TransparentToolButton(FIF.MICROPHONE, self)
+            self.whisperBtn.setToolTip("语音识别提取字幕")
+            self.whisperBtn.setFixedSize(32, 32)
+            self.whisperBtn.clicked.connect(self.extractWhisper)
+            buttonLayout.addWidget(self.whisperBtn)
+
+        # 设为当前原文按钮 (存档文件：原文_OCR.srt, 原文_Whisper.srt)
+        if self.archive_target and self.file_exists:
+            self.setActiveBtn = TransparentToolButton(FIF.ACCEPT, self)
+            self.setActiveBtn.setToolTip("设为当前原文")
+            self.setActiveBtn.setFixedSize(32, 32)
+            self.setActiveBtn.clicked.connect(self.setAsCurrentSubtitle)
+            buttonLayout.addWidget(self.setActiveBtn)
+
+        # 翻译字幕按钮 (当有任一原文文件但无译文.srt时显示)
+        if (
+            self.translate_need
+            and not self.file_exists
+            and (self.other_exists[3] or self.other_exists[4] or self.other_exists[5])
+        ):
             self.translateBtn = TransparentToolButton(FIF.GLOBE, self)
             self.translateBtn.setToolTip("翻译字幕")
             self.translateBtn.setFixedSize(32, 32)
@@ -802,11 +1019,10 @@ class FileItemWidget(SimpleCardWidget):
                 QDesktopServices.openUrl(QUrl.fromLocalFile(folder_path))
 
     def deleteFile(self):
-        """删除文件"""
+        """删除文件（异步）"""
         if not os.path.exists(self.file_path):
             return
 
-        # 确认对话框
         dialog = MessageBox(
             "确认删除",
             f"确定要删除文件 '{self.file_name}' 吗？此操作不可撤销。",
@@ -817,22 +1033,41 @@ class FileItemWidget(SimpleCardWidget):
         dialog.cancelButton.setText("取消")
 
         if dialog.exec():
-            try:
-                os.remove(self.file_path)
-                # 发射文件删除信号
-                parent = self.parent()
-                while parent:
-                    if isinstance(parent, ProjectDetailInterface):
-                        parent.delayedRefreshProject()
-                        break
-                    parent = parent.parent()
-                event_bus.notification_service.show_success(
-                    "成功", f"已删除文件: {self.file_name}"
-                )
-            except Exception as e:
-                event_bus.notification_service.show_error(
-                    "错误", f"删除文件时出错: {str(e)}"
-                )
+            file_path = self.file_path
+            file_name = self.file_name
+            # 向上找到 ProjectDetailInterface 用于 worker 生命周期管理
+            detail_parent = None
+            p = self.parent()
+            while p:
+                if isinstance(p, ProjectDetailInterface):
+                    detail_parent = p
+                    break
+                p = p.parent()
+            worker_parent = detail_parent or self.window()
+
+            def _do_delete():
+                os.remove(file_path)
+
+            def _on_done(success, message, _result):
+                if success:
+                    # 刷新父级 ProjectDetailInterface
+                    p = self.parent()
+                    while p:
+                        if isinstance(p, ProjectDetailInterface):
+                            p.delayedRefreshProject()
+                            break
+                        p = p.parent()
+                    event_bus.notification_service.show_success(
+                        "成功", f"已删除文件: {file_name}"
+                    )
+                else:
+                    event_bus.notification_service.show_error(
+                        "错误", f"删除文件时出错: {message}"
+                    )
+
+            FileOperationWorker.run_async(
+                worker_parent, "delete_file", _do_delete, _on_done
+            )
 
     def donwloadFile(self):
         """下载缺失的文件"""
@@ -903,13 +1138,28 @@ class FileItemWidget(SimpleCardWidget):
                 # )
 
     def extractSubtitle(self):
-        """切换到提取界面"""
-        video_file = Path(self.file_path)
-        if video_file.name == "原文.srt":
-            file_path = video_file.parent / "生肉.mp4"
-        event_bus.add_video_signal.emit(str(file_path))
-
+        """切换到OCR提取界面"""
+        event_bus.add_video_signal.emit(str(self.file_path))
         event_bus.switchToSampleCard.emit("VideocrStackedInterfaces", 3)
+
+    def extractWhisper(self):
+        """直接添加语音识别任务"""
+        output_path = Path(self.file_path).parent / "原文_Whisper.srt"
+        event_bus.whisper_requested.emit(str(self.file_path), str(output_path))
+
+    def setAsCurrentSubtitle(self):
+        """将存档原文设为当前活动原文"""
+        import shutil
+
+        target = os.path.join(os.path.dirname(self.file_path), self.archive_target)
+        try:
+            if os.path.exists(self.file_path):
+                shutil.copy2(self.file_path, target)
+                event_bus.notification_service.show_success(
+                    "成功", f"已将 {self.file_name} 设为当前原文"
+                )
+        except Exception as e:
+            event_bus.notification_service.show_error("错误", f"设置失败: {str(e)}")
 
     def translateSubtitle(self):
         """添加翻译任务"""
@@ -956,6 +1206,7 @@ class FileListWidget(QWidget):
         extract_need=False,
         translate_need=False,
         ffmpeg_need=False,
+        archive_target=None,
     ):
         """添加文件项"""
         self.file_exists.append(file_exists)
@@ -972,6 +1223,7 @@ class FileListWidget(QWidget):
             extract_need,
             translate_need,
             ffmpeg_need,
+            archive_target,
             self,
         )
         fileWidget.setCursor(Qt.PointingHandCursor)
@@ -1032,7 +1284,7 @@ class FileListWidget(QWidget):
             event_bus.notification_service.show_error("错误", f"无法打开文件: {str(e)}")
 
     def uploadMissingFile(self, file_path):
-        """上传缺失的文件"""
+        """上传缺失的文件（异步）"""
         file_name = os.path.basename(file_path)
 
         file_dialog = QFileDialog(self)
@@ -1044,26 +1296,40 @@ class FileListWidget(QWidget):
             if selected_files:
                 source_path = selected_files[0]
                 destination_path = file_path
+                dest_name = file_name
 
-                try:
+                # 找到 ProjectDetailInterface 作为 worker 的 parent
+                detail_parent = None
+                p = self.parent()
+                while p:
+                    if isinstance(p, ProjectDetailInterface):
+                        detail_parent = p
+                        break
+                    p = p.parent()
+                worker_parent = detail_parent or self.window()
+
+                def _do_upload():
                     shutil.copy2(source_path, destination_path)
 
-                    # 上传成功后刷新页面
-                    parent = self.parent()
-                    while parent:
-                        if isinstance(parent, ProjectDetailInterface):
-                            # 调用ProjectDetailInterface的刷新方法
-                            parent.delayedRefreshProject()
-                            break
-                        parent = parent.parent()
+                def _on_done(success, message, _result):
+                    if success:
+                        p = self.parent()
+                        while p:
+                            if isinstance(p, ProjectDetailInterface):
+                                p.delayedRefreshProject()
+                                break
+                            p = p.parent()
+                        event_bus.notification_service.show_success(
+                            "成功", f"已上传文件: {dest_name}"
+                        )
+                    else:
+                        event_bus.notification_service.show_error(
+                            "错误", f"上传文件失败: {message}"
+                        )
 
-                    event_bus.notification_service.show_success(
-                        "成功", f"已上传文件: {file_name}"
-                    )
-                except Exception as e:
-                    event_bus.notification_service.show_success(
-                        "错误", f"上传文件失败: {str(e)}"
-                    )
+                FileOperationWorker.run_async(
+                    worker_parent, "upload_file", _do_upload, _on_done
+                )
 
     def clearFiles(self):
         """清空所有文件项"""

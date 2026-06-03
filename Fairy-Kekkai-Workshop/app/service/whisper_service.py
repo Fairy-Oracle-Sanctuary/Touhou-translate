@@ -63,6 +63,25 @@ class WhisperProcess(QObject):
         self.output_lines = []  # 存储输出用于错误诊断
         self._cancellation_timer = None
 
+    def __del__(self):
+        """析构时确保子进程被终止"""
+        if self.process and self.process.state() == QProcess.Running:
+            self.process.kill()
+            self.process.waitForFinished(1000)
+
+    @staticmethod
+    def _activate_as_current(output_file: str):
+        """将提取结果复制为 原文.srt（作为当前活动原文）"""
+        import shutil
+
+        parent_dir = os.path.dirname(output_file)
+        current_file = os.path.join(parent_dir, "原文.srt")
+        try:
+            if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                shutil.copy2(output_file, current_file)
+        except Exception:
+            pass
+
     def build_whisper_command(self):
         """构建 Whisper main.exe 命令"""
         cli_path = get_whisper_cli_path()
@@ -297,6 +316,21 @@ class WhisperProcess(QObject):
             self.task.end_time = datetime.now()
             self.logger.info(f"转录完成 -{self.task.input_file}-")
 
+            # Whisper CLI 没有 -o 参数，输出自动生成在输入文件旁，需要重命名
+            input_dir = os.path.dirname(self.task.input_file)
+            input_stem = os.path.splitext(os.path.basename(self.task.input_file))[0]
+            possible_outputs = [
+                os.path.join(input_dir, f"{input_stem}.mp4.srt"),
+                os.path.join(input_dir, f"{input_stem}.srt"),
+            ]
+            for candidate in possible_outputs:
+                if os.path.exists(candidate) and candidate != self.task.output_file:
+                    try:
+                        os.replace(candidate, self.task.output_file)
+                        break
+                    except Exception:
+                        pass
+
             # 检查输出文件是否存在
             if os.path.exists(self.task.output_file):
                 file_size = os.path.getsize(self.task.output_file) / 1024  # KB
@@ -305,6 +339,8 @@ class WhisperProcess(QObject):
                 success_msg = "转录完成"
 
             self.finished_signal.emit(True, success_msg)
+            # 自动复制到 原文.srt（设为当前活动原文）
+            WhisperProcess._activate_as_current(self.task.output_file)
             event_bus.whisper_finished_signal.emit(True, str(self.task.output_file))
         else:
             error_message = f"转录失败，错误码: {exit_code}"

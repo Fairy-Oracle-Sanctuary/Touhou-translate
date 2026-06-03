@@ -99,21 +99,40 @@ static std::string format_poly_json(const std::array<cv::Point2f, 4> &box) {
 }
 
 // ---------------------------------------------------------------------------
+// Progress file writer
+// ---------------------------------------------------------------------------
+static void write_progress(const std::string &file_path, int current, int total) {
+  if (file_path.empty())
+    return;
+  std::ofstream ofs(file_path, std::ios::trunc);
+  if (ofs.is_open()) {
+    ofs << current << "/" << total;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Command: text_detection
 //   paddleocr.exe text_detection
 //      --input <dir>
 //      --model_dir <dir>
 //      --model_name <name>
 //      --save_path <dir>
+//      [--device cpu|gpu]
+//      [--progress_file <path>]
 // ---------------------------------------------------------------------------
 static int cmd_text_detection(const std::map<std::string, std::string> &args) {
   fs::path input_dir = args.count("--input") ? args.at("--input") : "";
   fs::path model_dir = args.count("--model_dir") ? args.at("--model_dir") : "";
   fs::path save_path = args.count("--save_path") ? args.at("--save_path") : "";
+  std::string device = args.count("--device") ? args.at("--device") : "cpu";
+  std::string progress_file = args.count("--progress_file") ? args.at("--progress_file") : "";
+  bool use_gpu = (device == "gpu");
+  // Map CLI device flag to ONNX Runtime provider name
+  std::string provider = use_gpu ? "DML" : "CPU";
 
   if (input_dir.empty() || model_dir.empty() || save_path.empty()) {
     std::cerr << "Usage: text_detection --input <dir> --model_dir <dir> "
-                 "--model_name <name> --save_path <dir>"
+                 "--model_name <name> --save_path <dir> [--device cpu|gpu]"
               << std::endl;
     return 1;
   }
@@ -134,7 +153,7 @@ static int cmd_text_detection(const std::map<std::string, std::string> &args) {
 
   g_last_error.clear();
   void *ocr = OcrInit(det_onnx.wstring().c_str(), rec_onnx.wstring().c_str(),
-                      dict_txt.wstring().c_str(), 4, false, 0, "CPU", error_cb);
+                      dict_txt.wstring().c_str(), 4, use_gpu, 0, provider.c_str(), error_cb);
   if (!ocr) {
     std::cerr << "OcrInit failed: " << g_last_error << std::endl;
     return 1;
@@ -186,6 +205,7 @@ static int cmd_text_detection(const std::map<std::string, std::string> &args) {
     ++processed;
     std::cout << "ppocr INFO: Processed item " << processed << "/"
               << images.size() << std::endl;
+    write_progress(progress_file, processed, (int)images.size());
   }
 
   OcrDestroy(ocr);
@@ -202,6 +222,8 @@ static int cmd_text_detection(const std::map<std::string, std::string> &args) {
 //      --text_detection_model_dir <dir>
 //      --text_recognition_model_dir <dir>
 //      [--textline_orientation_model_dir <dir>]
+//      [--output <file>]
+//      [--progress_file <path>]
 // ---------------------------------------------------------------------------
 static int cmd_ocr(const std::map<std::string, std::string> &args) {
   fs::path input_dir = args.count("--input") ? args.at("--input") : "";
@@ -233,6 +255,9 @@ static int cmd_ocr(const std::map<std::string, std::string> &args) {
   if (args.count("--device"))
     use_gpu = (args.at("--device") == "gpu");
 
+  std::string provider = use_gpu ? "DML" : "CPU";
+  std::string progress_file = args.count("--progress_file") ? args.at("--progress_file") : "";
+
   if (!OcrLoadRuntime()) {
     std::cerr << "Failed to load ONNX Runtime" << std::endl;
     return 1;
@@ -241,7 +266,7 @@ static int cmd_ocr(const std::map<std::string, std::string> &args) {
   g_last_error.clear();
   void *ocr =
       OcrInit(det_onnx.wstring().c_str(), rec_onnx.wstring().c_str(),
-              dict_txt.wstring().c_str(), 4, use_gpu, 0, "CPU", error_cb);
+              dict_txt.wstring().c_str(), 4, use_gpu, 0, provider.c_str(), error_cb);
   if (!ocr) {
     std::cerr << "OcrInit failed: " << g_last_error << std::endl;
     return 1;
@@ -306,6 +331,9 @@ static int cmd_ocr(const std::map<std::string, std::string> &args) {
     }
 
     ++processed;
+    std::cout << "ppocr INFO: Processed item " << processed << "/"
+              << images.size() << std::endl;
+    write_progress(progress_file, processed, (int)images.size());
   }
 
   if (out_json.is_open())

@@ -8,7 +8,7 @@ import tempfile
 import urllib.request
 
 from app.common.config import cfg
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QProcess, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -340,6 +340,14 @@ class DownloadInterface(ScrollArea):
                 self.startNextDownload()
                 break
 
+    def cleanup(self):
+        """关闭前清理所有活跃下载进程"""
+        for thread in self.active_downloads:
+            if thread.process and thread.process.state() == QProcess.Running:
+                thread.process.kill()
+                thread.process.waitForFinished(1000)
+        self.active_downloads.clear()
+
     def updateTaskUI(self, task_id):
         """更新任务UI"""
         # 查找对应的任务项
@@ -418,6 +426,10 @@ class DownloadInterface(ScrollArea):
             file_name="生肉",
         )
         self.addDownloadTask(task)
+        event_bus.notification_service.show_success(
+            "下载",
+            "已添加下载任务到队列",
+        )
 
     def setUpdateBoxEnabled(self, enabled):
         """设置更新框状态"""

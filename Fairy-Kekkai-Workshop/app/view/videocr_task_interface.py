@@ -47,8 +47,8 @@ class OcrTaskInterface(BaseTaskInterface):
         try:
             import re
 
-            # Step 1/2: Processing video... Current: HH:MM:SS / HH:MM:SS
-            if "Step 1/2" in message:
+            # Step 1/3: Processing video... Current: HH:MM:SS / HH:MM:SS
+            if "Step 1/3" in message:
                 match = re.search(
                     r"Current:\s+(\d+:\d+:\d+)\s+/\s+(\d+:\d+:\d+)", message
                 )
@@ -70,26 +70,62 @@ class OcrTaskInterface(BaseTaskInterface):
                     total_seconds = time_to_seconds(total_time_str)
 
                     if total_seconds > 0:
-                        progress = (current_seconds / total_seconds) * 50
+                        progress = (current_seconds / total_seconds) * 33
                         if current_seconds == 0:
                             self.log_signal.emit(
-                                "步骤1/2: 正在处理图像中…", False, False
+                                "步骤1/3: 正在处理视频帧…", False, False
                             )
                         else:
                             self.log_signal.emit(
-                                f"步骤1/2: 正在处理图像中… {current_time_str} / {total_time_str}",
+                                f"步骤1/3: 正在处理视频帧… {current_time_str} / {total_time_str}",
                                 False,
                                 True,
                             )
-                        return min(progress, 50)
+                        return min(progress, 33)
 
-            # SSIM filtering complete
-            elif "SSIM filtering complete" in message:
+            # Step 2/3: Performing Text-Detection on image X of Y
+            elif "Step 2/3" in message and "Text-Detection" in message:
+                match = re.search(
+                    r"Performing Text-Detection on image\s+(\d+)\s+of\s+(\d+)", message
+                )
+                if match:
+                    current = int(match.group(1))
+                    total = int(match.group(2))
+                    if total > 0:
+                        progress = 33 + (current / total) * 20
+                        self.log_signal.emit(
+                            f"步骤2/3: 正在进行文本检测 {current}/{total}", False, True
+                        )
+                        return min(progress, 53)
+
+            # Step 2/3: Analyzing frame X of Y
+            elif "Analyzing frame" in message:
+                match = re.search(r"Analyzing frame\s+(\d+)\s+of\s+(\d+)", message)
+                if match:
+                    current = int(match.group(1))
+                    total = int(match.group(2))
+                    if total > 0:
+                        progress = 53 + ((current - 1) / total) * 13
+                        self.log_signal.emit(
+                            f"步骤2/3: 正在分析检测帧 {current}/{total}", False, True
+                        )
+                        return min(progress, 66)
+
+            # Text-Detection pass start
+            elif (
+                "Running Text-Detection-Only pass" in message
+                or "Starting PaddleOCR..." in message
+            ):
                 self.log_signal.emit(message, False, False)
-                return 50
+                return 33
 
-            # Step 2/2: Performing OCR on image X of Y
-            elif "Step 2/2: Performing OCR on image" in message:
+            # Filtered out redundant frames
+            elif "Filtered out" in message and "redundant frame" in message:
+                self.log_signal.emit(message, False, False)
+                return 66
+
+            # Step 3/3: Performing OCR on image X of Y
+            elif "Step 3/3" in message and "Performing OCR" in message:
                 match = re.search(
                     r"Performing OCR on image\s+(\d+)\s+of\s+(\d+)", message
                 )
@@ -97,9 +133,11 @@ class OcrTaskInterface(BaseTaskInterface):
                     current = int(match.group(1))
                     total = int(match.group(2))
                     if total > 0:
-                        progress = 50 + (current / total) * 50
+                        progress = 66 + (current / total) * 34
                         self.log_signal.emit(
-                            f"步骤2/2: 正在对图像进行OCR {current}/{total}", False, True
+                            f"步骤3/3: 正在对图像进行OCR识别 {current}/{total}",
+                            False,
+                            True,
                         )
                         return min(progress, 100)
 
@@ -143,6 +181,10 @@ class OcrTaskInterface(BaseTaskInterface):
             ):
                 self.onTaskFinished(task_id, False, message)
                 self.log_signal.emit(message, True, False)
+
+            # 默认输出未匹配的日志消息（调试用）
+            else:
+                self.log_signal.emit(message, False, False)
 
             return None
 

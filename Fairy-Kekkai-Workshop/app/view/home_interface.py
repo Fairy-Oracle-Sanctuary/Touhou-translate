@@ -118,10 +118,10 @@ class HomeInterface(ScrollArea):
         if sys.platform == "win32":
             urlSamepleView.addOpenUrlCard(
                 icon=FIF.LIBRARY_FILL,
-                title="Whisper模型 (未内置)",
-                content="Whisper模型下载地址，下载后可在设置里设定\n路径",
+                title="Whisper模型 (已内置)",
+                content="Whisper模型下载地址，下载后可在设置里设定\n路径，目前软件内置的模型为small，对于油库\n里语音识别效果足够",
                 url="https://pan.xunlei.com/s/VOu1R3aOfz05uqcbNUBSnEFSA1?pwd=62cr#",
-            )          
+            )
         # urlSamepleView.addOpenUrlCard(
         #     icon=QIcon(":/app/images/logo/Paddle.svg"),
         #     title="PaddleOCR (已内置)",

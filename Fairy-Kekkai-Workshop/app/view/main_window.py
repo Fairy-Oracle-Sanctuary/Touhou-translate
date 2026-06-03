@@ -460,6 +460,9 @@ class MainWindow(MSFluentWindow):
                     # 标记任务为已取消
                     if hasattr(thread, "task"):
                         thread.task.status = "已取消"
+                # 强制终止残留进程
+                if download_interface and hasattr(download_interface, "cleanup"):
+                    download_interface.cleanup()
 
         # 停止翻译任务
         if hasattr(self, "translateInterface"):
@@ -486,6 +489,8 @@ class MainWindow(MSFluentWindow):
         if hasattr(self, "videoCRInterface"):
             ocr_interface = getattr(self.videoCRInterface, "taskInterface", None)
             if ocr_interface and hasattr(ocr_interface, "active_threads"):
+                from PySide6.QtCore import QProcess
+
                 for thread in ocr_interface.active_threads[:]:
                     # 断开信号连接
                     if hasattr(thread, "finished_signal"):
@@ -498,6 +503,10 @@ class MainWindow(MSFluentWindow):
                     # 标记任务为已取消
                     if hasattr(thread, "task"):
                         thread.task.status = "已取消"
+                    if hasattr(thread, "process") and thread.process:
+                        if thread.process.state() == QProcess.ProcessState.Running:
+                            thread.process.kill()
+                            thread.process.waitForFinished(1000)
                     if hasattr(thread, "wait"):
                         thread.wait(1000)
 

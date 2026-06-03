@@ -58,6 +58,12 @@ class DownloadProcess(QObject):
         self.output_lines = []  # 存储输出用于错误诊断
         self._cancellation_timer = None
 
+    def __del__(self):
+        """析构时确保子进程被终止"""
+        if self.process and self.process.state() == QProcess.Running:
+            self.process.kill()
+            self.process.waitForFinished(1000)
+
     def build_ytdlp_command(self):
         """根据配置构建 yt-dlp 命令"""
         cmd = [cfg.ytdlpPath.value]

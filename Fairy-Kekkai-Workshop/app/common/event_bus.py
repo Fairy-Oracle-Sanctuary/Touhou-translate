@@ -58,6 +58,7 @@ class GlobalEventBus(QObject):
     # Whisper语音识别相关事件
     whisper_finished_signal = Signal(bool, str)
     whisper_requested = Signal(str, str)
+    whisper_video_load_signal = Signal(str)  # 从项目详情加载视频到Whisper界面
     whisper_update_signal = Signal(
         str, str
     )  # 实时Whisper输出更新信号 (task_id, output_chunk)

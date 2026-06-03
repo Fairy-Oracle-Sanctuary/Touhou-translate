@@ -45,6 +45,25 @@ class OCRProcess(QObject):
         self.output_lines = []  # 存储输出用于错误诊断
         self._cancellation_timer = None
 
+    def __del__(self):
+        """析构时确保子进程被终止"""
+        if self.process and self.process.state() == QProcess.Running:
+            self.process.kill()
+            self.process.waitForFinished(1000)
+
+    @staticmethod
+    def _activate_as_current(output_file: str):
+        """将提取结果复制为 原文.srt（作为当前活动原文）"""
+        import shutil
+
+        parent_dir = os.path.dirname(output_file)
+        current_file = os.path.join(parent_dir, "原文.srt")
+        try:
+            if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                shutil.copy2(output_file, current_file)
+        except Exception:
+            pass
+
     def build_ocr_command(self):
         """根据配置构建 ocr 命令"""
         args = self.task.args
@@ -232,6 +251,9 @@ class OCRProcess(QObject):
                 success_msg = f"OCR处理完成 - 文件大小: {file_size:.2f}MB"
             else:
                 success_msg = "OCR处理完成"
+
+            # 自动复制到 原文.srt（设为当前活动原文）
+            self._activate_as_current(self.task.output_file)
 
             self.finished_signal.emit(True, success_msg)
             self.log_signal.emit("OCR处理完成\n", False, False)

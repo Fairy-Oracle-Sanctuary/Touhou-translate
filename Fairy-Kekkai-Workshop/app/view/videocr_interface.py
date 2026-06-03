@@ -80,8 +80,8 @@ class VideocrInterface(BaseFunctionInterface):
         super().__init__(parent, "提取字幕")
 
         self.file_extension = "*.mp4;*.flv;*.mkv;*.avi;*.wmv;*.m2ts;*.ts;*.mov;*.webm"
-        self.default_output_suffix = ".srt"
-        self.special_filename_mapping = {"生肉.mp4": "原文.srt"}
+        self.default_output_suffix = "_OCR.srt"
+        self.special_filename_mapping = {"生肉.mp4": "原文_OCR.srt"}
 
         self.logger = Logger("VideocrInterface", "videocr")
 
