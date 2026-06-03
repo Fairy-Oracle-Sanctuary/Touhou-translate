@@ -17,10 +17,6 @@
   <a style="text-decoration:none">
     <img src="https://img.shields.io/badge/Python-3.9.13-blue" alt="Python 3.9.13"/>
   </a>
-
-  <a style="text-decoration:none">
-    <img src="https://img.shields.io/badge/Version-1.17.1-blue.svg" alt="Version 1.17.1"/>
-  </a>
 </p>
 
 
@@ -88,6 +84,10 @@
 本仓库提供一系列自研的辅助脚本与工具，旨在提升翻译、整理与发布流程的效率。
 
 ### Fairy-Kekkai-Workshop
+
+> **📢 重要说明**：Fairy-Kekkai-Workshop 已迁移至独立仓库，本仓库中的代码已停止维护。请访问新仓库获取最新版本和开发文档。
+
+**独立仓库地址**：[https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop](https://github.com/Fairy-Oracle-Sanctuary/Fairy-Kekkai-Workshop)
 
 `Fairy-Kekkai-Workshop` 是本项目自主研发的 Python 集成工具，具备以下核心功能：
 
