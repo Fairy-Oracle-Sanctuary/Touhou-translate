@@ -40,8 +40,8 @@ class WhisperInterface(BaseFunctionInterface):
         self.file_extension = (
             "*.mp4;*.flv;*.mkv;*.avi;*.wmv;*.mpg;*.mov;*.wav;*.mp3;*.flac"
         )
-        self.default_output_suffix = "_transcribe.srt"
-        self.special_filename_mapping = {"生肉.mp4": "生肉_transcribe.srt"}
+        self.default_output_suffix = "_Whisper.srt"
+        self.special_filename_mapping = {"生肉.mp4": "原文_Whisper.srt"}
 
         self.logger = Logger("WhisperInterface", "whisper")
 
@@ -82,6 +82,7 @@ class WhisperInterface(BaseFunctionInterface):
         """连接信号槽"""
         super()._connect_signals()
         event_bus.whisper_requested.connect(self.addWhisperTaskFromProject)
+        event_bus.whisper_video_load_signal.connect(self.loadVideoFromProject)
 
     def _start_processing(self):
         """开始识别"""
@@ -114,3 +115,11 @@ class WhisperInterface(BaseFunctionInterface):
         args["gpu"] = cfg.get(cfg.whisperGpu) if cfg.get(cfg.whisperUseGpu) else ""
 
         self.addTask.emit(args)
+
+    def loadVideoFromProject(self, video_path):
+        """从项目加载视频到Whisper界面"""
+        if video_path:
+            self.file_path = video_path
+            self.inputFileCard.lineEdit.setText(video_path)
+            output_path = self._generate_output_path(video_path)
+            self.outputFileCard.lineEdit.setText(str(output_path))

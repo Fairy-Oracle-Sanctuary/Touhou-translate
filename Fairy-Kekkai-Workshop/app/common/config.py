@@ -525,7 +525,7 @@ class Config(QConfig):
     whisperModelPath = ConfigItem(
         "Whisper",
         "ModelPath",
-        str(Path("tools/Whisper.model").absolute()),
+        str(Path("tools/Whisper.model/ggml-model-whisper-small.bin").absolute()),
     )
     whisperCliPath = ConfigItem(
         "Whisper",
@@ -547,7 +547,7 @@ class Config(QConfig):
         restart=False,
     )
     whisperUseGpu = ConfigItem(
-        "Whisper", "UseGpu", False, BoolValidator(), restart=False
+        "Whisper", "UseGpu", True, BoolValidator(), restart=False
     )
     whisperGpu = OptionsConfigItem(
         "Whisper",

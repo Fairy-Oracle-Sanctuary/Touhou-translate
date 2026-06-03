@@ -5,6 +5,7 @@ import os
 import queue
 import shutil
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, cast
 
 import av
@@ -421,14 +422,55 @@ class Video:
                 writers.append(t)
 
             FILENAME_ZERO_PADDING = 8
+            GRID_SPACING = 4
+
+            # --- Detection Stitch Setup (Step 1 outputs stitched grids) ---
+            det_stitched_dir = os.path.join(temp_dir, "det_stitched")
+            os.makedirs(det_stitched_dir, exist_ok=True)
+
+            det_stitch_map: dict[str, list[dict[str, Any]]] = {}
+            det_counter = 0
+            det_batches: dict[int, list[dict[str, Any]]] = {0: [], 1: []}
+            batch_limits: dict[int, int] = {0: 36, 1: 36}
+
+            for z_idx, val_zone in enumerate(self.validated_zones):
+                sample_w = val_zone.get("w", 640)
+                sample_h = val_zone.get("h", 360)
+                batch_limits[z_idx] = utils.get_batch_limit(
+                    sample_w,
+                    sample_h,
+                    max_width=3000,
+                    max_height=3000,
+                    padding=GRID_SPACING,
+                )
+
+            def flush_batch(
+                batch: list[dict[str, Any]],
+                counter: int,
+                zone_idx: int,
+                prefix: str,
+                out_dir: str,
+                target_map: dict[str, Any],
+            ) -> int:
+                if not batch:
+                    return counter
+                filepath, canvas_w, canvas_h, draw_instructions = (
+                    utils.prepare_stitch_batch(
+                        batch,
+                        counter,
+                        zone_idx,
+                        prefix,
+                        out_dir,
+                        target_map,
+                        max_width=3000,
+                        grid_spacing=GRID_SPACING,
+                        zero_pad_length=FILENAME_ZERO_PADDING,
+                    )
+                )
+                write_queue.put((filepath, canvas_w, canvas_h, draw_instructions))
+                return counter + 1
 
             # Consumer Logic
-            rec_images_dir = os.path.join(temp_dir, "rec_images")
-            os.makedirs(rec_images_dir, exist_ok=True)
-
-            rec_image_map: dict[str, dict[str, int]] = {}
-            surviving_frames_meta: set[tuple[int, int]] = set()
-            rec_counter = 0
 
             prev_samples = (
                 [None] * len(self.validated_zones) if self.validated_zones else [None]
@@ -480,7 +522,7 @@ class Video:
 
                             if current_index % 15 == 0:
                                 print(
-                                    f"Step 1/2: Processing video... Current: {curr_str} / {target_end_str}, Frame: {expected_index + 1}",
+                                    f"Step 1/3: Processing video... Current: {curr_str} / {target_end_str}, Frame: {expected_index + 1}",
                                     flush=True,
                                 )
 
@@ -502,19 +544,23 @@ class Video:
                                                 continue
                                         prev_samples[zone_idx] = sample
 
-                                    filename = f"rec_image_{rec_counter:0{FILENAME_ZERO_PADDING}d}_zone{zone_idx}.jpg"
-                                    filepath = os.path.join(rec_images_dir, filename)
-                                    h, w = img.shape[:2]
-                                    write_queue.put((filepath, w, h, [(img, 0, 0)]))
-
-                                    rec_image_map[filename] = {
-                                        "frame_idx": expected_index,
-                                        "zone_idx": zone_idx,
-                                    }
-                                    surviving_frames_meta.add(
-                                        (expected_index, zone_idx)
+                                    det_batches[zone_idx].append(
+                                        {"img": img, "frame_idx": expected_index}
                                     )
-                                    rec_counter += 1
+
+                                    if (
+                                        len(det_batches[zone_idx])
+                                        >= batch_limits[zone_idx]
+                                    ):
+                                        det_counter = flush_batch(
+                                            det_batches[zone_idx],
+                                            det_counter,
+                                            zone_idx,
+                                            "det_stitched",
+                                            det_stitched_dir,
+                                            det_stitch_map,
+                                        )
+                                        det_batches[zone_idx] = []
 
                             expected_index += 1
 
@@ -527,14 +573,26 @@ class Video:
 
                         if target_end_ms is not None:
                             print(
-                                f"Step 1/2: Processing video... Current: {target_end_str} / {target_end_str}, Frame: {expected_index}",
+                                f"Step 1/3: Processing video... Current: {target_end_str} / {target_end_str}, Frame: {expected_index}",
                                 flush=True,
                             )
                             print("Reached end time. Stopping.", flush=True)
                         else:
                             print(
-                                f"Step 1/2: Processing video... Current: {final_str} / {target_end_str}, Frame: {expected_index}",
+                                f"Step 1/3: Processing video... Current: {final_str} / {target_end_str}, Frame: {expected_index}",
                                 flush=True,
+                            )
+
+                    # Flush remaining batches
+                    for z_idx in [0, 1]:
+                        if det_batches[z_idx]:
+                            det_counter = flush_batch(
+                                det_batches[z_idx],
+                                det_counter,
+                                z_idx,
+                                "det_stitched",
+                                det_stitched_dir,
+                                det_stitch_map,
                             )
 
                 success = True
@@ -589,8 +647,322 @@ class Video:
                     )
                     self.avg_frame_duration_ms = total_duration / (max_idx - min_idx)
 
+            if det_counter == 0:
+                return
+
+            # --------------------------------------------------------
+            # Step 2/3: Detection pass and SSIM filtering on detected text boxes
+            # --------------------------------------------------------
+            TIGHT_BOX_SSIM_THRESHOLD = 0.85
+            total_stitched_frames = sum(
+                len(mappings) for mappings in det_stitch_map.values()
+            )
             print(
-                f"\nSSIM filtering complete. {rec_counter} frame(s) will be sent to OCR.",
+                f"\nRunning Text-Detection-Only pass on {total_stitched_frames} filtered frame(s) stitched into {det_counter} image grid(s)...",
+                flush=True,
+            )
+
+            det_res_dir = os.path.join(temp_dir, "det_results")
+            os.makedirs(det_res_dir, exist_ok=True)
+            det_progress_file = os.path.join(temp_dir, "det_progress.txt")
+
+            args = [
+                self.paddleocr_path,
+                "text_detection",
+                "--input",
+                det_stitched_dir,
+                "--model_dir",
+                self.det_model_dir,
+                "--model_name",
+                os.path.basename(self.det_model_dir),
+                "--save_path",
+                det_res_dir,
+                "--device",
+                "gpu" if use_gpu else "cpu",
+                "--progress_file",
+                det_progress_file,
+            ]
+
+            print("Starting PaddleOCR...", flush=True)
+
+            _det_stop = [False]
+            _det_last = [0]
+
+            def _poll_det():
+                while not _det_stop[0]:
+                    try:
+                        if os.path.exists(det_progress_file):
+                            with open(det_progress_file, "r") as pf:
+                                content = pf.read().strip()
+                            if "/" in content:
+                                cur, tot = content.split("/", 1)
+                                cur_i = int(cur)
+                                if cur_i != _det_last[0]:
+                                    _det_last[0] = cur_i
+                                    print(
+                                        f"\rStep 2/3: Performing Text-Detection on image {cur_i} of {tot}",
+                                        end="",
+                                        flush=True,
+                                    )
+                    except Exception:
+                        pass
+                    import time
+
+                    time.sleep(0.25)
+
+            det_poll_t = threading.Thread(target=_poll_det, daemon=True)
+            det_poll_t.start()
+            try:
+                for line in utils.stream_cli_process(args, "paddleocr_error.log"):
+                    pass
+            finally:
+                _det_stop[0] = True
+                det_poll_t.join(timeout=1)
+            print(flush=True)
+
+            # Parse JSON Outputs and unstitch coordinates
+            parsed_detections: dict[int, list[Any]] = {0: [], 1: []}
+
+            for json_file in os.listdir(det_res_dir):
+                if not json_file.endswith(".json"):
+                    continue
+
+                with open(os.path.join(det_res_dir, json_file), encoding="utf-8") as f:
+                    data = json.load(f)
+
+                stitched_filename = os.path.basename(data["input_path"])
+                if stitched_filename not in det_stitch_map:
+                    continue
+
+                mapping = det_stitch_map[stitched_filename]
+                zone_idx = mapping[0]["zone_idx"]
+
+                temp_polys_dict: dict[int, list[Any]] = {
+                    m["frame_idx"]: [] for m in mapping
+                }
+
+                dt_polys = data["dt_polys"]
+                dt_scores = data["dt_scores"]
+
+                for poly, score in zip(dt_polys, dt_scores):
+                    for adjusted_poly, m in utils.unstitch_polygon(poly, mapping):
+                        temp_polys_dict[m["frame_idx"]].append(
+                            {"poly": adjusted_poly, "score": score}
+                        )
+
+                for m in mapping:
+                    polys_data = temp_polys_dict[m["frame_idx"]]
+                    frame_score = (
+                        sum(p["score"] for p in polys_data) / len(polys_data)
+                        if polys_data
+                        else 0.0
+                    )
+                    extracted_polygons = [p["poly"] for p in polys_data]
+
+                    parsed_detections[zone_idx].append(
+                        (m["frame_idx"], extracted_polygons, frame_score, m)
+                    )
+
+            for z_idx in parsed_detections:
+                parsed_detections[z_idx].sort(key=lambda x: x[0])
+
+            frames_processed = 0
+            frames_deleted_count = 0
+            next_print_target = 15
+
+            rec_images_dir = os.path.join(temp_dir, "rec_images")
+            os.makedirs(rec_images_dir, exist_ok=True)
+
+            empty_frames_meta: set[tuple[int, int]] = set()
+            surviving_frames_meta: set[tuple[int, int]] = set()
+            rec_image_map: dict[str, dict[str, int]] = {}
+            rec_counter = 0
+
+            drain_event.clear()
+            rec_writers: list[threading.Thread] = []
+            for _ in range(max(1, (os.cpu_count() or 1) - 1)):
+                t = threading.Thread(target=writer_thread)
+                t.start()
+                rec_writers.append(t)
+
+            success = False
+
+            # Process Zones
+            try:
+                for z_idx, zone_data in parsed_detections.items():
+                    if not zone_data:
+                        continue
+
+                    groups: list[Any] = []
+                    current_group: list[Any] = []
+                    current_union_rects: list[list[float]] = []
+
+                    for _, polys, frame_score, m in zone_data:
+                        if not polys or len(polys) == 0:
+                            frames_deleted_count += 1
+                            frames_processed += 1
+
+                            coord = (m["frame_idx"], z_idx)
+                            if coord not in empty_frames_meta:
+                                empty_frames_meta.add(coord)
+
+                            if frames_processed >= next_print_target:
+                                print(
+                                    f"\rAnalyzing frame {frames_processed} of {total_stitched_frames}",
+                                    end="",
+                                    flush=True,
+                                )
+                                next_print_target = frames_processed + 15
+
+                            continue
+
+                        line_rects = utils.get_line_rects(polys)
+
+                        if not current_group:
+                            current_group = [
+                                (m["frame_idx"], line_rects, frame_score, m)
+                            ]
+                            current_union_rects = line_rects
+                        else:
+                            if utils.are_rect_lists_similar(
+                                current_union_rects, line_rects, tolerance=0.05
+                            ):
+                                current_group.append(
+                                    (m["frame_idx"], line_rects, frame_score, m)
+                                )
+                                new_unions: list[list[float]] = []
+                                for u_rect, l_rect in zip(
+                                    current_union_rects, line_rects
+                                ):
+                                    new_unions.append(
+                                        [
+                                            min(u_rect[0], l_rect[0]),
+                                            min(u_rect[1], l_rect[1]),
+                                            max(u_rect[2], l_rect[2]),
+                                            max(u_rect[3], l_rect[3]),
+                                        ]
+                                    )
+                                current_union_rects = new_unions
+                            else:
+                                groups.append((current_union_rects, current_group))
+                                current_group = [
+                                    (m["frame_idx"], line_rects, frame_score, m)
+                                ]
+                                current_union_rects = line_rects
+
+                    if current_group:
+                        groups.append((current_union_rects, current_group))
+
+                    # SSIM & Repacking
+                    MAX_GRIDS_PER_CHUNK = 30
+
+                    chunks: list[tuple[list[Any], set[str]]] = []
+                    current_chunk_groups: list[Any] = []
+                    current_chunk_grids: set[str] = set()
+
+                    for union_rects, group_frames in groups:
+                        group_grids = set()
+                        for _, _, _, m in group_frames:
+                            group_grids.add(m["grid_file"])
+
+                        if (
+                            len(current_chunk_grids | group_grids) > MAX_GRIDS_PER_CHUNK
+                            and current_chunk_groups
+                        ):
+                            chunks.append((current_chunk_groups, current_chunk_grids))
+                            current_chunk_groups = []
+                            current_chunk_grids = set()
+
+                        current_chunk_groups.append((union_rects, group_frames))
+                        current_chunk_grids.update(group_grids)
+
+                    if current_chunk_groups:
+                        chunks.append((current_chunk_groups, current_chunk_grids))
+
+                    for chunk_groups, chunk_grids in chunks:
+                        loaded_grids: dict[str, Any] = {}
+
+                        with ThreadPoolExecutor() as executor:
+                            for g_file, img_array in executor.map(
+                                utils.load_grid, chunk_grids
+                            ):
+                                loaded_grids[g_file] = img_array
+
+                        group_args = [
+                            (
+                                union_rects,
+                                group_frames,
+                                loaded_grids,
+                                TIGHT_BOX_SSIM_THRESHOLD,
+                            )
+                            for union_rects, group_frames in chunk_groups
+                        ]
+
+                        for ssim_args in group_args:
+                            surviving_items, local_deleted = utils.process_ssim_group(
+                                *ssim_args
+                            )
+                            frames_deleted_count += local_deleted
+
+                            for item in surviving_items:
+                                surviving_frames_meta.add((item["frame_idx"], z_idx))
+
+                                filename = f"rec_image_{rec_counter:0{FILENAME_ZERO_PADDING}d}_zone{z_idx}.jpg"
+                                filepath = os.path.join(rec_images_dir, filename)
+                                h, w = item["img"].shape[:2]
+                                write_queue.put((filepath, w, h, [(item["img"], 0, 0)]))
+
+                                rec_image_map[filename] = {
+                                    "frame_idx": item["frame_idx"],
+                                    "zone_idx": z_idx,
+                                }
+                                rec_counter += 1
+
+                            frames_processed += len(ssim_args[1])
+
+                            if frames_processed >= next_print_target:
+                                print(
+                                    f"\rAnalyzing frame {frames_processed} of {total_stitched_frames}",
+                                    end="",
+                                    flush=True,
+                                )
+                                next_print_target = frames_processed + 15
+
+                        loaded_grids.clear()
+
+                print(
+                    f"\rAnalyzing frame {frames_processed} of {total_stitched_frames}",
+                    end="",
+                    flush=True,
+                )
+                success = True
+
+            except KeyboardInterrupt:
+                raise
+
+            finally:
+                is_aborting = not success or len(error_list) > 0
+
+                if is_aborting:
+                    stop_event.set()
+                else:
+                    drain_event.set()
+
+                if is_aborting:
+                    while not write_queue.empty():
+                        try:
+                            write_queue.get_nowait()
+                        except queue.Empty:
+                            break
+
+                for w in rec_writers:
+                    w.join()
+
+                if error_list:
+                    raise error_list[0]
+
+            print(
+                f"\nFiltered out {frames_deleted_count} redundant frame(s) via Text-Detection and tight-box SSIM analysis.",
                 flush=True,
             )
 
@@ -656,13 +1028,14 @@ class Video:
                     rec_ocr_outputs[stitched_filename] = results
                     ocr_image_index += 1
                     print(
-                        f"Step 2/2: Performing OCR on image {ocr_image_index} of {len(rec_image_map)}",
+                        f"Step 3/3: Performing OCR on image {ocr_image_index} of {len(rec_image_map)}",
                         flush=True,
                     )
                 print()
 
             elif ocr_engine == "paddleocr":
                 ocr_output_json = os.path.join(temp_dir, "ocr_results.json")
+                ocr_progress_file = os.path.join(temp_dir, "ocr_progress.txt")
                 args = [
                     self.paddleocr_path,
                     "ocr",
@@ -678,44 +1051,100 @@ class Video:
                     self.rec_model_dir,
                     "--output",
                     ocr_output_json,
+                    "--progress_file",
+                    ocr_progress_file,
                 ]
 
-                print("Starting PaddleOCR...", flush=True)
+                total_images = len(rec_image_map)
+                print(
+                    f"Starting PaddleOCR... (Total images: {total_images})", flush=True
+                )
 
-                # Run the CLI and wait for completion
-                for line in utils.stream_cli_process(args, "paddleocr_error.log"):
-                    line = line.strip()
-                    if line:
-                        # 转发PaddleOCR子进程的输出到stdout，让service层实时捕获
-                        print(line, flush=True)
+                processed_count = 0
 
-                # Read the JSON output file
-                if os.path.isfile(ocr_output_json):
-                    with open(ocr_output_json, "r", encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if not line:
-                                continue
-                            try:
-                                data = json.loads(line)
-                                image_name = data["image"]
-                                rec_ocr_outputs[image_name] = []
-                                for item in data["results"]:
-                                    box = item["box"]
-                                    text = item["text"]
-                                    score = item["score"]
-                                    rec_ocr_outputs[image_name].append(
-                                        [box, (text, score)]
-                                    )
-                                ocr_image_index += 1
-                                print(
-                                    f"Step 2/2: Performing OCR on image {ocr_image_index} of {len(rec_image_map)}",
-                                    flush=True,
-                                )
-                            except Exception as e:
-                                print(f"Error parsing JSON line: {e}", flush=True)
-                else:
-                    print(f"OCR output file not found: {ocr_output_json}", flush=True)
+                def parse_existing_json():
+                    """解析已存在的JSON结果文件并返回已处理的数量"""
+                    local_count = 0
+                    if os.path.isfile(ocr_output_json):
+                        try:
+                            with open(ocr_output_json, "r", encoding="utf-8") as f:
+                                for json_line in f:
+                                    json_line = json_line.strip()
+                                    if not json_line:
+                                        continue
+                                    try:
+                                        data = json.loads(json_line)
+                                        image_name = data["image"]
+                                        if image_name not in rec_ocr_outputs:
+                                            rec_ocr_outputs[image_name] = []
+                                            for item in data["results"]:
+                                                box = item["box"]
+                                                text = item["text"]
+                                                score = item["score"]
+                                                rec_ocr_outputs[image_name].append(
+                                                    [box, (text, score)]
+                                                )
+                                            local_count += 1
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+                    return local_count
+
+                import sys
+
+                def safe_print(msg: str) -> None:
+                    """安全打印，避免Windows cp932编码错误"""
+                    try:
+                        print(msg, flush=True)
+                    except UnicodeEncodeError:
+                        encoded = msg.encode(sys.stdout.encoding, errors="replace")
+                        sys.stdout.buffer.write(encoded)
+                        sys.stdout.buffer.flush()
+
+                # Background thread polls progress file for real-time updates
+                _ocr_stop = [False]
+                _ocr_last = [0]
+
+                def _poll_ocr():
+                    while not _ocr_stop[0]:
+                        try:
+                            if os.path.exists(ocr_progress_file):
+                                with open(ocr_progress_file, "r") as pf:
+                                    content = pf.read().strip()
+                                if "/" in content:
+                                    cur, tot = content.split("/", 1)
+                                    cur_i = int(cur)
+                                    if cur_i != _ocr_last[0]:
+                                        _ocr_last[0] = cur_i
+                                        safe_print(
+                                            f"Step 3/3: Performing OCR on image {cur_i} of {tot}"
+                                        )
+                        except Exception:
+                            pass
+                        import time
+
+                        time.sleep(0.25)
+
+                ocr_poll_t = threading.Thread(target=_poll_ocr, daemon=True)
+                ocr_poll_t.start()
+                try:
+                    for line in utils.stream_cli_process(args, "paddleocr_error.log"):
+                        pass  # progress read from file
+                finally:
+                    _ocr_stop[0] = True
+                    ocr_poll_t.join(timeout=1)
+
+                # Final JSON parse for results
+                final_count = parse_existing_json()
+                if final_count > processed_count:
+                    processed_count = final_count
+                    safe_print(
+                        f"Step 3/3: Performing OCR on image {processed_count} of {total_images}"
+                    )
+
+                if not rec_ocr_outputs:
+                    safe_print(f"OCR output file not found or empty: {ocr_output_json}")
                 print()
 
             # Map 2D coordinates

@@ -23,6 +23,7 @@ from qfluentwidgets import (
     PrimaryPushButton,
     PushButton,
     ScrollArea,
+    SimpleCardWidget,
     TransparentToolButton,
 )
 from qfluentwidgets import FluentIcon as FIF
@@ -313,7 +314,7 @@ class ProjectInterface(ScrollArea):
         dialog.exec()
 
 
-class TopButtonCard(CardWidget):
+class TopButtonCard(SimpleCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         # 创建三个按钮
