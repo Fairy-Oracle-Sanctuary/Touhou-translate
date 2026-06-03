@@ -1,6 +1,11 @@
 # coding:utf-8
 
-from qfluentwidgets import ComboBoxSettingCard
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices
+from qfluentwidgets import (
+    BodyLabel,
+    ComboBoxSettingCard,
+)
 from qfluentwidgets import FluentIcon as FIF
 
 from ..common.config import cfg
@@ -77,6 +82,20 @@ class WhisperInterface(BaseFunctionInterface):
         )
         self.settingsGroup.addSettingCard(self.languageCard)
         self.settingsGroup.addSettingCard(self.formatCard)
+
+        # 模型说明提示卡片
+        hint_label = BodyLabel(
+            "内置 <b>Small</b> 模型对油库里语音已够用。"
+            '需更高精度可<a href="https://pan.xunlei.com/s/VOu1R3aOfz05uqcbNUBSnEFSA1?pwd=62cr#" '
+            'style="color: #0078d4;">手动下载更大模型</a>后替换。',
+        )
+        hint_label.setWordWrap(True)
+        hint_label.linkActivated.connect(
+            lambda url: QDesktopServices.openUrl(QUrl(url))
+        )
+        self.settingsGroup.vBoxLayout.insertSpacing(-1, 8)
+        self.settingsGroup.vBoxLayout.addWidget(hint_label)
+        self.settingsGroup.vBoxLayout.insertSpacing(-1, 12)
 
     def _connect_signals(self):
         """连接信号槽"""

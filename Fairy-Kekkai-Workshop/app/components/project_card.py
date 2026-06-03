@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
     QHBoxLayout,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -361,13 +362,21 @@ class ProjectCard(CardWidget):
         self.isLink = isLink
 
         self.iconWidget = IconWidget(icon)
+        self._full_title = title
+        self._full_content = content
         self.titleLabel = BodyLabel(title, self)
         self.titleLabel.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
+        self.titleLabel.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+        )
         self.contentLabel = CaptionLabel(content, self)
         self.contentLabel.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self.contentLabel.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
         self.openButton = PrimaryPushButton("打开项目", self)
         self.editButton = TransparentToolButton(FIF.EDIT, self)
@@ -405,6 +414,36 @@ class ProjectCard(CardWidget):
         self.hBoxLayout.addWidget(self.openButton, 0, Qt.AlignRight)
         self.hBoxLayout.addWidget(self.editButton, 0, Qt.AlignRight)
         self.hBoxLayout.addWidget(self.moreButton, 0, Qt.AlignRight)
+
+    def resizeEvent(self, event):
+        """窗口大小改变时自适应截断标题和路径"""
+        super().resizeEvent(event)
+        self._elide_labels()
+
+    def _elide_labels(self):
+        """根据卡片宽度动态截断标题和路径文本"""
+        fixed_width = (
+            370  # icon(48)+openBtn(120)+edit(36)+more(36)+margins(31)+spacings(~100)
+        )
+        if hasattr(self, "linkButton"):
+            fixed_width += 50
+        available = max(self.width() - fixed_width, 50)
+
+        fm = self.titleLabel.fontMetrics()
+        elided = fm.elidedText(self._full_title, Qt.TextElideMode.ElideRight, available)
+        self.titleLabel.setText(elided)
+        self.titleLabel.setToolTip(
+            self._full_title if elided != self._full_title else ""
+        )
+
+        fm2 = self.contentLabel.fontMetrics()
+        elided2 = fm2.elidedText(
+            self._full_content, Qt.TextElideMode.ElideRight, available
+        )
+        self.contentLabel.setText(elided2)
+        self.contentLabel.setToolTip(
+            self._full_content if elided2 != self._full_content else ""
+        )
 
     def openProject(self):
         """打开项目"""

@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -42,6 +41,7 @@ from ..common.config import cfg
 from ..common.event_bus import event_bus
 from ..common.events import EventBuilder
 from ..components.dialog import (
+    BatchTaskDialog,
     CustomDoubleMessageBox,
     CustomMessageBox,
     CustomTripleMessageBox,
@@ -155,7 +155,6 @@ class ProjectDetailInterface(ScrollArea):
         self.current_page = 1
         self.items_per_page = cfg.get(cfg.detailProjectItemNum)
         self._pending_workers = []  # 持有异步 worker 引用防 GC
-        self._episode_labels = []  # (label, full_title)，用于自适应截断
         self.total_episodes = 0
         self.subfolders = []
         self.topPipsPager = None
@@ -177,9 +176,6 @@ class ProjectDetailInterface(ScrollArea):
 
     def _show_loading_view(self, project_path):
         """显示加载视图"""
-        # 清空旧集标题引用
-        self._episode_labels.clear()
-
         # 清空当前布局
         self._clearLayout(self.vBoxLayout)
 
@@ -252,28 +248,6 @@ class ProjectDetailInterface(ScrollArea):
             self.progress_ring.setValue(value)
         if status and hasattr(self, "loading_status") and self.loading_status:
             self.loading_status.setText(status)
-
-    def resizeEvent(self, event):
-        """窗口大小改变时自适应截断集标题"""
-        super().resizeEvent(event)
-        self._update_episode_labels()
-
-    def _update_episode_labels(self):
-        """根据窗口宽度自适应截断集标题"""
-        if not self._episode_labels:
-            return
-        # 估算按钮区宽度：4个ToolButton(36px) + 间距
-        button_area_width = 180
-        available_width = self.view.width() - 40  # 预留边距
-        target_width = max(available_width - button_area_width, 80)
-
-        for label, full_title in self._episode_labels:
-            fm = label.fontMetrics()
-            elided = fm.elidedText(
-                full_title, Qt.TextElideMode.ElideRight, target_width
-            )
-            label.setText(elided)
-            label.setToolTip(full_title if elided != full_title else "")
 
     def downloadPicture(self, pic_url, save_path):
         # https://i.ytimg.com/vi/4r2guMZPVJw/maxresdefault.jpg
@@ -377,17 +351,27 @@ class ProjectDetailInterface(ScrollArea):
             self.backToProjectListSignal.emit()
             return
 
-        # 创建返回按钮
+        # 创建顶部按钮栏
+        topButtonLayout = QHBoxLayout()
+
         backButton = PrimaryPushButton("返回项目列表", self.view)
         backButton.clicked.connect(self.backToProjectListSignal.emit)
 
-        # 创建刷新按钮
         refreshButton = PushButton("刷新项目列表", self.view)
         refreshButton.clicked.connect(
             lambda: self.loadProject(
                 self.current_project_path, self.card_id, isMessage=True
             )
         )
+
+        batchTaskButton = PushButton("批量任务", self.view)
+        batchTaskButton.setToolTip("批量添加下载/语音识别/翻译/压制任务")
+        batchTaskButton.clicked.connect(self._open_batch_task_dialog)
+
+        topButtonLayout.addWidget(backButton)
+        topButtonLayout.addWidget(refreshButton)
+        topButtonLayout.addWidget(batchTaskButton)
+        topButtonLayout.addSpacing(15)
 
         # 创建项目标题
         projectTitle = TitleLabel(
@@ -450,8 +434,7 @@ class ProjectDetailInterface(ScrollArea):
             hBoxLayout.addWidget(addButtonBottom)
 
         # 设置布局
-        self.vBoxLayout.addWidget(backButton)
-        self.vBoxLayout.addWidget(refreshButton)
+        self.vBoxLayout.addLayout(topButtonLayout)
         self.vBoxLayout.addWidget(projectTitle)
         self.vBoxLayout.addWidget(page_info_label)
 
@@ -477,11 +460,63 @@ class ProjectDetailInterface(ScrollArea):
         self.vBoxLayout.addStretch(1)
         event_bus.project_detail_interface = self.view
 
-        # 初始触发一次自适应截断
-        self._update_episode_labels()
-
         if self.isMessage:
             event_bus.notification_service.show_success("成功", "已刷新文件列表")
+
+    def _open_batch_task_dialog(self):
+        """打开批量任务对话框"""
+        if not self.subfolders:
+            event_bus.notification_service.show_warning("提示", "当前项目没有剧集")
+            return
+
+        dialog = BatchTaskDialog(self.card_id, self.subfolders, parent=self.window())
+        if dialog.exec():
+            selected = dialog.get_selected()
+            count = 0
+            for task_type, folder_num, folder_path in selected:
+                try:
+                    self._dispatch_task(task_type, folder_num, folder_path)
+                    count += 1
+                except Exception as e:
+                    event_bus.notification_service.show_error(
+                        "错误", f"第 {folder_num} 集添加失败: {str(e)}"
+                    )
+            if count > 0:
+                event_bus.notification_service.show_success(
+                    "成功", f"已添加 {count} 个任务"
+                )
+            else:
+                event_bus.notification_service.show_warning("提示", "没有选中任何任务")
+
+    def _dispatch_task(self, task_type, folder_num, folder_path):
+        """根据任务类型派发信号"""
+        raw = str(folder_path)
+        idx = folder_num - 1
+
+        if task_type == "下载":
+            video_url = project.project_video_url[self.card_id][idx]
+            event_bus.download_requested.emit(
+                EventBuilder.download_video(video_url, raw)
+            )
+
+        elif task_type == "语音识别":
+            video_path = os.path.join(raw, "生肉.mp4")
+            output_path = os.path.join(raw, "原文_Whisper.srt")
+            event_bus.whisper_requested.emit(video_path, output_path)
+
+        elif task_type == "翻译":
+            # 找到第一个存在的原文字幕
+            for src_name in ("原文.srt", "原文_OCR.srt", "原文_Whisper.srt"):
+                src_path = os.path.join(raw, src_name)
+                if os.path.exists(src_path):
+                    output_path = os.path.join(raw, "译文.srt")
+                    event_bus.translate_requested.emit(src_path, output_path)
+                    return
+
+        elif task_type == "压制":
+            input_path = os.path.join(raw, "熟肉.mp4")
+            output_path = os.path.join(raw, "熟肉_压制.mp4")
+            event_bus.ffmpeg_requested.emit(input_path, output_path)
 
     def _create_episode_widget(self, folder_num, folder_path, parent_layout):
         """创建单集的小部件"""
@@ -490,16 +525,20 @@ class ProjectDetailInterface(ScrollArea):
         folderTitleLayout = QHBoxLayout(folderTitleWidget)
         folderTitleLayout.setContentsMargins(0, 0, 0, 0)
 
-        # 文件夹标题（存储完整标题用于自适应截断）
+        # 文件夹标题（过长则截断，完整标题通过 tooltip 显示）
         full_title = f"第 {folder_num} 集 - {project.project_subtitle[self.card_id][folder_num - 1]}"
-        folderLabel = StrongBodyLabel(full_title, folderTitleWidget)
+        MAX_TITLE_LEN = 40
+        display_title = (
+            full_title[:MAX_TITLE_LEN] + "..."
+            if len(full_title) > MAX_TITLE_LEN
+            else full_title
+        )
+        folderLabel = StrongBodyLabel(display_title, folderTitleWidget)
         folderLabel.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        folderLabel.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
-        self._episode_labels.append((folderLabel, full_title))
+        if len(full_title) > MAX_TITLE_LEN:
+            folderLabel.setToolTip(full_title)
 
         # 插入按钮
         addEpisodeButton = TransparentToolButton(FIF.ADD, folderTitleWidget)

@@ -1,8 +1,9 @@
 import os
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    CheckBox,
     ComboBox,
     LineEdit,
     MessageBoxBase,
@@ -10,11 +11,14 @@ from qfluentwidgets import (
     PlainTextEdit,
     ProgressBar,
     ProgressRing,
+    PushButton,
+    ScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
 )
 
 from ..common.event_bus import event_bus
+from ..service.project_service import project
 
 
 class BaseInputDialog(MessageBoxBase):
@@ -691,3 +695,150 @@ class WhisperProgressDialog(MessageBoxBase):
         """重写接受方法，断开信号连接"""
         event_bus.whisper_update_signal.disconnect(self.on_whisper_update)
         super().accept()
+
+
+class BatchTaskDialog(MessageBoxBase):
+    """批量任务对话框 —— 选择任务类型后显示符合条件剧集，可多选添加"""
+
+    TASK_TYPES = ["下载", "语音识别", "翻译", "压制"]
+
+    def __init__(self, card_id, subfolders, parent=None):
+        super().__init__(parent)
+        self.card_id = card_id
+        self.subfolders = subfolders  # [(folder_num, folder_path), ...]
+        self._checkboxes = []  # [(checkbox, folder_num, folder_path)]
+
+        self.titleLabel = SubtitleLabel("批量添加任务")
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.widget.setMinimumWidth(520)
+
+        # 任务类型下拉框
+        self.taskTypeCombo = ComboBox()
+        self.taskTypeCombo.addItems(self.TASK_TYPES)
+        self.taskTypeCombo.currentTextChanged.connect(self._on_task_type_changed)
+        self.viewLayout.addWidget(self.taskTypeCombo)
+
+        # 全选 / 取消全选
+
+        select_layout = QHBoxLayout()
+        select_all_btn = PushButton("全选")
+        select_all_btn.clicked.connect(self._select_all)
+        deselect_all_btn = PushButton("取消全选")
+        deselect_all_btn.clicked.connect(self._deselect_all)
+        select_layout.addWidget(select_all_btn)
+        select_layout.addWidget(deselect_all_btn)
+        select_layout.addStretch()
+        self.viewLayout.addLayout(select_layout)
+
+        # 可滚动剧集列表
+
+        self.episodeScrollArea = ScrollArea()
+        self.episodeWidget = QWidget()
+        self.episodeLayout = QVBoxLayout(self.episodeWidget)
+        self.episodeLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.episodeScrollArea.setWidget(self.episodeWidget)
+        self.episodeScrollArea.setWidgetResizable(True)
+        self.episodeScrollArea.setFixedHeight(320)
+        self.viewLayout.addWidget(self.episodeScrollArea)
+
+        # 初始化列表
+        self._on_task_type_changed(self.taskTypeCombo.currentText())
+
+        self.yesButton.setText("添加任务")
+        self.yesButton.setEnabled(False)
+        self.cancelButton.setText("取消")
+
+    def _on_task_type_changed(self, task_type):
+        """切换任务类型时刷新剧集列表"""
+        self._clear_checkboxes()
+
+        for folder_num, folder_path in self.subfolders:
+            eligible, label = self._check_eligible(task_type, folder_num, folder_path)
+            if eligible:
+                cb = CheckBox(label)
+                cb.stateChanged.connect(self._on_check_state_changed)
+                self.episodeLayout.addWidget(cb)
+                self._checkboxes.append((cb, folder_num, folder_path))
+
+        self.episodeLayout.addStretch()
+        self._update_confirm_button()
+
+    def _on_check_state_changed(self):
+        """任一 checkbox 状态改变时更新确认按钮"""
+        self._update_confirm_button()
+
+    def _update_confirm_button(self):
+        """有勾选时启用确定按钮"""
+        for cb, _, _ in self._checkboxes:
+            if cb.isChecked():
+                self.yesButton.setEnabled(True)
+                return
+        self.yesButton.setEnabled(False)
+
+    def _check_eligible(self, task_type, folder_num, folder_path):
+        """检查某集是否可添加该类型任务，返回 (是否合格, 显示标签)"""
+
+        raw = str(folder_path)
+        idx = folder_num - 1
+        sub_title = project.project_subtitle[self.card_id][idx]
+        label = f"第 {folder_num} 集 - {sub_title}"
+
+        if task_type == "下载":
+            video_url = project.project_video_url[self.card_id][idx]
+            has_raw = os.path.exists(os.path.join(raw, "生肉.mp4"))
+            if video_url and video_url.strip() and not has_raw:
+                return True, label
+            return False, ""
+
+        elif task_type == "语音识别":
+            has_raw = os.path.exists(os.path.join(raw, "生肉.mp4"))
+            has_whisper = os.path.exists(os.path.join(raw, "原文_Whisper.srt"))
+            if has_raw and not has_whisper:
+                return True, label
+            return False, ""
+
+        elif task_type == "翻译":
+            has_trans = os.path.exists(os.path.join(raw, "译文.srt"))
+            if has_trans:
+                return False, ""
+            for src_name in ("原文.srt", "原文_OCR.srt", "原文_Whisper.srt"):
+                if os.path.exists(os.path.join(raw, src_name)):
+                    return True, label
+            return False, ""
+
+        elif task_type == "压制":
+            has_cooked = os.path.exists(os.path.join(raw, "熟肉.mp4"))
+            if has_cooked:
+                return True, label
+            return False, ""
+
+        return False, ""
+
+    def _clear_checkboxes(self):
+        """清空现有 checkbox 列表（含所有布局项）"""
+        while self.episodeLayout.count():
+            item = self.episodeLayout.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
+        self._checkboxes.clear()
+
+    def _select_all(self):
+        for cb, _, _ in self._checkboxes:
+            cb.setChecked(True)
+        self._update_confirm_button()
+
+    def _deselect_all(self):
+        for cb, _, _ in self._checkboxes:
+            cb.setChecked(False)
+        self._update_confirm_button()
+
+    def get_selected(self):
+        """返回 [({task_type}, folder_num, folder_path), ...]"""
+        task_type = self.taskTypeCombo.currentText()
+        selected = []
+        for cb, folder_num, folder_path in self._checkboxes:
+            if cb.isChecked():
+                selected.append((task_type, folder_num, folder_path))
+        return selected

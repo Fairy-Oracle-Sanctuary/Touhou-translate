@@ -17,7 +17,7 @@ class WhisperTaskInterface(BaseTaskInterface):
             object_name="whisperTaskInterface",
             processing_text="识别中",
             task_type="识别",
-            max_concurrent_tasks=2,
+            max_concurrent_tasks=1,
             parent=parent,
         )
 

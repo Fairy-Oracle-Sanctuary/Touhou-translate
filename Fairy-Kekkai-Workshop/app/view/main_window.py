@@ -400,7 +400,16 @@ class MainWindow(MSFluentWindow):
 
         event_bus.is_shutting_down = True
 
-        # 检查是否有运行中的任务
+        # 非直接关闭模式：最小化到托盘，不检查任务
+        if not (hasattr(self, "_really_quit") and self._really_quit) and not cfg.get(
+            cfg.closeDirectly
+        ):
+            event_bus.is_shutting_down = False
+            event.ignore()
+            self.hide()
+            return
+
+        # 直接关闭模式：检查是否有运行中的任务
         running_tasks = self.check_running_tasks()
 
         if running_tasks:
@@ -425,20 +434,10 @@ class MainWindow(MSFluentWindow):
                 event_bus.is_shutting_down = False
                 event.ignore()
         else:
-            # 没有运行中的任务，正常处理
-            if (hasattr(self, "_really_quit") and self._really_quit) or cfg.get(
-                cfg.closeDirectly
-            ):
-                # 保存窗口状态
-                self.save_window_state()
-                # 执行真正的退出
-                super().closeEvent(event)
-                QApplication.instance().exit(0)
-            else:
-                # 最小化到托盘
-                event_bus.is_shutting_down = False
-                event.ignore()
-                self.hide()
+            # 没有运行中的任务，直接退出
+            self.save_window_state()
+            super().closeEvent(event)
+            QApplication.instance().exit(0)
 
     def stop_all_tasks(self):
         """停止所有运行中的任务"""

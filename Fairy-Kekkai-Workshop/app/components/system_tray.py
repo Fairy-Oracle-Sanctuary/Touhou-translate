@@ -1,6 +1,6 @@
 # widgets/system_tray.py
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon
+from PySide6.QtWidgets import QSystemTrayIcon
 from qfluentwidgets import Action, SystemTrayMenu
 
 from ..resource import resource_rc  # noqa: F401
@@ -28,8 +28,7 @@ class SystemTray(QSystemTrayIcon):
                 ),
                 Action(
                     self.tr("退出"),
-                    triggered=QApplication.instance().exit,
-                    # triggered=lambda: print("a")
+                    triggered=self.quit_application,
                 ),
             ]
         )
@@ -64,7 +63,7 @@ class SystemTray(QSystemTrayIcon):
 
     def quit_application(self):
         """退出应用程序"""
-        # 设置真正退出标志
+        # 设置真正退出标志，触发 closeEvent 的退出路径
         self.main_window._really_quit = True
-        # 退出应用程序
-        QApplication.instance().exit
+        self.main_window.show()
+        self.main_window.close()
